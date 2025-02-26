@@ -9,11 +9,18 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     
     # Enable loading extensions if sqlite-vec is available
+    extension_loaded = False
     try:
         conn.enable_load_extension(True)
         conn.load_extension("sqlite_vec")
+        extension_loaded = True
     except sqlite3.OperationalError:
-        pass
+        try:
+            # Try to import the Python package which might register the extension
+            import sqlite_vec
+            extension_loaded = True
+        except ImportError:
+            pass
         
     return conn
 

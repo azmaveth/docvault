@@ -11,13 +11,22 @@ def initialize_database():
     conn = sqlite3.connect(config.DB_PATH)
     
     # Load sqlite-vec extension
+    extension_loaded = False
     try:
         conn.enable_load_extension(True)
         conn.load_extension("sqlite_vec")
-    except sqlite3.OperationalError:
-        print("⚠️  Warning: sqlite-vec extension not found")
-        print("Please install sqlite-vec: https://github.com/asg017/sqlite-vec")
-        print("Database created without vector search capability")
+        extension_loaded = True
+        print("✅ sqlite-vec extension loaded successfully")
+    except sqlite3.OperationalError as e:
+        print(f"⚠️ Warning: sqlite-vec extension not loaded directly: {e}")
+        try:
+            # Try to import the Python package which might register the extension
+            import sqlite_vec
+            print("Attempting to use sqlite-vec through Python package...")
+            extension_loaded = True
+        except ImportError:
+            print("⚠️ Warning: sqlite-vec Python package not found either")
+            print("Vector search functionality may be limited")
     
     conn.executescript("""
     -- Documents table

@@ -1,16 +1,7 @@
-# UV configuration file
+# Minimal UV configuration
 
-# Resolution settings
+# Resolution strategy for dependencies
 resolution = "highest"
 
-# Cache settings
-no-cache = false
-
-# Python version preferences
-python-preference = "3.12"
-
-# Dependencies
-exclude-newer = []
-
-# Development settings
+# Use compiled bytecode for performance
 compile-bytecode = true

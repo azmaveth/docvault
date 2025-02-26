@@ -46,10 +46,13 @@ cd docvault
 pip install -e .
 ```
 
-### Required Extension
+### Required Packages
 
-Ensure you have the sqlite-vec extension installed:
-https://github.com/asg017/sqlite-vec
+DocVault automatically installs all required dependencies, including:
+
+- `sqlite-vec` - Vector search extension for SQLite
+- `mcp` - Model Context Protocol for LLM integration
+- Various other libraries for web scraping, document processing, etc.
 
 ## Quick Start
 
@@ -125,9 +128,9 @@ dv lookup tensorflow --version 2.0.0
 ## Requirements
 
 - Python 3.12+
-- sqlite-vec extension
 - Ollama for embeddings
-- MCP SDK
+- MCP (`mcp` package) - included in dependencies
+- sqlite-vec - included in dependencies
 - UV (recommended)
 
 ## Configuration

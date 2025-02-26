@@ -22,7 +22,8 @@ setup(
         "html2text>=2020.1.16",
         "aiohttp>=3.8.4",
         "numpy>=1.24.0",
-        "mcp-sdk>=0.1.0",
+        "mcp>=0.1.0",
+        "sqlite-vec>=0.1.0",
         "uvicorn>=0.17.6"
     ],
     scripts=["dv"],

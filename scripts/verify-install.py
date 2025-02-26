@@ -40,12 +40,21 @@ def check_sqlite_vec():
         conn = sqlite3.connect(':memory:')
         conn.enable_load_extension(True)
         conn.load_extension('sqlite_vec')
-        print("✅ sqlite-vec extension is installed")
+        print("✅ sqlite-vec extension is installed and loaded")
         return True
     except Exception as e:
-        print(f"❌ sqlite-vec extension is not available: {e}")
-        print("Please install from https://github.com/asg017/sqlite-vec")
-        return False
+        # Try to check if it's installed through pip
+        try:
+            import sqlite_vec
+            print("✅ sqlite-vec package is installed, but extension loading failed")
+            print(f"   Error: {e}")
+            print("   This could be due to system permissions or configuration")
+            return False
+        except ImportError:
+            print(f"❌ sqlite-vec extension is not available: {e}")
+            print("Please reinstall DocVault or install sqlite-vec manually:")
+            print("pip install sqlite-vec")
+            return False
 
 def check_ollama():
     """Check if Ollama is running"""

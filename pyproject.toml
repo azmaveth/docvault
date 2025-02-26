@@ -27,12 +27,6 @@ classifiers = [
     "Topic :: Text Processing",
     "Topic :: Utilities"
 ]
-
-[project.urls]
-homepage = "https://github.com/yourusername/docvault"
-repository = "https://github.com/yourusername/docvault.git"
-documentation = "https://github.com/yourusername/docvault#readme"
-issues = "https://github.com/yourusername/docvault/issues"
 dependencies = [
     "click>=8.1.3",
     "rich>=13.3.1",
@@ -42,16 +36,16 @@ dependencies = [
     "html2text>=2020.1.16",
     "aiohttp>=3.8.4",
     "numpy>=1.24.0",
-    "mcp-sdk>=0.1.0"
+    "mcp>=0.1.0",
+    "sqlite-vec>=0.1.0"
 ]
+
+[project.urls]
+homepage = "https://github.com/yourusername/docvault"
+repository = "https://github.com/yourusername/docvault.git"
+documentation = "https://github.com/yourusername/docvault#readme"
+issues = "https://github.com/yourusername/docvault/issues"
 
 [project.scripts]
 dv = "docvault.main:main"
 
-[tool.hatch.build.targets.wheel]
-packages = ["docvault"]
-
-[tool.uv]
-# UV-specific configuration options
-python = "3.12"
-resolver = "backtracking"
