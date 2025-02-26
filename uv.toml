@@ -1,0 +1,19 @@
+# UV configuration file
+
+[tool]
+# Prefer higher versions when resolving dependencies
+resolver = "highest"
+
+# Cache packages locally for faster installs
+cached = true
+
+# Exclude these packages from lockfile
+exclude = []
+
+[venv]
+# Use symlinks when creating venvs
+use-symlinks = true
+
+[python]
+# Default Python version for development
+version = "3.12"
