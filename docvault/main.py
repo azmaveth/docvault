@@ -20,42 +20,21 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-@click.group()
-def main():
-    """DocVault: Document management system with vector search"""
-    # Ensure app is initialized
-    ensure_app_initialized()
-    pass
+# Import CLI commands directly
+from docvault.cli.commands import (
+    scrape, search, read, list_docs, lookup,
+    config, init_db, add, delete, rm, backup, import_backup
+)
 
-def ensure_app_initialized():
-    """Ensure the application is initialized on first run"""
-    from docvault.db.schema import initialize_database
-    from docvault import config
-    
-    # Check if database exists and is initialized
-    if not os.path.exists(config.DB_PATH):
-        click.echo(f"Initializing DocVault in {config.DEFAULT_BASE_DIR}")
-        
-        # Set up database
-        initialize_database()
-        
-        # Create example .env file for future customization
-        env_template = create_env_template()
-        env_path = config.DEFAULT_BASE_DIR / ".env.example"
-        with open(env_path, "w") as f:
-            f.write(env_template)
-            
-        # Also copy our included .env.example if it exists
-        package_dir = Path(__file__).parent.parent
-        example_env = package_dir / ".env.example"
-        if example_env.exists():
-            import shutil
-            shutil.copy(example_env, config.DEFAULT_BASE_DIR / ".env.example")
-        
-        click.echo(f"✅ DocVault initialized successfully!")
-        click.echo(f"📂 Default configuration created in {config.DEFAULT_BASE_DIR}")
-        click.echo(f"ℹ️  To customize settings, run 'dv config --init' to create a .env file")
-        click.echo(f"💡 A detailed .env.example file is available for reference")
+# Import initialization function
+from docvault.core.initialization import ensure_app_initialized
+
+@click.group()
+@click.pass_context
+def main(ctx):
+    """DocVault: Document management system"""
+    # Ensure initialization happens before any command
+    ensure_app_initialized()
 
 def create_env_template():
     """Create a template .env file with default values and explanations"""
@@ -90,12 +69,6 @@ LOG_DIR={conf.LOG_DIR}
 LOG_FILE={os.path.basename(conf.LOG_FILE)}
 """
     return template
-
-# Import CLI commands directly
-from docvault.cli.commands import (
-    scrape, search, read, list_docs, lookup,
-    config, init_db, add, delete, rm, backup, import_backup
-)
 
 # Add commands directly to main
 main.add_command(scrape)
