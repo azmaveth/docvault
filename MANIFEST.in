@@ -1,0 +1,16 @@
+include LICENSE.md
+include README.md
+include pyproject.toml
+include uv.toml
+include dv
+include .gitignore
+
+recursive-include scripts *
+recursive-include docvault *.py
+
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dylib
+global-exclude .DS_Store
+global-exclude .git*

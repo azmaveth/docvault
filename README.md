@@ -26,7 +26,7 @@ pipx install uv
 Then clone and install DocVault:
 
 ```bash
-git clone https://github.com/yourusername/docvault.git
+git clone https://github.com/azmaveth/docvault.git
 cd docvault
 uv pip install -e .
 ```
@@ -36,7 +36,7 @@ uv pip install -e .
 If you prefer, you can also use traditional pip:
 
 ```bash
-git clone https://github.com/yourusername/docvault.git
+git clone https://github.com/azmaveth/docvault.git
 cd docvault
 pip install -e .
 ```
@@ -95,9 +95,19 @@ Then edit the `.env` file in `~/.docvault/`.
 - `dv search <query>` - Search documents
 - `dv read <id>` - Read a document (markdown or HTML)
 - `dv list` - List all documents
-- `dv lookup <library>` - Lookup library documentation
+- `dv lookup <library_name> [--version <version>]` - Lookup and fetch documentation for a library
 - `dv config` - Manage configuration
 - `dv serve` - Start the MCP server
+
+### Library Lookup Example
+
+```bash
+# Lookup latest version of a library
+dv lookup pandas
+
+# Lookup specific version
+dv lookup tensorflow --version 2.0.0
+```
 
 ## MCP Tools for LLMs
 
@@ -126,6 +136,35 @@ DocVault can be configured using environment variables or a `.env` file in `~/.d
 - `STORAGE_PATH` - Path for document storage
 - `SERVER_HOST` - MCP server host
 - `SERVER_PORT` - MCP server port
+
+## Development
+
+We provide a convenient script to set up a development environment using UV:
+
+```bash
+# Make the script executable if needed
+chmod +x scripts/dev-setup.sh
+
+# Run the setup script
+./scripts/dev-setup.sh
+```
+
+This script creates a virtual environment, installs dependencies with UV, and checks for the sqlite-vec extension.
+
+## Publishing to PyPI
+
+To build and publish DocVault to PyPI:
+
+```bash
+# Build the package
+uv build
+
+# Publish to TestPyPI first (recommended)
+uv publish --repository testpypi
+
+# Publish to PyPI
+uv publish
+```
 
 ## License
 
