@@ -5,9 +5,13 @@
 echo "Cleaning previous builds..."
 rm -rf dist/ build/ *.egg-info/
 
-# Build the package using UV
-echo "Building package with UV..."
-uv build
+# Build the package using hatch (as specified in pyproject.toml)
+echo "Building package..."
+python -m build
+
+# Alternative using UV
+# echo "Building package with UV..."
+# uv pip build .
 
 # Show the built files
 echo -e "\nBuilt packages:"

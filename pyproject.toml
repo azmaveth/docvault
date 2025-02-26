@@ -1,19 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.13.0"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build]
-include = [
-  "docvault/**/*.py",
-  "scripts/*.py",
-  "scripts/*.sh",
-  "dv"
-]
-exclude = [
-  "**/__pycache__",
-  "**/.pytest_cache",
-  "**/*.pyc"
-]
+[tool.setuptools]
+packages = ["docvault"]
+include-package-data = true
 
 [project]
 name = "docvault"

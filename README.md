@@ -28,7 +28,12 @@ Then clone and install DocVault:
 ```bash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
+
+# Install in development mode
 uv pip install -e .
+
+# Or simply install the package
+uv pip install .
 ```
 
 ### Using Traditional Pip
@@ -156,14 +161,17 @@ This script creates a virtual environment, installs dependencies with UV, and ch
 To build and publish DocVault to PyPI:
 
 ```bash
+# Install build dependencies
+pip install build twine
+
 # Build the package
-uv build
+python -m build
 
 # Publish to TestPyPI first (recommended)
-uv publish --repository testpypi
+twine upload --repository testpypi dist/*
 
 # Publish to PyPI
-uv publish
+twine upload dist/*
 ```
 
 ## License
