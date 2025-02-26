@@ -3,8 +3,15 @@ import datetime
 from typing import List, Dict, Any, Optional
 from docvault import config
 
+# Register adapter for datetime objects to fix deprecation warning in Python 3.12
+def adapt_datetime(dt):
+    return dt.isoformat()
+
 def get_connection():
     """Get a connection to the SQLite database"""
+    # Register the datetime adapter
+    sqlite3.register_adapter(datetime.datetime, adapt_datetime)
+    
     conn = sqlite3.connect(config.DB_PATH)
     conn.row_factory = sqlite3.Row
     
@@ -43,6 +50,50 @@ def add_document(url: str, title: str, html_path: str, markdown_path: str,
     conn.close()
     
     return document_id
+
+def delete_document(document_id: int) -> bool:
+    """Delete a document and its segments from the database"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Begin transaction
+        conn.execute("BEGIN TRANSACTION")
+        
+        # Delete segments first (though CASCADE would handle this)
+        cursor.execute("DELETE FROM document_segments WHERE document_id = ?", (document_id,))
+        
+        # Delete from document_segments_vec
+        try:
+            # Get segment IDs for this document
+            cursor.execute("SELECT id FROM document_segments WHERE document_id = ?", (document_id,))
+            segment_ids = [row[0] for row in cursor.fetchall()]
+            
+            # Delete from vector table if it exists
+            for segment_id in segment_ids:
+                try:
+                    cursor.execute("DELETE FROM document_segments_vec WHERE id = ?", (segment_id,))
+                except sqlite3.OperationalError:
+                    # Vector table might not exist
+                    pass
+        except Exception as e:
+            # Ignore errors with vector table
+            pass
+        
+        # Delete the document
+        cursor.execute("DELETE FROM documents WHERE id = ?", (document_id,))
+        
+        # Commit transaction
+        conn.commit()
+        return True
+    except Exception as e:
+        # Rollback on error
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+    
+    return False
 
 def get_document(document_id: int) -> Optional[Dict[str, Any]]:
     """Get a document by ID"""
@@ -211,3 +262,31 @@ def get_library_documents(library_id: int) -> List[Dict[str, Any]]:
     conn.close()
     
     return [dict(row) for row in rows]
+
+def get_latest_library_version(name: str) -> Optional[Dict[str, Any]]:
+    """Get the latest version of a library by name"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # First try to find an explicitly 'latest' version
+    cursor.execute("""
+    SELECT * FROM libraries 
+    WHERE name = ? AND version != 'latest' AND is_available = 1
+    ORDER BY 
+        CASE 
+            WHEN version = 'stable' THEN 0
+            WHEN version GLOB '[0-9]*.[0-9]*.[0-9]*' THEN 1 
+            WHEN version GLOB '[0-9]*.[0-9]*' THEN 2
+            ELSE 3
+        END,
+        CAST(REPLACE(REPLACE(REPLACE(version, 'v', ''), '-beta', ''), '-alpha', '') AS TEXT) DESC,
+        last_checked DESC
+    LIMIT 1
+    """, (name,))
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return dict(row)
+    return None

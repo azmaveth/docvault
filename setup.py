@@ -26,7 +26,7 @@ setup(
         "sqlite-vec>=0.1.0",
         "uvicorn>=0.17.6"
     ],
-    scripts=["dv"],
+    scripts=["scripts/dv"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",

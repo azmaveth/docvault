@@ -13,7 +13,9 @@ async def handle_scrape_document(params: Dict[str, Any]) -> Dict[str, Any]:
     depth = params.get("depth", 1)
     
     try:
-        result = await scrape_url(url, depth=depth)
+        from docvault.core.scraper import get_scraper
+        scraper = get_scraper()
+        result = await scraper.scrape_url(url, depth=depth)
         return {
             "success": True,
             "document_id": result["id"],

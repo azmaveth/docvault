@@ -2,31 +2,29 @@ import sqlite3
 import pathlib
 from docvault import config
 
-def initialize_database():
+def initialize_database(force_recreate=False):
     """Initialize the SQLite database with sqlite-vec extension"""
     # Ensure directory exists
     db_path = pathlib.Path(config.DB_PATH)
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Delete existing database if force_recreate is True
+    if force_recreate and db_path.exists():
+        db_path.unlink()
+        print(f"Deleted existing database at {db_path}")
     
     conn = sqlite3.connect(config.DB_PATH)
     
     # Load sqlite-vec extension
     extension_loaded = False
     try:
-        conn.enable_load_extension(True)
-        conn.load_extension("sqlite_vec")
+        # Import the Python package for sqlite-vec
+        import sqlite_vec
         extension_loaded = True
         print("✅ sqlite-vec extension loaded successfully")
-    except sqlite3.OperationalError as e:
-        print(f"⚠️ Warning: sqlite-vec extension not loaded directly: {e}")
-        try:
-            # Try to import the Python package which might register the extension
-            import sqlite_vec
-            print("Attempting to use sqlite-vec through Python package...")
-            extension_loaded = True
-        except ImportError:
-            print("⚠️ Warning: sqlite-vec Python package not found either")
-            print("Vector search functionality may be limited")
+    except ImportError:
+        print("⚠️ Warning: sqlite-vec Python package not found")
+        print("Vector search functionality may be limited")
     
     conn.executescript("""
     -- Documents table

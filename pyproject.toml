@@ -1,31 +1,16 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = ["docvault"]
-include-package-data = true
 
 [project]
 name = "docvault"
 version = "0.1.0"
-description = "Document management system with vector search and MCP integration for LLMs"
+description = "Document management system with vector search"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {file = "LICENSE.md"}
+license = {text = "MIT"}
 authors = [
-    {name = "DocVault Contributors"}
-]
-keywords = ["documentation", "vector search", "mcp", "llm", "embeddings"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Documentation",
-    "Topic :: Text Processing",
-    "Topic :: Utilities"
+    {name = "azmaveth"},
 ]
 dependencies = [
     "click>=8.1.3",
@@ -36,16 +21,23 @@ dependencies = [
     "html2text>=2020.1.16",
     "aiohttp>=3.8.4",
     "numpy>=1.24.0",
-    "mcp>=0.1.0",
-    "sqlite-vec>=0.1.0"
+    "markdown-it-py>=2.2.0",
+    "httpx>=0.23.3",
+    "httpx-sse>=0.3.0"
 ]
 
-[project.urls]
-homepage = "https://github.com/yourusername/docvault"
-repository = "https://github.com/yourusername/docvault.git"
-documentation = "https://github.com/yourusername/docvault#readme"
-issues = "https://github.com/yourusername/docvault/issues"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.20.0",
+    "pytest-cov>=4.0.0"
+]
 
 [project.scripts]
 dv = "docvault.main:main"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+asyncio_mode = "auto"

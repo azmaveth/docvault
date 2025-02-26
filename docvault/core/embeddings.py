@@ -21,19 +21,23 @@ async def generate_embeddings(text: str) -> bytes:
     }
     
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
+        # Create a session for the request
+        session = aiohttp.ClientSession()
+        try:
+            # Make the request
+            resp = await session.post(
                 f"{config.OLLAMA_URL}/api/embeddings",
                 json=request_data,
                 timeout=30
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
+            )
+            try:
+                if resp.status != 200:
+                    error_text = await resp.text()
                     logger.error(f"Embedding generation failed: {error_text}")
                     # Return empty embedding as fallback
                     return np.zeros(384, dtype=np.float32).tobytes()
                 
-                result = await response.json()
+                result = await resp.json()
                 if "embedding" not in result:
                     logger.error(f"Embedding not found in response: {result}")
                     return np.zeros(384, dtype=np.float32).tobytes()
@@ -41,7 +45,12 @@ async def generate_embeddings(text: str) -> bytes:
                 # Convert to numpy array and then to bytes
                 embedding = np.array(result["embedding"], dtype=np.float32)
                 return embedding.tobytes()
-                
+            finally:
+                # Close the response
+                await resp.release()
+        finally:
+            # Close the session
+            await session.close()
     except Exception as e:
         logger.error(f"Error generating embeddings: {e}")
         # Return empty embedding as fallback

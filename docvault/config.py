@@ -7,17 +7,23 @@ HOME_DIR = pathlib.Path.home()
 DEFAULT_BASE_DIR = HOME_DIR / ".docvault"
 DEFAULT_BASE_DIR.mkdir(exist_ok=True)
 
-# Load .env file if it exists
+# Load .env file if it exists (first check current directory, then ~/.docvault)
 load_dotenv()
+# Look for .env file in the user's docvault directory
 docvault_env = DEFAULT_BASE_DIR / ".env"
 if docvault_env.exists():
     load_dotenv(docvault_env)
+
+# Also check for .env in the package directory (useful for development)
+package_dir = pathlib.Path(__file__).parent.parent
+if (package_dir / ".env").exists():
+    load_dotenv(package_dir / ".env")
 
 # Database
 DB_PATH = os.getenv("DOCVAULT_DB_PATH", str(DEFAULT_BASE_DIR / "docvault.db"))
 
 # API Keys
-BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "")
+BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "")
 
 # Embedding
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")

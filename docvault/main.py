@@ -10,7 +10,7 @@
 #     "html2text>=2020.1.16",
 #     "aiohttp>=3.8.4",
 #     "numpy>=1.24.0",
-#     "mcp-sdk>=0.1.0"
+#     "mcp>=0.1.0"
 # ]
 # ///
 
@@ -44,10 +44,18 @@ def ensure_app_initialized():
         env_path = config.DEFAULT_BASE_DIR / ".env.example"
         with open(env_path, "w") as f:
             f.write(env_template)
+            
+        # Also copy our included .env.example if it exists
+        package_dir = Path(__file__).parent.parent
+        example_env = package_dir / ".env.example"
+        if example_env.exists():
+            import shutil
+            shutil.copy(example_env, config.DEFAULT_BASE_DIR / ".env.example")
         
         click.echo(f"✅ DocVault initialized successfully!")
         click.echo(f"📂 Default configuration created in {config.DEFAULT_BASE_DIR}")
-        click.echo(f"ℹ️  To customize settings, rename .env.example to .env and edit")
+        click.echo(f"ℹ️  To customize settings, run 'dv config --init' to create a .env file")
+        click.echo(f"💡 A detailed .env.example file is available for reference")
 
 def create_env_template():
     """Create a template .env file with default values and explanations"""
@@ -61,8 +69,8 @@ def create_env_template():
 DOCVAULT_DB_PATH={conf.DB_PATH}
 
 # API Keys
-# Add your Brave Search API key here for library documentation search
-BRAVE_SEARCH_API_KEY=
+# Add your Brave API key here for library documentation search
+BRAVE_API_KEY=
 
 # Embedding Configuration
 OLLAMA_URL={conf.OLLAMA_URL}
@@ -83,9 +91,25 @@ LOG_FILE={os.path.basename(conf.LOG_FILE)}
 """
     return template
 
-# Add CLI commands
-from docvault.cli.commands import cli
-main.add_command(cli)
+# Import CLI commands directly
+from docvault.cli.commands import (
+    scrape, search, read, list_docs, lookup,
+    config, init_db, add, delete, rm, backup, import_backup
+)
+
+# Add commands directly to main
+main.add_command(scrape)
+main.add_command(add)
+main.add_command(search)
+main.add_command(read)
+main.add_command(list_docs, name="list")
+main.add_command(delete)
+main.add_command(rm)
+main.add_command(lookup)
+main.add_command(config)
+main.add_command(init_db)
+main.add_command(backup)
+main.add_command(import_backup)
 
 @main.command(name="serve")
 @click.option("--host", default=None, help="Host to bind the server to")
@@ -96,7 +120,7 @@ def serve(host, port):
         from docvault.mcp.server import run_server
         run_server(host=host, port=port)
     except ImportError:
-        click.echo("⚠️  MCP SDK not installed. Please install it with 'pip install mcp-sdk'")
+        click.echo("⚠️  MCP not installed. Please install it with 'pip install mcp'")
         sys.exit(1)
 
 if __name__ == "__main__":

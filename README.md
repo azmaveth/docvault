@@ -58,6 +58,13 @@ DocVault automatically installs all required dependencies, including:
 
 Once installed, you can run DocVault directly using the `dv` command:
 
+> **Note:** When installing DocVault with pip or UV, the `dv` script will be automatically installed to your PATH. If using from a git clone without installing, you can either:
+> 1. Run `./scripts/dv` from the project directory
+> 2. Use `uv run dv` which will use the UV dependency resolver
+> 3. Copy `scripts/dv` to a location in your PATH
+>
+> The first time you run DocVault commands, you may see a message like "Bytecode compiled X files in XXXms". This is normal behavior as Python compiles dependencies to improve performance. This only happens once after installation and will be much faster on subsequent runs.
+
 1. Initialize the database:
    ```bash
    dv init-db
@@ -100,11 +107,16 @@ Then edit the `.env` file in `~/.docvault/`.
 ## CLI Commands
 
 - `dv scrape <url>` - Scrape and store a document
-- `dv search <query>` - Search documents
+- `dv add <url>` - Alias for scrape
+- `dv delete <id1> [id2...]` - Delete documents from the vault
+- `dv search <query>` - Search documents with semantic search
 - `dv read <id>` - Read a document (markdown or HTML)
-- `dv list` - List all documents
-- `dv lookup <library_name> [--version <version>]` - Lookup and fetch documentation for a library
+- `dv list` - List all documents in the vault
+- `dv lookup <library_name> [--version <version>]` - Lookup and fetch library documentation
+- `dv backup [destination]` - Backup the vault to a zip file
+- `dv import-backup <file>` - Import a backup file
 - `dv config` - Manage configuration
+- `dv init-db` - Initialize or reset the database
 - `dv serve` - Start the MCP server
 
 ### Library Lookup Example
@@ -128,14 +140,25 @@ dv lookup tensorflow --version 2.0.0
 ## Requirements
 
 - Python 3.12+
-- Ollama for embeddings
-- MCP (`mcp` package) - included in dependencies
-- sqlite-vec - included in dependencies
-- UV (recommended)
+- Ollama for embeddings (using `nomic-embed-text` model by default)
 
 ## Configuration
 
 DocVault can be configured using environment variables or a `.env` file in `~/.docvault/`:
+
+```bash
+dv config --init
+```
+
+This will create a `.env` file with default settings. You can then edit this file to customize DocVault.
+
+Alternatively, you can copy the included `.env.example` file to your DocVault directory:
+
+```bash
+cp .env.example ~/.docvault/.env
+```
+
+Available configuration options include:
 
 - `DOCVAULT_DB_PATH` - Path to SQLite database
 - `BRAVE_SEARCH_API_KEY` - API key for Brave Search (optional)

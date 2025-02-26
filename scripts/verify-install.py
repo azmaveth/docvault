@@ -87,21 +87,38 @@ def check_ollama():
 def check_docvault_cli():
     """Check if DocVault CLI is working"""
     try:
+        # First try with direct command
         result = subprocess.run(
             ["dv", "--help"], 
             capture_output=True, 
             text=True, 
             check=False
         )
+        
         if result.returncode == 0 and "DocVault" in result.stdout:
-            print("✅ DocVault CLI is working")
+            print("✅ DocVault CLI is working (dv command found in PATH)")
+            return True
+            
+        # Try with UV if direct command fails
+        result = subprocess.run(
+            ["uv", "run", "dv", "--help"],
+            capture_output=True, 
+            text=True, 
+            check=False
+        )
+        
+        if result.returncode == 0 and "DocVault" in result.stdout:
+            print("✅ DocVault CLI is working (available through uv run dv)")
+            print("   TIP: Copy scripts/dv to your PATH for easier access")
             return True
         else:
             print(f"❌ DocVault CLI is not working correctly")
             print(f"Output: {result.stdout}")
+            print(f"Error: {result.stderr}")
             return False
     except FileNotFoundError:
         print("❌ DocVault CLI (dv command) is not found in PATH")
+        print("   TIP: Try running with 'uv run dv' or copy scripts/dv to your PATH")
         return False
 
 def main():
