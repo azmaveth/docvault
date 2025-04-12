@@ -90,7 +90,7 @@ async def test_search(mock_config, test_db):
     async def mock_generate_embeddings(text):
         return mock_embedding
         
-    def mock_search_segments(embedding, limit=5):
+    def mock_search_segments(embedding, limit=5, text_query=None):
         return [
             {
                 'id': segment_id,

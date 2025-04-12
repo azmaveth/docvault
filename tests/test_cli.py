@@ -62,8 +62,15 @@ def test_search_command(mock_config, cli_runner):
         }
     ]
     
-    with patch('docvault.core.embeddings.search',
-               new=MagicMock(return_value=sample_results)):
+    # Mock embeddings.search async function
+    async def mock_search_func(query, limit=5, text_only=False):
+        # Return sample results directly
+        return sample_results
+        
+    # Use AsyncMock to handle the async nature of the function
+    mock_search = AsyncMock(side_effect=mock_search_func)
+    
+    with patch('docvault.core.embeddings.search', mock_search):
         # Run command
         result = cli_runner.invoke(search, ['pytest', '--limit', '5'])
         
@@ -133,8 +140,8 @@ def test_lookup_command(mock_config, cli_runner, test_db, mock_embeddings):
         assert 'pytest Documentation' in result.output
         
 def test_scrape_command(mock_config, cli_runner, mock_embeddings):
-    """Test scrape command"""
-    from docvault.cli.commands import scrape
+    """Test internal _scrape command"""
+    from docvault.cli.commands import _scrape
     
     # Mock the scraper and document result
     mock_document = {
@@ -154,7 +161,7 @@ def test_scrape_command(mock_config, cli_runner, mock_embeddings):
     
     with patch('docvault.core.scraper.get_scraper', return_value=mock_scraper):
         # Run command
-        result = cli_runner.invoke(scrape, ['https://example.com/docs', '--depth', '2'])
+        result = cli_runner.invoke(_scrape, ['https://example.com/docs', '--depth', '2'])
         
         # Verify command succeeded
         assert result.exit_code == 0
@@ -163,8 +170,8 @@ def test_scrape_command(mock_config, cli_runner, mock_embeddings):
         assert "5" in result.output  # Pages scraped count
         
 def test_add_command(mock_config, cli_runner, mock_embeddings):
-    """Test add command (alias for scrape)"""
-    from docvault.cli.commands import add, scrape
+    """Test add command"""
+    from docvault.cli.commands import add
     
     # Mock the scraper and document result
     mock_document = {
@@ -183,7 +190,7 @@ def test_add_command(mock_config, cli_runner, mock_embeddings):
     mock_scraper.scrape_url = AsyncMock(return_value=mock_document)
     
     with patch('docvault.core.scraper.get_scraper', return_value=mock_scraper):
-        # Run command using add (which should call scrape)
+        # Run command using add
         result = cli_runner.invoke(add, ['https://example.com/docs'])
         
         # Verify command succeeded
@@ -227,8 +234,8 @@ def test_read_command(mock_config, cli_runner):
                 mock_open_browser.assert_called_once_with('/test/path/doc.html')
 
 def test_delete_command(mock_config, cli_runner):
-    """Test delete command"""
-    from docvault.cli.commands import delete
+    """Test internal _delete command"""
+    from docvault.cli.commands import _delete
     
     # Create test documents
     mock_docs = [
@@ -260,7 +267,7 @@ def test_delete_command(mock_config, cli_runner):
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.unlink') as mock_unlink:
                     # Test deleting multiple documents with force flag
-                    result = cli_runner.invoke(delete, ['1', '2', '--force'])
+                    result = cli_runner.invoke(_delete, ['1', '2', '--force'])
                     
                     # Verify results
                     assert result.exit_code == 0
@@ -273,33 +280,67 @@ def test_delete_command(mock_config, cli_runner):
                     assert mock_unlink.call_count == 4  # 2 HTML + 2 Markdown files
 
 def test_rm_command(mock_config, cli_runner):
-    """Test rm command (alias for delete)"""
-    from docvault.cli.commands import rm, delete
+    """Test rm command"""
+    from docvault.cli.commands import rm
     
-    # Create test document
-    mock_doc = {
-        'id': 3,
-        'title': 'Test Doc 3',
-        'url': 'https://example.com/doc3',
-        'html_path': '/test/path/doc3.html',
-        'markdown_path': '/test/path/doc3.md'
-    }
+    # Create test documents
+    mock_docs = [
+        {
+            'id': 3,
+            'title': 'Test Doc 3',
+            'url': 'https://example.com/doc3',
+            'html_path': '/test/path/doc3.html',
+            'markdown_path': '/test/path/doc3.md'
+        },
+        {
+            'id': 4,
+            'title': 'Test Doc 4',
+            'url': 'https://example.com/doc4',
+            'html_path': '/test/path/doc4.html',
+            'markdown_path': '/test/path/doc4.md'
+        },
+        {
+            'id': 5,
+            'title': 'Test Doc 5',
+            'url': 'https://example.com/doc5',
+            'html_path': '/test/path/doc5.html',
+            'markdown_path': '/test/path/doc5.md'
+        }
+    ]
+    
+    def mock_get_document(doc_id):
+        for doc in mock_docs:
+            if doc['id'] == doc_id:
+                return doc
+        return None
     
     # Set up mocks
-    with patch('docvault.db.operations.get_document', return_value=mock_doc):
+    with patch('docvault.db.operations.get_document', side_effect=mock_get_document):
         with patch('docvault.db.operations.delete_document') as mock_delete:
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.unlink'):
-                    # Test rm command (should call delete)
-                    result = cli_runner.invoke(rm, ['3', '--force'])
+                    # Test single ID
+                    result1 = cli_runner.invoke(rm, ['3', '--force'])
+                    assert result1.exit_code == 0
+                    assert "Test Doc 3" in result1.output
                     
-                    # Verify results
-                    assert result.exit_code == 0
-                    assert "Test Doc 3" in result.output
-                    assert "Deleted" in result.output
+                    # Test comma-separated IDs
+                    result2 = cli_runner.invoke(rm, ['4,5', '--force'])
+                    assert result2.exit_code == 0
+                    assert "Test Doc 4" in result2.output
+                    assert "Test Doc 5" in result2.output
                     
-                    # Check delete was called
-                    mock_delete.assert_called_once_with(3)
+                    # Test range syntax
+                    mock_delete.reset_mock()
+                    result3 = cli_runner.invoke(rm, ['3-5', '--force'])
+                    assert result3.exit_code == 0
+                    assert mock_delete.call_count == 3
+                    
+                    # Test mixed format
+                    mock_delete.reset_mock()
+                    result4 = cli_runner.invoke(rm, ['3,4-5', '--force'])
+                    assert result4.exit_code == 0
+                    assert mock_delete.call_count == 3
 
 def test_config_command(mock_config, cli_runner):
     """Test config command"""
