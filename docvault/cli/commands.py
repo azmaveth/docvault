@@ -171,12 +171,39 @@ def _delete(document_ids, force):
 
 
 @click.command()
-@click.argument("document_ids", nargs=-1, type=int, required=True)
+@click.argument("id_ranges", required=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def rm(document_ids, force):
-    """Remove documents from the vault"""
+def rm(id_ranges, force):
+    """Remove documents from the vault
+    
+    Examples:
+      dv rm 1,2,3        # Remove documents 1, 2, and 3
+      dv rm 1-5          # Remove documents 1 through 5
+      dv rm 1-5,7,9-11   # Remove documents 1-5, 7, and 9-11
+    """
+    document_ids = []
+    
+    # Parse the id_ranges argument
+    ranges = id_ranges.replace(' ', '').split(',')
+    for r in ranges:
+        if '-' in r:
+            # Handle ranges like 1-5
+            try:
+                start, end = map(int, r.split('-'))
+                document_ids.extend(range(start, end + 1))
+            except ValueError:
+                console.print(f"⚠️ Invalid range format: {r}. Expected 'start-end'", style="yellow")
+                continue
+        else:
+            # Handle individual IDs
+            try:
+                document_ids.append(int(r))
+            except ValueError:
+                console.print(f"⚠️ Invalid document ID: {r}. Must be an integer.", style="yellow")
+                continue
+    
     if not document_ids:
-        console.print("❌ No document IDs provided", style="bold red")
+        console.print("❌ No valid document IDs provided", style="bold red")
         return
     
     documents_to_delete = []
