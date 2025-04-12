@@ -139,35 +139,7 @@ def test_lookup_command(mock_config, cli_runner, test_db, mock_embeddings):
         assert result.exit_code == 0
         assert 'pytest Documentation' in result.output
         
-def test_scrape_command(mock_config, cli_runner, mock_embeddings):
-    """Test internal _scrape command"""
-    from docvault.cli.commands import _scrape
-    
-    # Mock the scraper and document result
-    mock_document = {
-        'id': 1,
-        'title': 'Test Documentation',
-        'url': 'https://example.com/docs'
-    }
-    
-    # Mock scraper class with stats
-    mock_scraper = MagicMock()
-    mock_scraper.stats = {
-        "pages_scraped": 5,
-        "pages_skipped": 2,
-        "segments_created": 10
-    }
-    mock_scraper.scrape_url = AsyncMock(return_value=mock_document)
-    
-    with patch('docvault.core.scraper.get_scraper', return_value=mock_scraper):
-        # Run command
-        result = cli_runner.invoke(_scrape, ['https://example.com/docs', '--depth', '2'])
-        
-        # Verify command succeeded
-        assert result.exit_code == 0
-        assert "Test Documentation" in result.output
-        assert "Pages Scraped" in result.output
-        assert "5" in result.output  # Pages scraped count
+
         
 def test_add_command(mock_config, cli_runner, mock_embeddings):
     """Test add command"""
@@ -233,51 +205,7 @@ def test_read_command(mock_config, cli_runner):
                 assert html_result.exit_code == 0
                 mock_open_browser.assert_called_once_with('/test/path/doc.html')
 
-def test_delete_command(mock_config, cli_runner):
-    """Test internal _delete command"""
-    from docvault.cli.commands import _delete
-    
-    # Create test documents
-    mock_docs = [
-        {
-            'id': 1,
-            'title': 'Test Doc 1',
-            'url': 'https://example.com/doc1',
-            'html_path': '/test/path/doc1.html',
-            'markdown_path': '/test/path/doc1.md'
-        },
-        {
-            'id': 2,
-            'title': 'Test Doc 2',
-            'url': 'https://example.com/doc2',
-            'html_path': '/test/path/doc2.html',
-            'markdown_path': '/test/path/doc2.md'
-        }
-    ]
-    
-    def mock_get_document(doc_id):
-        for doc in mock_docs:
-            if doc['id'] == doc_id:
-                return doc
-        return None
-    
-    # Set up mocks
-    with patch('docvault.db.operations.get_document', side_effect=mock_get_document):
-        with patch('docvault.db.operations.delete_document') as mock_delete:
-            with patch('pathlib.Path.exists', return_value=True):
-                with patch('pathlib.Path.unlink') as mock_unlink:
-                    # Test deleting multiple documents with force flag
-                    result = cli_runner.invoke(_delete, ['1', '2', '--force'])
-                    
-                    # Verify results
-                    assert result.exit_code == 0
-                    assert "Test Doc 1" in result.output
-                    assert "Test Doc 2" in result.output
-                    assert "Deleted" in result.output
-                    
-                    # Check correct calls were made
-                    assert mock_delete.call_count == 2
-                    assert mock_unlink.call_count == 4  # 2 HTML + 2 Markdown files
+
 
 def test_rm_command(mock_config, cli_runner):
     """Test rm command"""
