@@ -22,8 +22,8 @@ from datetime import datetime
 
 # Import CLI commands directly
 from docvault.cli.commands import (
-    scrape, search, read, list_docs, lookup,
-    config, init_db, add, delete, rm, backup, import_backup, index
+    search, read, list_docs, lookup,
+    config, init_db, add, rm, backup, import_backup, index
 )
 
 # Import initialization function
@@ -71,12 +71,10 @@ LOG_FILE={os.path.basename(conf.LOG_FILE)}
     return template
 
 # Add commands directly to main
-main.add_command(scrape)
 main.add_command(add)
 main.add_command(search)
 main.add_command(read)
 main.add_command(list_docs, name="list")
-main.add_command(delete)
 main.add_command(rm)
 main.add_command(lookup)
 main.add_command(config)

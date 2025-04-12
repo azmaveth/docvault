@@ -16,8 +16,8 @@ from docvault.core.storage import read_markdown, open_html_in_browser
 from docvault.core.library_manager import lookup_library_docs
 
 # Export all commands
-__all__ = ['scrape', 'search', 'read', 'list_docs', 'lookup',
-           'config', 'init_db', 'add', 'delete', 'rm', 'backup', 'import_backup', 'index']
+__all__ = ['search', 'read', 'list_docs', 'lookup',
+           'config', 'init_db', 'add', 'rm', 'backup', 'import_backup', 'index']
 
 console = Console()
 
@@ -27,7 +27,7 @@ console = Console()
 @click.option("--max-links", default=None, type=int, help="Maximum number of links to follow per page")
 @click.option("--quiet", is_flag=True, help="Reduce output verbosity")
 @click.option("--strict-path", is_flag=True, default=True, help="Only follow links within same URL hierarchy")
-def scrape(url, depth, max_links, quiet, strict_path):
+def _scrape(url, depth, max_links, quiet, strict_path):
     """Scrape and store documentation from URL"""
     if quiet:
         logging.basicConfig(level=logging.WARNING)
@@ -70,22 +70,57 @@ def scrape(url, depth, max_links, quiet, strict_path):
 
 
 @click.command()
-@click.pass_context
 @click.argument("url")
 @click.option("--depth", default=1, help="Scraping depth (1=single page)")
 @click.option("--max-links", default=None, type=int, help="Maximum number of links to follow per page")
 @click.option("--quiet", is_flag=True, help="Reduce output verbosity")
 @click.option("--strict-path", is_flag=True, default=True, help="Only follow links within same URL hierarchy")
-def add(ctx, url, depth, max_links, quiet, strict_path):
-    """Add (alias for scrape) documentation from URL"""
-    # Simply redirect all logic to 'scrape'
-    ctx.invoke(scrape, url=url, depth=depth, max_links=max_links, quiet=quiet, strict_path=strict_path)
+def add(url, depth, max_links, quiet, strict_path):
+    """Add documentation from URL"""
+    if quiet:
+        logging.basicConfig(level=logging.WARNING)
+    else:
+        console.print(f"Scraping [bold blue]{url}[/] with depth {depth}...")
+        logging.basicConfig(level=logging.INFO)
+    
+    try:
+        logging.getLogger("docvault").setLevel(logging.ERROR)
+        from docvault.core.scraper import get_scraper
+
+        with console.status("[bold blue]Scraping documents...[/]", spinner="dots"):
+            scraper = get_scraper()
+            document = asyncio.run(
+                scraper.scrape_url(url, depth, max_links=max_links, strict_path=strict_path)
+            )
+        
+        if document:
+            table = Table(title=f"Scraping Results for {url}")
+            table.add_column("Metric", style="green")
+            table.add_column("Count", style="cyan", justify="right")
+            
+            table.add_row("Pages Scraped", str(scraper.stats["pages_scraped"]))
+            table.add_row("Pages Skipped", str(scraper.stats["pages_skipped"]))
+            table.add_row("Segments Created", str(scraper.stats["segments_created"]))
+            table.add_row(
+                "Total Pages",
+                str(scraper.stats["pages_scraped"] + scraper.stats["pages_skipped"])
+            )
+            
+            console.print(table)
+            console.print(f"✅ Primary document: [bold green]{document['title']}[/] (ID: {document['id']})")
+        else:
+            console.print("❌ Failed to scrape document", style="bold red")
+
+    except KeyboardInterrupt:
+        console.print("\nScraping interrupted by user", style="yellow")
+    except Exception as e:
+        console.print(f"❌ Error: {e}", style="bold red")
 
 
 @click.command()
 @click.argument("document_ids", nargs=-1, type=int, required=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def delete(document_ids, force):
+def _delete(document_ids, force):
     """Delete documents from the vault"""
     if not document_ids:
         console.print("❌ No document IDs provided", style="bold red")
@@ -136,13 +171,56 @@ def delete(document_ids, force):
 
 
 @click.command()
-@click.pass_context
 @click.argument("document_ids", nargs=-1, type=int, required=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def rm(ctx, document_ids, force):
-    """Remove documents from the vault (alias for delete)"""
-    # Simply redirect all logic to 'delete'
-    ctx.invoke(delete, document_ids=document_ids, force=force)
+def rm(document_ids, force):
+    """Remove documents from the vault"""
+    if not document_ids:
+        console.print("❌ No document IDs provided", style="bold red")
+        return
+    
+    documents_to_delete = []
+    for doc_id in document_ids:
+        doc = operations.get_document(doc_id)
+        if doc:
+            documents_to_delete.append(doc)
+        else:
+            console.print(f"⚠️ Document ID {doc_id} not found", style="yellow")
+    
+    if not documents_to_delete:
+        console.print("No valid documents to delete")
+        return
+    
+    table = Table(title=f"Documents to Delete ({len(documents_to_delete)})")
+    table.add_column("ID", style="dim")
+    table.add_column("Title", style="red")
+    table.add_column("URL", style="blue")
+    
+    for doc in documents_to_delete:
+        table.add_row(str(doc["id"]), doc["title"] or "Untitled", doc["url"])
+    
+    console.print(table)
+    
+    if not force and not click.confirm("Are you sure you want to delete these documents?", default=False):
+        console.print("Deletion cancelled")
+        return
+    
+    for doc in documents_to_delete:
+        try:
+            html_path = Path(doc["html_path"])
+            md_path = Path(doc["markdown_path"])
+            
+            if html_path.exists():
+                html_path.unlink()
+            if md_path.exists():
+                md_path.unlink()
+            
+            operations.delete_document(doc["id"])
+            console.print(f"✅ Deleted: {doc['title']} (ID: {doc['id']})")
+        except Exception as e:
+            console.print(f"❌ Error deleting document {doc['id']}: {e}", style="bold red")
+    
+    console.print(f"Deleted {len(documents_to_delete)} document(s)")
 
 
 @click.command()
