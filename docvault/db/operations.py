@@ -156,37 +156,98 @@ def add_document_segment(document_id: int, content: str,
     
     return segment_id
 
-def search_segments(embedding: bytes, limit: int = 5) -> List[Dict[str, Any]]:
+def search_segments(embedding: bytes = None, limit: int = 5, text_query: str = None) -> List[Dict[str, Any]]:
     """Search for similar document segments"""
     conn = get_connection()
     cursor = conn.cursor()
     
-    try:
-        # Search using vector similarity
-        cursor.execute("""
-        SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
-               vec_cosine_similarity(v.embedding, ?) AS score
-        FROM document_segments_vec v
-        JOIN document_segments s ON v.id = s.id
-        JOIN documents d ON s.document_id = d.id
-        ORDER BY score DESC
-        LIMIT ?
-        """, (embedding, limit))
-        
-        rows = cursor.fetchall()
-        
-    except sqlite3.OperationalError:
-        # Fallback to text search if vector extension is not available
-        cursor.execute("""
-        SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
-               0 AS score
-        FROM document_segments s
-        JOIN documents d ON s.document_id = d.id
-        LIMIT ?
-        """, (limit,))
-        
-        rows = cursor.fetchall()
+    # Check if we should skip vector search
+    use_text_search = embedding is None
+    rows = []
     
+    if not use_text_search:
+        try:
+            # Search using vector similarity
+            cursor.execute("""
+            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
+                vec_cosine_similarity(v.embedding, ?) AS score
+            FROM document_segments_vec v
+            JOIN document_segments s ON v.id = s.id
+            JOIN documents d ON s.document_id = d.id
+            ORDER BY score DESC
+            LIMIT ?
+            """, (embedding, limit))
+            
+            rows = cursor.fetchall()
+            
+            # If we got results, return them
+            if len(rows) > 0:
+                conn.close()
+                return [dict(row) for row in rows]
+                
+            # Otherwise, fall back to text search
+            use_text_search = True
+            print("Vector search found no results, falling back to text search")
+            
+        except sqlite3.OperationalError as e:
+            print(f"Vector search failed: {e}. Falling back to text search.")
+            use_text_search = True
+    
+    # Perform text search if needed
+    if use_text_search:
+        if text_query is not None and text_query.strip():
+            # Prepare search patterns for text search
+            search_terms = text_query.lower().split()
+            like_patterns = [f"%{term}%" for term in search_terms[:3]]  # Use first 3 terms for performance
+            
+            # Construct the query dynamically based on number of terms
+            base_query = """
+            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
+                   (CASE 
+            """
+            
+            # Score for exact matches
+            score_cases = []
+            for i, term in enumerate(search_terms[:3]):
+                score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i*0.5}")
+            
+            # Add default case
+            score_cases.append("ELSE 0.5 END) AS score")
+            
+            # Complete the query
+            query = base_query + "\n".join(score_cases) + """
+            FROM document_segments s
+            JOIN documents d ON s.document_id = d.id
+            WHERE """
+            
+            # Add WHERE conditions for each term with OR
+            where_clauses = []
+            for _ in like_patterns:
+                where_clauses.append("LOWER(s.content) LIKE ?")
+            
+            query += " OR ".join(where_clauses)
+            query += """
+            ORDER BY score DESC
+            LIMIT ?
+            """
+            
+            # Prepare all parameters
+            params = like_patterns + like_patterns + [limit]
+            
+            cursor.execute(query, params)
+        else:
+            # No text query available, just return some documents
+            cursor.execute("""
+            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
+                   0.1 AS score
+            FROM document_segments s
+            JOIN documents d ON s.document_id = d.id
+            ORDER BY RANDOM()
+            LIMIT ?
+            """, (limit,))
+    
+    # Fetch rows and close connection
+    rows = cursor.fetchall()
     conn.close()
     
     return [dict(row) for row in rows]

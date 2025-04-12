@@ -23,7 +23,7 @@ from datetime import datetime
 # Import CLI commands directly
 from docvault.cli.commands import (
     scrape, search, read, list_docs, lookup,
-    config, init_db, add, delete, rm, backup, import_backup
+    config, init_db, add, delete, rm, backup, import_backup, index
 )
 
 # Import initialization function
@@ -83,6 +83,7 @@ main.add_command(config)
 main.add_command(init_db)
 main.add_command(backup)
 main.add_command(import_backup)
+main.add_command(index)
 
 @main.command(name="serve")
 @click.option("--host", default=None, help="Host to bind the server to")

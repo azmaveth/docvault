@@ -11,13 +11,13 @@ import shutil
 from docvault import config as app_config
 from docvault.db import operations
 from docvault.db.schema import initialize_database
-from docvault.core.embeddings import search as docvault_search
+from docvault.core.embeddings import search as docvault_search, generate_embeddings
 from docvault.core.storage import read_markdown, open_html_in_browser
 from docvault.core.library_manager import lookup_library_docs
 
 # Export all commands
 __all__ = ['scrape', 'search', 'read', 'list_docs', 'lookup',
-           'config', 'init_db', 'add', 'delete', 'rm', 'backup', 'import_backup']
+           'config', 'init_db', 'add', 'delete', 'rm', 'backup', 'import_backup', 'index']
 
 console = Console()
 
@@ -148,16 +148,74 @@ def rm(ctx, document_ids, force):
 @click.command()
 @click.argument("query", required=True)
 @click.option("--limit", default=5, help="Maximum number of results to return")
-def search(query, limit):
-    """Search documents in the vault"""
-    from docvault.core.embeddings import search as search_docs
+@click.option("--debug", is_flag=True, help="Enable debug output")
+@click.option("--text-only", is_flag=True, help="Use only text search (no embeddings)")
+@click.option("--context", default=2, help="Number of context lines to show")
+def search(query, limit, debug, text_only, context):
+    """Search documents in the vault
     
+    Examples:
+      dv search "python database connection"
+      dv search --text-only "configuration settings"
+      dv search --limit 10 "API endpoints"
+      dv search --debug "embedding vector similarity" 
+    """
+    from docvault.core.embeddings import search as search_docs, generate_embeddings
+    import numpy as np
     import asyncio
-    results = asyncio.run(search_docs(query, limit=limit))
+    import logging
+    
+    if debug:
+        # Set up debug logging
+        log_handler = logging.StreamHandler()
+        log_handler.setLevel(logging.DEBUG)
+        logging.getLogger("docvault").setLevel(logging.DEBUG)
+        logging.getLogger("docvault").addHandler(log_handler)
+        console.print("[yellow]Debug mode enabled[/]")
+    
+    try:
+        # Check if sqlite-vec is available
+        if debug:
+            import sqlite3
+            conn = sqlite3.connect(":memory:")
+            try:
+                conn.enable_load_extension(True)
+                conn.load_extension("sqlite_vec")
+                console.print("[green]sqlite-vec extension is loaded successfully[/]")
+            except sqlite3.OperationalError as e:
+                console.print(f"[red]sqlite-vec extension cannot be loaded: {e}[/]")
+                console.print("[yellow]Will use text-based fallback search[/]")
+            finally:
+                conn.close()
+    except Exception as e:
+        if debug:
+            console.print(f"[red]Error checking sqlite-vec: {e}[/]")
+    
+    # Execute query
+    with console.status(f"[bold blue]Searching for '{query}'...[/]", spinner="dots"):
+        results = asyncio.run(search_docs(query, limit=limit, text_only=text_only))
+    
     if not results:
         console.print("No matching documents found")
         return
-        
+    
+    # Print detailed results
+    console.print(f"Found {len(results)} results for '{query}'")
+    
+    # Show embedding vector info if in debug mode
+    if debug and not text_only:
+        console.print("[bold]Query embedding diagnostics:[/]")
+        try:
+            embedding_bytes = asyncio.run(generate_embeddings(query))
+            embedding_array = np.frombuffer(embedding_bytes, dtype=np.float32)
+            console.print(f"Embedding dimensions: {len(embedding_array)}")
+            console.print(f"Embedding sample: {embedding_array[:5]}...")
+            console.print(f"Embedding min/max: {embedding_array.min():.4f}/{embedding_array.max():.4f}")
+            console.print(f"Embedding mean/std: {embedding_array.mean():.4f}/{embedding_array.std():.4f}")
+        except Exception as e:
+            console.print(f"[red]Error analyzing embedding: {e}[/]")
+    
+    # Display results table
     table = Table(title=f"Search Results for '{query}'")
     table.add_column("Score", style="cyan")
     table.add_column("Title", style="green")
@@ -165,12 +223,30 @@ def search(query, limit):
     table.add_column("Content", style="white")
     
     for result in results:
+        # Get context for the matched content
+        content_preview = result['content']
+        if len(content_preview) > 100:
+            match_start = max(0, content_preview.lower().find(query.lower()))
+            if match_start == -1:  # If exact query not found, show beginning
+                match_start = 0
+            
+            # Calculate context window
+            start = max(0, match_start - 50 * context)
+            end = min(len(content_preview), match_start + len(query) + 50 * context)
+            
+            # Add ellipsis if needed
+            prefix = "..." if start > 0 else ""
+            suffix = "..." if end < len(content_preview) else ""
+            
+            content_preview = prefix + content_preview[start:end] + suffix
+        
         table.add_row(
             f"{result['score']:.2f}",
             result['title'] or "Untitled",
             result['url'],
-            result['content'][:100] + "..."
+            content_preview
         )
+    
     console.print(table)
 
 @click.command()
@@ -230,6 +306,115 @@ def lookup(library_name, version):
     
     # Run the async function
     asyncio.run(run_lookup())
+
+@click.command()
+@click.option("--verbose", is_flag=True, help="Show detailed output")
+@click.option("--force", is_flag=True, help="Force re-indexing of all documents")
+@click.option("--batch-size", default=10, help="Number of segments to process in one batch")
+def index(verbose, force, batch_size):
+    """Index or re-index documents for improved search
+    
+    This command generates or updates embeddings for existing documents to improve search.
+    Use this if you've imported documents from a backup or if search isn't working well.
+    """
+    from docvault.db.operations import list_documents, search_segments
+    from docvault.core.embeddings import generate_embeddings
+    
+    # Get all documents
+    docs = list_documents(limit=9999)  # Get all documents
+    
+    if not docs:
+        console.print("No documents found to index")
+        return
+    
+    console.print(f"Found {len(docs)} documents to process")
+    
+    # Process each document
+    total_segments = 0
+    indexed_segments = 0
+    
+    for doc in docs:
+        # Get the content
+        try:
+            with console.status(f"Processing [bold blue]{doc['title']}[/]", spinner="dots"):
+                # Read document content
+                content = read_markdown(doc['markdown_path'])
+                
+                # Split into reasonable segments
+                segments = []
+                current_segment = ""
+                for line in content.split("\n"):
+                    current_segment += line + "\n"
+                    if len(current_segment) > 500 and len(current_segment.split()) > 50:
+                        segments.append(current_segment)
+                        current_segment = ""
+                
+                # Add final segment if not empty
+                if current_segment.strip():
+                    segments.append(current_segment)
+                
+                total_segments += len(segments)
+                
+                # Generate embeddings for each segment
+                for i, segment in enumerate(segments):
+                    # Check if we already have this segment
+                    conn = operations.get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT id, embedding FROM document_segments WHERE document_id = ? AND content = ?", 
+                        (doc['id'], segment)
+                    )
+                    existing = cursor.fetchone()
+                    conn.close()
+                    
+                    if existing and not force:
+                        if verbose:
+                            console.print(f"  Segment {i+1}/{len(segments)} already indexed")
+                        continue
+                    
+                    # Generate embedding
+                    embedding = asyncio.run(generate_embeddings(segment))
+                    
+                    # Store in database
+                    if existing:
+                        # Update
+                        operations.update_segment_embedding(existing[0], embedding)
+                    else:
+                        # Create new
+                        operations.add_document_segment(
+                            doc['id'], 
+                            segment,
+                            embedding,
+                            segment_type="text",
+                            position=i
+                        )
+                    
+                    indexed_segments += 1
+                    
+                    if verbose:
+                        console.print(f"  Indexed segment {i+1}/{len(segments)}")
+                    
+                    # Batch commit
+                    if i % batch_size == 0:
+                        conn = operations.get_connection()
+                        conn.commit()
+                        conn.close()
+            
+            if indexed_segments > 0:
+                console.print(f"✅ Indexed {indexed_segments} segments for [bold green]{doc['title']}[/]")
+        
+        except Exception as e:
+            console.print(f"❌ Error processing document {doc['id']}: {e}", style="bold red")
+    
+    console.print(f"\nIndexing complete! {indexed_segments}/{total_segments} segments processed.")
+    console.print("You can now use improved search functionality.")
+    if total_segments > 0:
+        console.print(f"Coverage: {indexed_segments/total_segments:.1%}")
+
+# Add the update_segment_embedding function to operations.py
+operations.update_segment_embedding = lambda segment_id, embedding: operations.get_connection().execute(
+    "UPDATE document_segments SET embedding = ? WHERE id = ?", (embedding, segment_id)
+).connection.commit()
 
 # Make sure the read command is defined before it's imported
 @click.command()
