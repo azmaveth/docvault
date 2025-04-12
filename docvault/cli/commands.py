@@ -152,7 +152,8 @@ def search(query, limit):
     """Search documents in the vault"""
     from docvault.core.embeddings import search as search_docs
     
-    results = search_docs(query, limit=limit)
+    import asyncio
+    results = asyncio.run(search_docs(query, limit=limit))
     if not results:
         console.print("No matching documents found")
         return
