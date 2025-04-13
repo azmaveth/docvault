@@ -10,7 +10,7 @@
 #     "html2text>=2020.1.16",
 #     "aiohttp>=3.8.4",
 #     "numpy>=1.24.0",
-#     "mcp>=0.1.0"
+#     "modelcontextprotocol>=0.1.0"
 # ]
 # ///
 
@@ -86,13 +86,17 @@ main.add_command(index)
 @main.command(name="serve")
 @click.option("--host", default=None, help="Host to bind the server to")
 @click.option("--port", default=None, type=int, help="Port to bind the server to")
-def serve(host, port):
+@click.option("--transport", default="stdio", type=click.Choice(["stdio", "sse"]),
+              help="Transport type for the MCP server (stdio or sse)")
+def serve(host, port, transport):
     """Run the MCP server"""
     try:
         from docvault.mcp.server import run_server
-        run_server(host=host, port=port)
-    except ImportError:
-        click.echo("⚠️  MCP not installed. Please install it with 'pip install mcp'")
+        run_server(host=host, port=port, transport=transport)
+    except ImportError as e:
+        click.echo(f"⚠️  Error importing MCP server: {e}")
+        click.echo("Make sure the 'modelcontextprotocol' package is installed.")
+        click.echo("Try: 'uv pip install modelcontextprotocol'")
         sys.exit(1)
 
 if __name__ == "__main__":
