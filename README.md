@@ -26,15 +26,15 @@ DocVault is designed to help AI assistants and developers access up-to-date docu
 
 DocVault uses [uv](https://github.com/astral-sh/uv) as the preferred installation method for its speed and reliability. If you don't have uv installed, you can get it with:
 
-```bash
+```bashbash
 pip install uv
 # or with pipx for isolated installation
 pipx install uv
-```
+```bash
 
 Then clone and install DocVault:
 
-```bash
+```bashbash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 
@@ -52,7 +52,7 @@ uv pip install .
 
 # Initialise the database (sets up vector tables)
 dv init-db --wipe
-```
+```bash
 
 > **Note:** The `--wipe` flag will clear all existing data and fully reset the database. Use this if you want to start fresh or if you encounter issues with old or corrupted data.
 
@@ -60,13 +60,13 @@ dv init-db --wipe
 
 If you prefer, you can also use traditional pip:
 
-```bash
+```bashbash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
-```
+```bash
 
 ### Required Packages
 
@@ -86,45 +86,70 @@ Once installed, you can run DocVault directly using the `dv` command:
 > 3. Copy `scripts/dv` to a location in your PATH
 
 1. Initialize the database (recommended for a fresh start):
-   ```bash
+   ```bashbash
    dv init-db --wipe
-   ```
+   ```bash
    If you want to keep existing data, you can omit `--wipe`.
 
 2. Add your first document:
-   ```bash
+   ```bashbash
    dv add https://docs.python.org/3/library/sqlite3.html
-   ```
+   ```bash
 
 3. Search for content:
-   ```bash
+   ```bashbash
    dv search "sqlite connection"
-   ```
+   ```bash
 
 4. Start the MCP server for AI assistant integration:
-   ```bash
+   ```bashbash
    dv serve --transport sse
-   ```
+   ```bash
    This will start a server at http://127.0.0.1:8000 that AI assistants can interact with.
 
 ### Running with UV
 
 You can also run DocVault directly with UV without installation:
 
-```bash
+```bashbash
 ./dv add https://docs.python.org/3/
 # or
 uv run dv add https://docs.python.org/3/
-```
+```bash
 
 All configuration is automatically managed in `~/.docvault/`. 
 To customize settings, run:
-```bash
+```bashbash
 dv config --init
-```
+```bash
 Then edit the `.env` file in `~/.docvault/`.
 
 ## CLI Commands
+
+## Pre-commit Hooks
+
+To ensure code and documentation quality, DocVault uses [pre-commit](https://pre-commit.com/) hooks for Python formatting, linting, markdown linting, YAML linting, and secret detection.
+
+### Setup
+
+1. Install pre-commit (once per system):
+
+   ```bash
+   pip install pre-commit
+   ```
+
+1. Install the hooks (once per clone):
+
+   ```bash
+   pre-commit install
+   ```
+
+1. This will automatically run checks on staged files before each commit.
+   To manually run all hooks on all files:
+
+   ```bash
+   pre-commit run --all-files
+   ```
 
 - `dv add <url>` - Scrape and store a document (supports `--depth` parameter)
 - `dv rm <id1> [id2...]` - Delete documents from the vault
@@ -141,13 +166,13 @@ Then edit the `.env` file in `~/.docvault/`.
 
 ### Library Lookup Example
 
-```bash
+```bashbash
 # Lookup latest version of a library
 dv lookup pandas
 
 # Lookup specific version
 dv lookup tensorflow --version 2.0.0
-```
+```bash
 
 ## Connecting DocVault to AI Assistants
 
@@ -180,7 +205,7 @@ This will start DocVault in stdio mode, where Claude Desktop will send commands 
 
 You can configure DocVault in Claude Desktop by adding it to your configuration file. Here's a JSON example you can copy and paste:
 
-```json
+```bashjson
 {
   "mcpServers": {
     "docvault": {
@@ -189,10 +214,10 @@ You can configure DocVault in Claude Desktop by adding it to your configuration 
     }
   }
 }
-```
+```bash
 
 > **Note:** If `dv` is not in your PATH, you need to use the full path to the executable, e.g.:
-> ```json
+> ```bashjson
 > {
 >   "mcpServers": {
 >     "docvault": {
@@ -201,7 +226,7 @@ You can configure DocVault in Claude Desktop by adding it to your configuration 
 >     }
 >   }
 > }
-> ```
+> ```bash
 > You can find the full path by running `which dv` in your terminal.
 
 #### Option 2: Using SSE Transport (For Web-Based AI Assistants)
@@ -209,9 +234,9 @@ You can configure DocVault in Claude Desktop by adding it to your configuration 
 For web-based AI assistants or when you want to run DocVault as a persistent server:
 
 1. Start the DocVault MCP server with SSE transport:
-   ```bash
+   ```bashbash
    dv serve --transport sse --host 127.0.0.1 --port 8000
-   ```
+   ```bash
 
 2. The server will start on the specified host and port (defaults to 127.0.0.1:8000).
 
@@ -226,14 +251,14 @@ For web-based AI assistants or when you want to run DocVault as a persistent ser
 For testing and debugging, you can use the [mcp-inspector](https://github.com/modelcontextprotocol/inspector) tool:
 
 1. Start DocVault with SSE transport:
-   ```bash
+   ```bashbash
    dv serve --transport sse
-   ```
+   ```bash
 
 2. Install and run mcp-inspector:
-   ```bash
+   ```bashbash
    npx @modelcontextprotocol/inspector
-   ```
+   ```bash
 
 3. In the inspector interface, connect to `http://localhost:8000`
 
@@ -269,9 +294,9 @@ For detailed instructions for AI assistants using DocVault, see [CLAUDE.md](CLAU
 
 DocVault can be configured using environment variables or a `.env` file in `~/.docvault/`:
 
-```bash
+```bashbash
 dv config --init
-```
+```bash
 
 This will create a `.env` file with default settings. You can then edit this file to customize DocVault.
 
@@ -292,13 +317,13 @@ We welcome contributions to DocVault! Check out the [TASKS.md](TASKS.md) file fo
 
 We provide a convenient script to set up a development environment using UV:
 
-```bash
+```bashbash
 # Make the script executable if needed
 chmod +x scripts/dev-setup.sh
 
 # Run the setup script
 ./scripts/dev-setup.sh
-```
+```bash
 
 This script creates a virtual environment, installs dependencies with UV, and checks for the sqlite-vec extension.
 

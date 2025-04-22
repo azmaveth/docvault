@@ -131,3 +131,81 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Intelligent Preprocessing**: Develop preprocessing options to optimize content for different use cases
 - [ ] **Cross-referencing**: Implement intelligent cross-referencing between related documentation
 - [ ] **Export Features**: Add ability to export documentation in various formats (PDF, Markdown, etc.)
+
+## CLI UX Review & Recommendations
+
+### General Observations
+
+- The CLI is logically organized, with clear commands for core actions (add, list, search, read, etc.).
+- Help output is concise and readable.
+- Most commands use positional arguments for primary targets (e.g., URL, DOCUMENT_ID), which is good.
+- Some commands have inconsistent flag/argument naming or could be made more user-friendly.
+- Some command names and argument conventions could be improved for discoverability and clarity.
+
+### Detailed Suggestions
+
+#### 1. Command Naming & Structure
+
+- **`list`**: Consider renaming to `ls` (Unix-like), or aliasing both. Add a `--long` or `-l` flag for more detailed output (e.g., show all metadata fields).
+- **`add`**: Good as is, but consider allowing multiple URLs at once. Consider renaming to `import` or aliasing both.
+- **`rm`**: Acceptable, but consider `remove` as an alias for clarity.
+- **`lookup`**: Rename to `doc` or `find` for brevity, or alias. Make it clear in help that this is for libraries, not arbitrary search.
+- **`read`**: Rename to `cat` (Unix-like) or alias both.
+- **`search`**: Good as is. Consider making `search` the default command if no subcommand is given (optional).
+- **`init-db`**: Rename to `init` for brevity.
+- **`serve`**: Good, but clarify in help that this is for MCP server.
+
+#### 2. Flags & Arguments
+
+- Use consistent flag naming: prefer `--force`, `--quiet`, `--format`, etc.
+- For boolean flags, always provide both positive and negative forms (e.g., `--strict-path` and `--no-strict-path`).
+- For output formatting, standardize `--format` across commands (e.g., `list`, `read`, `search`).
+- Consider supporting `--json` as a shortcut for `--format json`.
+- For commands with IDs, allow ranges and comma-separated lists everywhere (not just `rm`).
+
+#### 3. Help & Examples
+
+- Add more usage examples to each command's help output.
+- For `add`, show example with depth, max-links, and strict-path.
+- For `search`, show both embedding and text-only examples.
+- For `rm`, clarify ID range syntax in help.
+
+#### 4. User Experience
+
+- On errors, suggest next steps (e.g., “Try `dv list` to see available documents”).
+- Support tab completion (if not already).
+- Print summary tables in a more compact format by default; use `--long` for full details.
+- For interactive commands (like `rm`), support `--yes` or `-y` to skip confirmation.
+
+#### 5. Advanced Suggestions
+
+- Add a `help` subcommand: `dv help <command>`.
+- Support config profiles: `dv config --profile <name>`.
+- Add a `status` command to show DB health, number of docs, etc.
+- Allow piping and redirection for output (e.g., `dv search ... | jq`).
+
+### Example of Improved Command Set
+
+```markdown
+ dv add <url> [--depth N] [--max-links N] [--no-strict-path] [--quiet]
+ dv import-backup <file>
+ dv backup [destination]
+ dv list [--filter <query>] [--long] [--format <fmt>]
+ dv search <query> [--limit N] [--text-only] [--format <fmt>]
+ dv doc <library> [--version <ver>]
+ dv read <doc_id> [--format <fmt>]
+ dv rm <ids> [--force]
+ dv init [--force]
+ dv serve [--host H] [--port P] [--transport <type>]
+ dv status
+```
+
+---
+
+### [ ] CLI UX Improvements
+
+- Review and refactor command names and aliases for clarity and consistency.
+- Standardize flag names and output formatting options.
+- Expand help and usage examples for all commands.
+- Add support for batch operations, more flexible ID input, and improved error messages.
+- Consider adding new commands for status and help.
