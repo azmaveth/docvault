@@ -44,6 +44,7 @@ Thumbs.db
 
 # Docvault specific
 .docvault/
+benchmark*
 
 # Logs
 logs/

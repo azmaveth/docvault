@@ -2,6 +2,7 @@ import sqlite3
 import datetime
 from typing import List, Dict, Any, Optional
 from docvault import config
+import logging
 
 # Register adapter for datetime objects to fix deprecation warning in Python 3.12
 def adapt_datetime(dt):
@@ -187,10 +188,12 @@ def search_segments(embedding: bytes = None, limit: int = 5, text_query: str = N
                 
             # Otherwise, fall back to text search
             use_text_search = True
-            print("Vector search found no results, falling back to text search")
+            logger = logging.getLogger(__name__)
+            logger.warning("Vector search returned no matching results; falling back to text search. Ensure sqlite-vec extension is installed.")
             
         except sqlite3.OperationalError as e:
-            print(f"Vector search failed: {e}. Falling back to text search.")
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Vector search failed ({e}); falling back to text search. To enable vector search, install sqlite-vec extension and ensure it's available.")
             use_text_search = True
     
     # Perform text search if needed

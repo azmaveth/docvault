@@ -135,19 +135,99 @@ dv lookup pandas
 dv lookup tensorflow --version 2.0.0
 ```
 
-## AI Integration via MCP
+## Connecting DocVault to AI Assistants
 
-DocVault integrates with AI assistants through the [Model Context Protocol](https://modelcontextprotocol.io) (MCP). This allows AI assistants to directly access documentation through a standardized interface.
+### What is MCP?
+
+The [Model Context Protocol](https://modelcontextprotocol.io) (MCP) is a standardized interface for AI assistants to interact with external tools and data sources. DocVault implements MCP to allow AI assistants to search for and retrieve documentation.
 
 ### Starting the MCP Server
 
-```bash
-dv serve --transport sse
+DocVault supports two transport methods:
+
+1. **stdio** - Used when running DocVault directly from an AI assistant
+2. **SSE (Server-Sent Events)** - Used when running DocVault as a standalone server
+
+#### Option 1: Using stdio Transport (Recommended for Claude Desktop)
+
+For Claude Desktop, use stdio transport which is the most secure option and recommended by the MCP specification. Claude Desktop will launch DocVault as a subprocess and communicate directly with it:
+
+1. In Claude Desktop, navigate to Settings > External Tools
+2. Click "Add Tool"
+3. Fill in the form:
+   - **Name**: DocVault
+   - **Description**: Documentation search and retrieval tool
+   - **Command**: The full path to your DocVault executable, e.g., `/usr/local/bin/dv` or the full path to your Python executable plus the path to the DocVault script
+   - **Arguments**: `serve`
+
+This will start DocVault in stdio mode, where Claude Desktop will send commands directly to DocVault's stdin and receive responses from stdout.
+
+### Claude Desktop Configuration Example
+
+You can configure DocVault in Claude Desktop by adding it to your configuration file. Here's a JSON example you can copy and paste:
+
+```json
+{
+  "mcpServers": {
+    "docvault": {
+      "command": "dv",
+      "args": ["serve"]
+    }
+  }
+}
 ```
 
-This starts a server at http://127.0.0.1:8000 (configurable) that exposes DocVault functionality to AI assistants.
+> **Note:** If `dv` is not in your PATH, you need to use the full path to the executable, e.g.:
+> ```json
+> {
+>   "mcpServers": {
+>     "docvault": {
+>       "command": "/usr/local/bin/dv",
+>       "args": ["serve"]
+>     }
+>   }
+> }
+> ```
+> You can find the full path by running `which dv` in your terminal.
 
-### Available MCP Tools
+#### Option 2: Using SSE Transport (For Web-Based AI Assistants)
+
+For web-based AI assistants or when you want to run DocVault as a persistent server:
+
+1. Start the DocVault MCP server with SSE transport:
+   ```bash
+   dv serve --transport sse --host 127.0.0.1 --port 8000
+   ```
+
+2. The server will start on the specified host and port (defaults to 127.0.0.1:8000).
+
+3. For AI assistants that support connecting to MCP servers via SSE:
+   - Configure the MCP client with the URL: `http://127.0.0.1:8000`
+   - The AI assistant will connect to the SSE endpoint and receive the message endpoint in the initial handshake
+
+> **Security Note**: When using SSE transport, bind to localhost (127.0.0.1) to prevent external access to your DocVault server. The MCP protocol recommends stdio transport for desktop applications due to potential security concerns with network-accessible endpoints.
+
+### Example: Using DocVault with mcp-inspector
+
+For testing and debugging, you can use the [mcp-inspector](https://github.com/modelcontextprotocol/inspector) tool:
+
+1. Start DocVault with SSE transport:
+   ```bash
+   dv serve --transport sse
+   ```
+
+2. Install and run mcp-inspector:
+   ```bash
+   npx @modelcontextprotocol/inspector
+   ```
+
+3. In the inspector interface, connect to `http://localhost:8000`
+
+4. You'll be able to explore available tools, resources, and test interactions with your DocVault server.
+
+## Available MCP Tools
+
+DocVault exposes the following tools via MCP:
 
 - `scrape_document` - Add documentation from a URL to the vault
 - `search_documents` - Search documents using semantic search

@@ -22,7 +22,10 @@ setup(
         "html2text>=2020.1.16",
         "aiohttp>=3.8.4",
         "numpy>=1.24.0",
-        "mcp>=0.1.0",
+        "markdown-it-py>=2.2.0",
+        "httpx>=0.23.3",
+        "httpx-sse>=0.3.0",
+        "mcp[cli]>=1.3.0",
         "sqlite-vec>=0.1.0",
         "uvicorn>=0.17.6"
     ],

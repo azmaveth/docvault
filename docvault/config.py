@@ -1,6 +1,10 @@
 import os
 import pathlib
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs):
+        return
 
 # Default paths
 HOME_DIR = pathlib.Path.home()
@@ -24,6 +28,8 @@ DB_PATH = os.getenv("DOCVAULT_DB_PATH", str(DEFAULT_BASE_DIR / "docvault.db"))
 
 # API Keys
 BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "")
+# GitHub
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
 # Embedding
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")

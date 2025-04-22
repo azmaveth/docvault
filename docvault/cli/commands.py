@@ -416,14 +416,44 @@ def lookup(library_name, version):
 @click.option("--verbose", is_flag=True, help="Show detailed output")
 @click.option("--force", is_flag=True, help="Force re-indexing of all documents")
 @click.option("--batch-size", default=10, help="Number of segments to process in one batch")
-def index(verbose, force, batch_size):
+@click.option("--rebuild-table", is_flag=True, help="Drop and recreate the vector table before indexing")
+def index(verbose, force, batch_size, rebuild_table):
     """Index or re-index documents for improved search
     
     This command generates or updates embeddings for existing documents to improve search.
     Use this if you've imported documents from a backup or if search isn't working well.
     """
-    from docvault.db.operations import list_documents, search_segments
+    import sqlite3
+    from docvault.db.operations import list_documents, search_segments, get_connection
+    from docvault.db.schema import initialize_database
     from docvault.core.embeddings import generate_embeddings
+    
+    # Ensure vector table exists (and optionally rebuild)
+    conn = get_connection()
+    try:
+        if rebuild_table:
+            try:
+                conn.execute("DROP TABLE IF EXISTS document_segments_vec;")
+                console.print("[yellow]Dropped existing document_segments_vec table.[/]")
+            except Exception as e:
+                console.print(f"[red]Error dropping vector table: {e}[/]")
+        # Try to create the vector table if missing
+        conn.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS document_segments_vec USING vec(
+            id INTEGER PRIMARY KEY,
+            embedding BLOB,
+            dims INTEGER,
+            distance TEXT
+        );
+        """)
+        conn.commit()
+    except Exception as e:
+        console.print("[red]Error initializing vector table.\nMake sure the sqlite-vec extension is installed and enabled.[/]")
+        console.print(f"[red]Details: {e}[/]")
+        console.print("[yellow]Try: pip install sqlite-vec && dv init-db[/]")
+        return
+    finally:
+        conn.close()
     
     # Get all documents
     docs = list_documents(limit=9999)  # Get all documents
@@ -463,7 +493,7 @@ def index(verbose, force, batch_size):
                 # Generate embeddings for each segment
                 for i, segment in enumerate(segments):
                     # Check if we already have this segment
-                    conn = operations.get_connection()
+                    conn = get_connection()
                     cursor = conn.cursor()
                     cursor.execute(
                         "SELECT id, embedding FROM document_segments WHERE document_id = ? AND content = ?", 
@@ -501,7 +531,7 @@ def index(verbose, force, batch_size):
                     
                     # Batch commit
                     if i % batch_size == 0:
-                        conn = operations.get_connection()
+                        conn = get_connection()
                         conn.commit()
                         conn.close()
             

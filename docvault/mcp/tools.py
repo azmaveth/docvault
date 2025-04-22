@@ -1,114 +1,121 @@
-from mcp import Tool, ToolParameter
-from typing import List
+# This file is kept for backward compatibility but is no longer used directly.
+# Tool definitions are now handled by FastMCP decorators in server.py
 
-# Define tools using MCP SDK
-scrape_document_tool = Tool(
-    name="scrape_document",
-    description="Scrape a document from a URL and store it in the document vault",
-    parameters=[
-        ToolParameter(
-            name="url",
-            description="The URL to scrape",
-            required=True,
-            type="string"
-        ),
-        ToolParameter(
-            name="depth",
-            description="How many levels deep to scrape",
-            required=False,
-            type="integer",
-            default=1
-        )
-    ]
-)
+# Tool definitions for DocVault MCP server
+from typing import List, Dict, Any
 
-search_documents_tool = Tool(
-    name="search_documents",
-    description="Search documents in the vault using semantic search",
-    parameters=[
-        ToolParameter(
-            name="query",
-            description="The search query",
-            required=True,
-            type="string"
-        ),
-        ToolParameter(
-            name="limit",
-            description="Maximum number of results",
-            required=False,
-            type="integer",
-            default=5
-        )
-    ]
-)
+import mcp.types as types
 
-read_document_tool = Tool(
-    name="read_document",
-    description="Read a document from the vault",
-    parameters=[
-        ToolParameter(
-            name="document_id",
-            description="ID of the document to read",
-            required=True,
-            type="integer"
-        ),
-        ToolParameter(
-            name="format",
-            description="Format to return the document in",
-            required=False,
-            type="string",
-            enum=["markdown", "html"],
-            default="markdown"
-        )
-    ]
-)
+# These constants define the input schemas for our tools
+# They're kept here for reference but the actual schemas are now
+# inferred from the function signatures by FastMCP
 
-lookup_library_docs_tool = Tool(
-    name="lookup_library_docs",
-    description="Lookup and fetch documentation for a specific library and version if not already available",
-    parameters=[
-        ToolParameter(
-            name="library_name",
-            description="Name of the library (e.g., 'pandas', 'tensorflow')",
-            required=True,
-            type="string"
-        ),
-        ToolParameter(
-            name="version",
-            description="Version of the library (e.g., '1.5.0', 'latest')",
-            required=False,
-            type="string",
-            default="latest"
-        )
-    ]
-)
+SCRAPE_DOCUMENT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "url": {
+            "type": "string",
+            "description": "The URL to scrape"
+        },
+        "depth": {
+            "type": "integer",
+            "description": "How many levels deep to scrape",
+            "default": 1
+        }
+    },
+    "required": ["url"]
+}
 
-list_documents_tool = Tool(
-    name="list_documents",
-    description="List all documents in the vault",
-    parameters=[
-        ToolParameter(
-            name="filter",
-            description="Optional filter string",
-            required=False,
-            type="string",
-            default=""
-        ),
-        ToolParameter(
-            name="limit",
-            description="Maximum number of documents to return",
-            required=False,
-            type="integer",
-            default=20
-        )
-    ]
-)
+SEARCH_DOCUMENTS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "The search query"
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of results",
+            "default": 5
+        }
+    },
+    "required": ["query"]
+}
 
-# Collect all tools
-docvault_tools = [
-    scrape_document_tool,
-    search_documents_tool,
-    read_document_tool,
-    lookup_library_docs_tool,
-    list_documents_tool
-]
+READ_DOCUMENT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "document_id": {
+            "type": "integer",
+            "description": "ID of the document to read"
+        },
+        "format": {
+            "type": "string",
+            "description": "Format to return the document in",
+            "enum": ["markdown", "html"],
+            "default": "markdown"
+        }
+    },
+    "required": ["document_id"]
+}
+
+LOOKUP_LIBRARY_DOCS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "library_name": {
+            "type": "string",
+            "description": "Name of the library (e.g., 'pandas', 'tensorflow')"
+        },
+        "version": {
+            "type": "string",
+            "description": "Version of the library (e.g., '1.5.0', 'latest')",
+            "default": "latest"
+        }
+    },
+    "required": ["library_name"]
+}
+
+LIST_DOCUMENTS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "filter": {
+            "type": "string",
+            "description": "Optional filter string",
+            "default": ""
+        },
+        "limit": {
+            "type": "integer",
+            "description": "Maximum number of documents to return",
+            "default": 20
+        }
+    }
+}
+
+# New function to create a ToolResult from a legacy handler response
+def create_tool_result(response: Dict[str, Any]) -> types.ToolResult:
+    """Convert a legacy handler response to a ToolResult object"""
+    success = response.get("success", False)
+    
+    if success:
+        if "content" in response:
+            content = response["content"]
+        elif "results" in response:
+            content = "\n\n".join([f"{r['title']}: {r['content']}" for r in response["results"]])
+        elif "documents" in response:
+            content = "\n\n".join([f"{doc['title']}" for doc in response["documents"]])
+        elif "message" in response:
+            content = response["message"]
+        else:
+            content = "Operation completed successfully"
+    else:
+        content = response.get("error", "Unknown error occurred")
+    
+    return types.ToolResult(
+        content=[
+            types.TextContent(
+                type="text",
+                text=content
+            )
+        ],
+        metadata=response
+    )

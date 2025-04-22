@@ -1,14 +1,19 @@
+# This file is kept for backward compatibility but is no longer used.
+# All handlers have been moved to server.py and integrated with FastMCP.
+
 import asyncio
 from typing import Dict, Any
 
+# These imports are kept for backward compatibility
 from docvault.core.scraper import scrape_url
 from docvault.core.embeddings import search
 from docvault.core.library_manager import lookup_library_docs
 from docvault.core.storage import read_markdown, read_html
 from docvault.db import operations
 
+# Legacy handler functions - no longer used directly but kept for reference and backward compatibility
 async def handle_scrape_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handler for scrape_document tool"""
+    """Handler for scrape_document tool (Legacy)"""
     url = params["url"]
     depth = params.get("depth", 1)
     
@@ -29,7 +34,7 @@ async def handle_scrape_document(params: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 async def handle_search_documents(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handler for search_documents tool"""
+    """Handler for search_documents tool (Legacy)"""
     query = params["query"]
     limit = params.get("limit", 5)
     
@@ -54,7 +59,7 @@ async def handle_search_documents(params: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 async def handle_read_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handler for read_document tool"""
+    """Handler for read_document tool (Legacy)"""
     document_id = params["document_id"]
     format = params.get("format", "markdown")
     
@@ -87,7 +92,7 @@ async def handle_read_document(params: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 async def handle_lookup_library_docs(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handler for lookup_library_docs tool"""
+    """Handler for lookup_library_docs tool (Legacy)"""
     library_name = params["library_name"]
     version = params.get("version", "latest")
     
@@ -119,7 +124,7 @@ async def handle_lookup_library_docs(params: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 async def handle_list_documents(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Handler for list_documents tool"""
+    """Handler for list_documents tool (Legacy)"""
     filter_text = params.get("filter", "")
     limit = params.get("limit", 20)
     

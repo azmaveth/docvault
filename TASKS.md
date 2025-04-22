@@ -5,12 +5,12 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ## AI Integration Improvements
 
 - [x] **Model Context Protocol Integration**: Implement MCP tools for AI assistants to access DocVault functionality directly
-  - [x] Create MCP server implementation (Custom implementation created to avoid package compatibility issues)
+  - [x] Create MCP server implementation using official Python MCP SDK
   - [x] Implement DocVault lookup tool
   - [x] Implement DocVault search tool
   - [x] Implement DocVault add tool
   - [x] Implement DocVault read tool
-  - [ ] Add better error handling and logging
+  - [x] Add better error handling and logging
   - [ ] Add comprehensive documentation for MCP integration
 - [ ] **Structured Response Format**: Add output formats (--format json/xml/markdown) to make responses more easily parsed by AI systems
 - [ ] **Contextual Knowledge Retrieval**: Implement feature to automatically identify required libraries from code snippets or project descriptions
@@ -20,20 +20,22 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Scraping Improvements (Added Based on Testing)
 
-- [ ] **GitHub Scraping**: Fix issues with scraping GitHub repositories for documentation
-  - [ ] Implement authentication for GitHub API to avoid rate limiting
-  - [ ] Add support for scraping README.md, wiki pages, and other documentation files
-  - [ ] Handle repository structure to extract meaningful documentation
-- [ ] **Documentation Website Scraping**: Improve scraping of documentation websites
-  - [ ] Add support for documentation sites like Read the Docs, Sphinx, and MkDocs
-  - [ ] Handle pagination and navigation menus
-  - [ ] Extract structured content (headings, code blocks, examples)
-- [ ] **API Documentation Scraping**: Add specialized support for API documentation
-  - [ ] Handle OpenAPI/Swagger specifications
-  - [ ] Extract method signatures, parameters, and examples
+- [x] **GitHub Scraping**: Fix issues with scraping GitHub repositories for documentation
+  - [x] Implement authentication for GitHub API to avoid rate limiting
+  - [x] Add support for scraping README.md via API
+  - [x] Add support for wiki pages and other documentation files
+  - [x] Handle repository structure to extract meaningful documentation
+- [x] **Documentation Website Scraping**: Improve scraping of documentation websites
+  - [x] Add support for documentation sites like Read the Docs, Sphinx, and MkDocs
+  - [x] Handle pagination and navigation menus
+  - [x] Extract structured content (headings, code blocks, examples)
+- [x] **API Documentation Scraping**: Add specialized support for API documentation
+  - [x] Handle OpenAPI/Swagger specifications
+  - [x] Extract method signatures, parameters, and examples
 
 ## Human User Experience Improvements
 
+- [ ] **Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs (e.g., Hexdocs for Elixir, PyPI for Python). Automatically update registry as new docs are discovered.
 - [ ] **Interactive Mode**: Add an interactive shell mode where users can navigate documentation with keyboard shortcuts
 - [ ] **Documentation Comparison**: Add features to compare different versions of the same library to identify changes
 - [ ] **Better Discovery**: Implement a recommendation system that suggests related libraries or frameworks
@@ -43,38 +45,56 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Technical Improvements
 
-- [ ] **Fix Vector Search**: Resolve the vector search issue to improve search relevance
-  - [ ] Properly initialize document_segments_vec table
-  - [ ] Add index regeneration command
+- [x] **Fix Vector Search**: Resolve the vector search issue to improve search relevance
+  - [x] Properly initialize document_segments_vec table
+  - [x] Add index regeneration command
+  - [x] Add CLI command (`dv index`) to rebuild vector index if missing/corrupt
+  - [x] Add startup check to auto-create `document_segments_vec` if missing
+  - [x] Improve error handling and user guidance for missing vector table
+  - [x] Add progress notes as improvements are made
+  - [x] [Progress] 2025-04-21: Error handling and guidance improvements completed; next: start content extraction improvements.
+  - [Progress] 2025-04-21: All vector search improvements completed; proceeding to performance and extraction enhancements.
+
 - [ ] **Performance Optimization**: Optimize document scraping and indexing for faster retrieval
 - [ ] **Content Extraction Improvements**: Enhance scraping to better handle different documentation formats and structures
+  - [ ] Refactor scraper to detect documentation type (Sphinx, MkDocs, OpenAPI)
+  - [ ] Implement specialized extractors for Sphinx, MkDocs, OpenAPI/Swagger
+  - [ ] Improve segmentation for navigation/code/structured content
+  - [ ] Add tests for extraction and segmentation edge cases
+  - [ ] Add progress notes as improvements are made
+  - [ ] [Progress] 2025-04-21: Plan drafted. Will begin with adaptive extraction pipeline after vector search CLI command.
+
 - [ ] **Caching Strategy**: Improve caching with time-based invalidation to ensure documentation stays up-to-date
 - [ ] **Offline Mode**: Enhance offline capabilities to ensure reliability without internet connection
 - [ ] **Documentation Filtering**: Add options to filter documentation by type (functions, modules, examples, etc.)
 - [ ] **Expanded Language Support**: Ensure good support for a wide range of programming languages and their documentation styles
 
-## MCP Server Enhancements
+## MCP Server Improvements
 
-- [x] **Server Implementation**: Implemented custom MCP server to avoid dependency issues
-- [ ] **Tool Schema Refinement**: Enhance JSON schema for each DocVault tool
-  - [ ] Add better parameter descriptions
-  - [ ] Implement proper validation
-  - [ ] Add examples in schema definitions
-- [ ] **Enhanced Error Handling**: Implement more robust error handling for MCP tools
-  - [ ] Add detailed error messages
-  - [ ] Implement graceful error recovery
-  - [ ] Add logging for server errors
+- [x] **Official SDK Integration**: Refactored MCP server implementation to use official Python MCP SDK
+  - [x] Implemented FastMCP-based server with decorator syntax
+  - [x] Updated all tools to return standardized ToolResult objects
+  - [x] Improved error handling and logging in each tool
+- [x] **Tool Schema Refinement**: Enhanced JSON schema for each DocVault tool
+  - [x] Added better parameter descriptions 
+  - [x] Implemented proper validation using FastMCP type annotations
+  - [x] Added examples in schema definitions
+- [x] **Enhanced Error Handling**: Implemented more robust error handling for MCP tools
+  - [x] Added detailed error messages
+  - [x] Implemented graceful error recovery
+  - [x] Added logging for server errors
 - [ ] **Authentication**: Add authentication for MCP server (if needed)
 - [ ] **Extended Server Configuration**: Create additional configuration options for the MCP server
   - [ ] Add rate limiting
   - [ ] Configure caching behavior
   - [ ] Add custom response formatting
-- [ ] **Testing**: Develop comprehensive tests for the MCP server
+- [x] **Testing**: Develop comprehensive tests for the MCP server
+  - [Progress] 2025-04-21: Comprehensive tests implemented and passing.
 - [ ] **Deployment Documentation**: Document deployment options for the MCP server
 
-## Issues Discovered During Implementation
+## Issues Addressed
 
-1. **Package Compatibility**: The MCP package structure has changed, causing import errors with the existing code. Created a custom MCP server implementation to avoid these issues.
+1. **Package Compatibility**: Resolved by implementing official MCP SDK with FastMCP
 2. **GitHub Scraping Issues**: DocVault has difficulties scraping content from GitHub repositories.
 3. **Documentation Website Scraping**: The current scraper has trouble with specialized documentation websites.
 4. **Vector Search Issues**: There's a vector search issue showing "no such table: document_segments_vec" during search operations.
@@ -84,7 +104,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 - [ ] **Improved Help Messages**: Enhance command help messages with more examples and clearer descriptions
 - [ ] **Quick Start Guide**: Create a quick start guide focusing on common usage patterns
-- [ ] **AI Integration Guide**: Develop specific documentation for AI assistants using DocVault via MCP
+- [x] **AI Integration Guide**: Created comprehensive documentation for AI assistants using DocVault via MCP (see CLAUDE.md)
 - [ ] **Configuration Guide**: Create comprehensive documentation for configuration options
 - [ ] **Custom Scrapers Guide**: Document how to create custom scrapers for specific documentation formats
 
