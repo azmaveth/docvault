@@ -38,17 +38,23 @@ Then clone and install DocVault:
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 
+# Create virtual environment
+uv venv .venv
+
+# Activate virtual environment
+source .venv/bin/activate
+
 # Install in development mode (runtime deps + sqlite‑vec)
 uv pip install -e .
-# Install vector extension (required for semantic search)
-uv pip install sqlite-vec
-
-# Initialise the database (sets up vector tables)
-dv init-db
 
 # Or simply install the package
 uv pip install .
+
+# Initialise the database (sets up vector tables)
+dv init-db --wipe
 ```
+
+> **Note:** The `--wipe` flag will clear all existing data and fully reset the database. Use this if you want to start fresh or if you encounter issues with old or corrupted data.
 
 ### Using Traditional Pip
 
@@ -57,6 +63,8 @@ If you prefer, you can also use traditional pip:
 ```bash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
+python -m venv .venv
+source .venv/bin/activate
 pip install -e .
 ```
 
@@ -77,10 +85,11 @@ Once installed, you can run DocVault directly using the `dv` command:
 > 2. Use `uv run dv` which will use the UV dependency resolver
 > 3. Copy `scripts/dv` to a location in your PATH
 
-1. Initialize the database:
+1. Initialize the database (recommended for a fresh start):
    ```bash
-   dv init-db
+   dv init-db --wipe
    ```
+   If you want to keep existing data, you can omit `--wipe`.
 
 2. Add your first document:
    ```bash
@@ -126,7 +135,7 @@ Then edit the `.env` file in `~/.docvault/`.
 - `dv backup [destination]` - Backup the vault to a zip file
 - `dv import-backup <file>` - Import a backup file
 - `dv config` - Manage configuration
-- `dv init-db` - Initialize or reset the database
+- `dv init-db [--wipe]` - Initialize the database (use `--wipe` to clear all existing data)
 - `dv serve` - Start the MCP server
 - `dv index` - Index or re-index documents for vector search
 
@@ -248,6 +257,8 @@ For detailed instructions for AI assistants using DocVault, see [CLAUDE.md](CLAU
 - **GitHub Scraping**: DocVault may have difficulty scraping GitHub repositories. Try using specific documentation URLs instead of repository root URLs.
 - **Documentation Websites**: Some documentation websites with complex structures may not be scraped correctly. Try adjusting the depth parameter (`--depth`).
 - **Embedding Model**: The default embedding model is `nomic-embed-text` via Ollama. Ensure Ollama is running and has this model available.
+- **dv command not found**: If `dv` is not recognized, use `uv run dv` or run `./scripts/dv` from the project directory.
+- **Failed to fetch URL**: If you see errors like 'Failed to fetch URL' when adding documents, verify the URL is accessible and check your network connection. Some sites may block automated scraping.
 
 ## Requirements
 

@@ -66,7 +66,9 @@ def _scrape(url, depth, max_links, quiet, strict_path):
     except KeyboardInterrupt:
         console.print("\nScraping interrupted by user", style="yellow")
     except Exception as e:
+        import traceback
         console.print(f"❌ Error: {e}", style="bold red")
+        console.print(traceback.format_exc(), style="yellow")
 
 
 @click.command()
@@ -114,7 +116,9 @@ def add(url, depth, max_links, quiet, strict_path):
     except KeyboardInterrupt:
         console.print("\nScraping interrupted by user", style="yellow")
     except Exception as e:
+        import traceback
         console.print(f"❌ Error: {e}", style="bold red")
+        console.print(traceback.format_exc(), style="yellow")
 
 
 @click.command()
@@ -369,6 +373,8 @@ def list_docs(filter):
     table.add_column("ID", style="dim")
     table.add_column("Title", style="green")
     table.add_column("URL", style="blue")
+    table.add_column("Version", style="magenta")
+    table.add_column("Content Hash", style="yellow")
     table.add_column("Scraped At", style="cyan")
     
     for doc in docs:
@@ -376,6 +382,8 @@ def list_docs(filter):
             str(doc['id']),
             doc['title'] or "Untitled",
             doc['url'],
+            doc.get('version', 'unknown'),
+            doc.get('content_hash', '') or '',
             doc['scraped_at']
         )
     console.print(table)

@@ -11,13 +11,15 @@ def sample_doc(test_db):
     cursor = test_db.cursor()
     cursor.execute("""
     INSERT INTO documents 
-    (url, title, html_path, markdown_path, scraped_at)
-    VALUES (?, ?, ?, ?, ?)
+    (url, title, html_path, markdown_path, version, content_hash, scraped_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         "https://example.com/test", 
         "Test Document", 
         "/path/to/html", 
         "/path/to/markdown",
+        "v1.0.0",
+        "abc123hash",
         datetime.datetime.now()
     ))
     doc_id = cursor.lastrowid
@@ -35,7 +37,9 @@ def test_add_document(test_db, mock_config):
     md_path = "/tmp/example.md"
     
     # Add document
-    doc_id = add_document(url, title, html_path, md_path)
+    version = "v2.1.0"
+    content_hash = "cafebabedeadbeef"
+    doc_id = add_document(url, title, html_path, md_path, version=version, content_hash=content_hash)
     
     # Verify document was added
     cursor = test_db.cursor()
@@ -47,6 +51,8 @@ def test_add_document(test_db, mock_config):
     assert doc['title'] == title
     assert doc['html_path'] == html_path
     assert doc['markdown_path'] == md_path
+    assert doc['version'] == version
+    assert doc['content_hash'] == content_hash
 
 def test_get_document(test_db, sample_doc, mock_config):
     """Test retrieving a document by ID"""
@@ -109,17 +115,23 @@ def test_list_documents(test_db, mock_config):
     from docvault.db.operations import add_document, list_documents
     
     # Add multiple documents
-    add_document("https://example.com/1", "Test 1", "/tmp/1.html", "/tmp/1.md")
-    add_document("https://example.com/2", "Test 2", "/tmp/2.html", "/tmp/2.md")
-    add_document("https://example.com/3", "Test 3", "/tmp/3.html", "/tmp/3.md")
+    add_document("https://example.com/1", "Test 1", "/tmp/1.html", "/tmp/1.md", version="v1", content_hash="hash1")
+    add_document("https://example.com/2", "Test 2", "/tmp/2.html", "/tmp/2.md", version="v2", content_hash="hash2")
+    add_document("https://example.com/3", "Test 3", "/tmp/3.html", "/tmp/3.md", version="v3", content_hash="hash3")
     
     # List documents
     docs = list_documents(limit=10)
     
     assert len(docs) == 3
     assert docs[0]['title'] == "Test 3"  # Most recently added first
+    assert docs[0]['version'] == "v3"
+    assert docs[0]['content_hash'] == "hash3"
     assert docs[1]['title'] == "Test 2"
+    assert docs[1]['version'] == "v2"
+    assert docs[1]['content_hash'] == "hash2"
     assert docs[2]['title'] == "Test 1"
+    assert docs[2]['version'] == "v1"
+    assert docs[2]['content_hash'] == "hash1"
     
     # Test filtering
     filtered_docs = list_documents(filter_text="Test 2")

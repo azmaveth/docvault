@@ -35,6 +35,14 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Human User Experience Improvements
 
+- [ ] **Fix README instructions for database initialization**: The README instructs users to run `dv init-db --wipe`, but the `--wipe` option does not exist. Update the README to remove or correct this flag.
+- [ ] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README should emphasize alternative invocation methods (`uv run dv`, `./scripts/dv`) and troubleshooting tips for command-not-found issues.
+- [ ] **Improve error feedback for add command**: When adding a document with `dv add <url>`, a generic "Failed to fetch URL" error is shown. Add more descriptive error messages (e.g., network issues, unsupported site, authentication required) and suggest next steps.
+- [ ] **Vector search setup guidance**: If vector search fails due to missing tables or extensions, provide actionable guidance (e.g., how to install sqlite-vec, how to rebuild the index) directly in the CLI output.
+- [ ] **AI/Automation-friendly CLI**: Add structured output options (e.g., `--format json`) for all commands to make parsing by AI agents and automation tools easier. Ensure all error messages are machine-readable as well as human-friendly.
+- [ ] **Installation troubleshooting section**: Add a section to the README for common installation issues and their solutions, especially for virtual environments, dependency problems, and OS-specific quirks.
+- [ ] **Quick test script**: Provide a script or command sequence in the README for users (and AIs) to verify that DocVault is installed and functioning correctly after setup.
+
 - [ ] **Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs (e.g., Hexdocs for Elixir, PyPI for Python). Automatically update registry as new docs are discovered.
 - [ ] **Interactive Mode**: Add an interactive shell mode where users can navigate documentation with keyboard shortcuts
 - [ ] **Documentation Comparison**: Add features to compare different versions of the same library to identify changes
@@ -44,6 +52,14 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **User-Friendly Installation**: Simplify the installation process and dependencies
 
 ## Technical Improvements
+
+- [ ] **Document Update-on-Add & Timestamps**: When `dv add <url>` is run on a URL that already exists, update all existing data for that document (re-scrape and overwrite). Ensure the database has a timestamp for each document addition/update and display the date when viewing stored documents.
+
+- [ ] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues.
+
+- [ ] **Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH or provide a reliable fallback method for all supported OSes and shells.
+- [ ] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates.
+- [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.
 
 - [x] **Fix Vector Search**: Resolve the vector search issue to improve search relevance
   - [x] Properly initialize document_segments_vec table

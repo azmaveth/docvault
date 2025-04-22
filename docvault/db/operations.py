@@ -34,23 +34,32 @@ def get_connection():
 
 def add_document(url: str, title: str, html_path: str, markdown_path: str, 
                 library_id: Optional[int] = None, 
-                is_library_doc: bool = False) -> int:
-    """Add a document to the database"""
+                is_library_doc: bool = False,
+                version: str = "latest",
+                content_hash: Optional[str] = None) -> int:
+    """Add a document to the database, supporting versioning and content hash."""
     conn = get_connection()
     cursor = conn.cursor()
-    
     cursor.execute("""
     INSERT INTO documents 
-    (url, title, html_path, markdown_path, library_id, is_library_doc, scraped_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (url, title, str(html_path), str(markdown_path), 
-          library_id, is_library_doc, datetime.datetime.now()))
-    
+    (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (url, version, title, str(html_path), str(markdown_path), content_hash, library_id, is_library_doc, datetime.datetime.now()))
     document_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    
     return document_id
+
+def update_document_by_url(url: str, title: str, html_path: str, markdown_path: str,
+                          library_id: Optional[int] = None,
+                          is_library_doc: bool = False,
+                          version: str = "latest",
+                          content_hash: Optional[str] = None) -> int:
+    """Update a document by deleting the old one (if any) and re-adding it with a new timestamp/version."""
+    old_doc = get_document_by_url(url)
+    if old_doc:
+        delete_document(old_doc['id'])
+    return add_document(url, title, html_path, markdown_path, library_id, is_library_doc, version, content_hash)
 
 def delete_document(document_id: int) -> bool:
     """Delete a document and its segments from the database"""

@@ -31,13 +31,16 @@ def initialize_database(force_recreate=False):
     CREATE TABLE IF NOT EXISTS documents (
         id INTEGER PRIMARY KEY,
         url TEXT NOT NULL,
+        version TEXT NOT NULL,
         title TEXT,
         html_path TEXT,
         markdown_path TEXT,
+        content_hash TEXT,
         scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         library_id INTEGER,
-        is_library_doc BOOLEAN DEFAULT FALSE
+        is_library_doc BOOLEAN DEFAULT FALSE,
+        UNIQUE(url, version)
     );
 
     -- Document segments for more granular search
