@@ -38,8 +38,13 @@ Then clone and install DocVault:
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 
-# Install in development mode
+# Install in development mode (runtime deps + sqlite‑vec)
 uv pip install -e .
+# Install vector extension (required for semantic search)
+uv pip install sqlite-vec
+
+# Initialise the database (sets up vector tables)
+dv init-db
 
 # Or simply install the package
 uv pip install .
