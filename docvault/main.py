@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
@@ -25,12 +25,11 @@ from docvault.cli.commands import (
     config_cmd,
     import_backup,
     import_cmd,
-    index,
+    index_cmd,
     init_cmd,
-    init_db_cmd,
     list_cmd,
     read_cmd,
-    remove,
+    remove_cmd,
     search_cmd,
 )
 
@@ -94,13 +93,14 @@ LOG_FILE={os.path.basename(conf.LOG_FILE)}
 def register_commands(main):
     main.add_command(import_cmd, name="import")
     main.add_command(import_cmd, name="add")
-    main.add_command(init_cmd, name="init")
-    main.add_command(init_db_cmd, name="init-db")
     main.add_command(import_cmd, name="scrape")
     main.add_command(import_cmd, name="fetch")
 
-    main.add_command(remove, name="remove")
-    main.add_command(remove, name="rm")
+    main.add_command(init_cmd, name="init")
+    main.add_command(init_cmd, name="init-db")
+
+    main.add_command(remove_cmd, name="remove")
+    main.add_command(remove_cmd, name="rm")
 
     main.add_command(list_cmd, name="list")
     main.add_command(list_cmd, name="ls")
@@ -115,7 +115,7 @@ def register_commands(main):
 
     main.add_command(backup, name="backup")
     main.add_command(import_backup, name="import-backup")
-    main.add_command(index, name="index")
+    main.add_command(index_cmd, name="index")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

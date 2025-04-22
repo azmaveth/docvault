@@ -205,7 +205,7 @@ def _delete(document_ids, force):
 @click.command(name="remove", help="Remove documents from the vault (alias: rm)")
 @click.argument("id_ranges", required=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def remove(id_ranges, force):
+def remove_cmd(id_ranges, force):
     """Remove documents from the vault by ID or range. Examples:
     dv remove 1,2,3        # Remove documents 1, 2, and 3
     dv remove 1-5          # Remove documents 1 through 5
@@ -483,7 +483,7 @@ def search_text(query, limit, debug, text_only, context):
     is_flag=True,
     help="Drop and recreate the vector table before indexing",
 )
-def index(verbose, force, batch_size, rebuild_table):
+def index_cmd(verbose, force, batch_size, rebuild_table):
     """Index or re-index documents for improved search
 
     This command generates or updates embeddings for existing documents to improve search.
@@ -697,8 +697,7 @@ def make_init_cmd(name, help_text):
     return _init_cmd
 
 
-init_cmd = make_init_cmd("init", "Initialize the database (alias: init-db)")
-init_db_cmd = make_init_cmd("init-db", "Initialize the database (alias: init)")
+init_cmd = make_init_cmd("init", "Initialize the database (aliases: init-db)")
 
 
 @click.command()
