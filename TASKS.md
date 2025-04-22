@@ -76,7 +76,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Updated all tools to return standardized ToolResult objects
   - [x] Improved error handling and logging in each tool
 - [x] **Tool Schema Refinement**: Enhanced JSON schema for each DocVault tool
-  - [x] Added better parameter descriptions 
+  - [x] Added better parameter descriptions
   - [x] Implemented proper validation using FastMCP type annotations
   - [x] Added examples in schema definitions
 - [x] **Enhanced Error Handling**: Implemented more robust error handling for MCP tools
