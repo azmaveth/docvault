@@ -1,42 +1,48 @@
 """Tests for CLI commands"""
-import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-from click.testing import CliRunner
+
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import numpy as np
-import click
-import os
-from pathlib import Path
+import pytest
+from click.testing import CliRunner
+
 
 @pytest.fixture
 def cli_runner():
     """Create a CLI runner for testing"""
     return CliRunner()
 
+
 @pytest.fixture
 def mock_embeddings():
     """Mock embedding generation"""
     sample_embedding = np.random.rand(384).astype(np.float32).tobytes()
+
     async def mock_generate_embeddings(text):
         return sample_embedding
-    
-    with patch('docvault.core.embeddings.generate_embeddings', 
-              new=mock_generate_embeddings):
+
+    with patch(
+        "docvault.core.embeddings.generate_embeddings", new=mock_generate_embeddings
+    ):
         yield
+
 
 def test_placeholder():
     """Placeholder test that will pass"""
     assert True
 
+
 def test_main_init(mock_config, cli_runner, mock_embeddings):
     """Test main CLI initialization"""
     # Import needed modules AFTER patching
-    with patch('docvault.core.initialization.ensure_app_initialized') as mock_init:
+    with patch("docvault.core.initialization.ensure_app_initialized") as mock_init:
         # Import main after patching
-        from docvault.main import main
-        
-        with patch('docvault.db.operations.list_documents', return_value=[]):
+        from docvault.main import create_main
+
+        main = create_main()
+        with patch("docvault.db.operations.list_documents", return_value=[]):
             # Run the command with standalone_mode=False to ensure context is preserved
-            result = cli_runner.invoke(main, ['list'], standalone_mode=False)
+            result = cli_runner.invoke(main, ["list"], standalone_mode=False)
 
             # Verify initialization was called
             mock_init.assert_called_once()
@@ -47,33 +53,35 @@ def test_main_init(mock_config, cli_runner, mock_embeddings):
 
 def test_search_command(mock_config, cli_runner):
     """Test search command"""
-    from docvault.cli.commands import search
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Mock the docvault.core.embeddings.search function
     sample_results = [
         {
-            'id': 1,
-            'document_id': 1,
-            'content': 'Test content',
-            'segment_type': 'text',
-            'title': 'Test Document',
-            'url': 'https://example.com/test',
-            'score': 0.95
+            "id": 1,
+            "document_id": 1,
+            "content": "Test content",
+            "segment_type": "text",
+            "title": "Test Document",
+            "url": "https://example.com/test",
+            "score": 0.95,
         }
     ]
-    
+
     # Mock embeddings.search async function
     async def mock_search_func(query, limit=5, text_only=False):
         # Return sample results directly
         return sample_results
-        
+
     # Use AsyncMock to handle the async nature of the function
     mock_search = AsyncMock(side_effect=mock_search_func)
-    
-    with patch('docvault.core.embeddings.search', mock_search):
+
+    with patch("docvault.core.embeddings.search", mock_search):
         # Run command
-        result = cli_runner.invoke(search, ['pytest', '--limit', '5'])
-        
+        result = cli_runner.invoke(main, ["search", "text", "pytest", "--limit", "5"])
+
         # Verify command succeeded
         assert result.exit_code == 0
         assert "Test Document" in result.output
@@ -82,29 +90,30 @@ def test_search_command(mock_config, cli_runner):
 
 def test_list_command(mock_config, cli_runner):
     """Test list command"""
-    from docvault.cli.commands import list_docs
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Mock the list_documents function
     sample_docs = [
         {
-            'id': 1,
-            'url': 'https://example.com/test1',
-            'title': 'Test Document 1',
-            'scraped_at': '2024-02-25 10:00:00'
+            "id": 1,
+            "url": "https://example.com/test1",
+            "title": "Test Document 1",
+            "scraped_at": "2024-02-25 10:00:00",
         },
         {
-            'id': 2,
-            'url': 'https://example.com/test2',
-            'title': 'Test Document 2',
-            'scraped_at': '2024-02-25 11:00:00'
-        }
+            "id": 2,
+            "url": "https://example.com/test2",
+            "title": "Test Document 2",
+            "scraped_at": "2024-02-25 11:00:00",
+        },
     ]
-    
-    with patch('docvault.db.operations.list_documents',
-               return_value=sample_docs):
+
+    with patch("docvault.db.operations.list_documents", return_value=sample_docs):
         # Run command
-        result = cli_runner.invoke(list_docs)
-        
+        result = cli_runner.invoke(main, ["list"])
+
         # Verify command succeeded
         assert result.exit_code == 0
         # Accept either the full title or split table output
@@ -113,169 +122,182 @@ def test_list_command(mock_config, cli_runner):
         assert result.output.count("2") >= 1
 
 
-def test_lookup_command(mock_config, cli_runner, test_db, mock_embeddings):
-    """Test library lookup command"""
-    from docvault.cli.commands import lookup
+def test_search_lib_command(mock_config, cli_runner, test_db, mock_embeddings):
+    """Test 'search lib' subcommand for library documentation lookup"""
     from docvault.db.schema import initialize_database
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Initialize database with required tables
     initialize_database(force_recreate=True)
-    
+
     # Mock the get_library_docs method
     async def mock_get_library_docs(*args, **kwargs):
-        return [{
-            'id': 1,
-            'url': 'https://docs.pytest.org/en/7.0.0/',
-            'title': 'pytest Documentation',
-            'resolved_version': '7.0.0'
-        }]
-    
-    with patch('docvault.core.library_manager.LibraryManager.get_library_docs',
-               new=mock_get_library_docs):
-        # Run command
-        result = cli_runner.invoke(lookup, ['pytest', '--version', '7.0.0'])
-        
+        return [
+            {
+                "id": 1,
+                "url": "https://docs.pytest.org/en/7.0.0/",
+                "title": "pytest Documentation",
+                "resolved_version": "7.0.0",
+            }
+        ]
+
+    with patch(
+        "docvault.core.library_manager.LibraryManager.get_library_docs",
+        new=mock_get_library_docs,
+    ):
+        # Run command as 'dv search lib pytest --version 7.0.0'
+        result = cli_runner.invoke(
+            main, ["search", "lib", "pytest", "--version", "7.0.0"]
+        )
         # Verify command succeeded
         assert result.exit_code == 0
-        assert 'pytest Documentation' in result.output
-        
+        assert "pytest Documentation" in result.output
 
-        
+
 def test_add_command(mock_config, cli_runner, mock_embeddings):
     """Test add command"""
-    from docvault.cli.commands import add
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Mock the scraper and document result
     mock_document = {
-        'id': 1,
-        'title': 'Test Documentation',
-        'url': 'https://example.com/docs'
+        "id": 1,
+        "title": "Test Documentation",
+        "url": "https://example.com/docs",
     }
-    
+
     # Mock scraper class with stats
     mock_scraper = MagicMock()
-    mock_scraper.stats = {
-        "pages_scraped": 3,
-        "pages_skipped": 1,
-        "segments_created": 6
-    }
+    mock_scraper.stats = {"pages_scraped": 3, "pages_skipped": 1, "segments_created": 6}
     mock_scraper.scrape_url = AsyncMock(return_value=mock_document)
-    
-    with patch('docvault.core.scraper.get_scraper', return_value=mock_scraper):
+
+    with patch("docvault.core.scraper.get_scraper", return_value=mock_scraper):
         # Run command using add
-        result = cli_runner.invoke(add, ['https://example.com/docs'])
-        
+        result = cli_runner.invoke(main, ["add", "https://example.com/docs"])
+
         # Verify command succeeded
         assert result.exit_code == 0
         assert "Test Documentation" in result.output
         assert "Pages Scraped" in result.output
         assert "3" in result.output  # Pages scraped count
 
+
 def test_read_command(mock_config, cli_runner):
     """Test read command"""
-    from docvault.cli.commands import read
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Create a test document
     mock_doc = {
-        'id': 1,
-        'title': 'Test Documentation',
-        'url': 'https://example.com/docs',
-        'markdown_path': '/test/path/doc.md',
-        'html_path': '/test/path/doc.html'
+        "id": 1,
+        "title": "Test Documentation",
+        "url": "https://example.com/docs",
+        "markdown_path": "/test/path/doc.md",
+        "html_path": "/test/path/doc.html",
     }
-    
+
     # Mock markdown content
     mock_content = "# Test Documentation\n\nThis is test content."
-    
-    with patch('docvault.db.operations.get_document', return_value=mock_doc):
-        with patch('docvault.core.storage.read_markdown', return_value=mock_content):
-            with patch('docvault.core.storage.open_html_in_browser') as mock_open_browser:
+
+    with patch("docvault.db.operations.get_document", return_value=mock_doc):
+        with patch("docvault.core.storage.read_markdown", return_value=mock_content):
+            with patch(
+                "docvault.core.storage.open_html_in_browser"
+            ) as mock_open_browser:
                 # Test markdown format (default)
-                md_result = cli_runner.invoke(read, ['1'])
-                
+                md_result = cli_runner.invoke(main, ["read", "1"])
+
                 # Verify markdown result
                 assert md_result.exit_code == 0
                 assert "Test Documentation" in md_result.output
                 assert "This is test content" in md_result.output
-                
+
                 # Test HTML format
-                html_result = cli_runner.invoke(read, ['1', '--format', 'html'])
-                
+                html_result = cli_runner.invoke(main, ["read", "1", "--format", "html"])
+
                 # Verify HTML result and browser open
                 assert html_result.exit_code == 0
-                mock_open_browser.assert_called_once_with('/test/path/doc.html')
-
+                mock_open_browser.assert_called_once_with("/test/path/doc.html")
 
 
 def test_rm_command(mock_config, cli_runner):
     """Test rm command"""
-    from docvault.cli.commands import rm
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Create test documents
     mock_docs = [
         {
-            'id': 3,
-            'title': 'Test Doc 3',
-            'url': 'https://example.com/doc3',
-            'html_path': '/test/path/doc3.html',
-            'markdown_path': '/test/path/doc3.md'
+            "id": 3,
+            "title": "Test Doc 3",
+            "url": "https://example.com/doc3",
+            "html_path": "/test/path/doc3.html",
+            "markdown_path": "/test/path/doc3.md",
         },
         {
-            'id': 4,
-            'title': 'Test Doc 4',
-            'url': 'https://example.com/doc4',
-            'html_path': '/test/path/doc4.html',
-            'markdown_path': '/test/path/doc4.md'
+            "id": 4,
+            "title": "Test Doc 4",
+            "url": "https://example.com/doc4",
+            "html_path": "/test/path/doc4.html",
+            "markdown_path": "/test/path/doc4.md",
         },
         {
-            'id': 5,
-            'title': 'Test Doc 5',
-            'url': 'https://example.com/doc5',
-            'html_path': '/test/path/doc5.html',
-            'markdown_path': '/test/path/doc5.md'
-        }
+            "id": 5,
+            "title": "Test Doc 5",
+            "url": "https://example.com/doc5",
+            "html_path": "/test/path/doc5.html",
+            "markdown_path": "/test/path/doc5.md",
+        },
     ]
-    
+
     def mock_get_document(doc_id):
         for doc in mock_docs:
-            if doc['id'] == doc_id:
+            if doc["id"] == doc_id:
                 return doc
         return None
-    
+
     # Set up mocks
-    with patch('docvault.db.operations.get_document', side_effect=mock_get_document):
-        with patch('docvault.db.operations.delete_document') as mock_delete:
-            with patch('pathlib.Path.exists', return_value=True):
-                with patch('pathlib.Path.unlink'):
+    with patch("docvault.db.operations.get_document", side_effect=mock_get_document):
+        with patch("docvault.db.operations.delete_document") as mock_delete:
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch("pathlib.Path.unlink"):
                     # Test single ID
-                    result1 = cli_runner.invoke(rm, ['3', '--force'])
+                    result1 = cli_runner.invoke(main, ["rm", "3", "--force"])
                     assert result1.exit_code == 0
                     assert "Test Doc 3" in result1.output
-                    
+
                     # Test comma-separated IDs
-                    result2 = cli_runner.invoke(rm, ['4,5', '--force'])
+                    result2 = cli_runner.invoke(main, ["rm", "4,5", "--force"])
                     assert result2.exit_code == 0
                     assert "Test Doc 4" in result2.output
                     assert "Test Doc 5" in result2.output
-                    
+
                     # Test range syntax
                     mock_delete.reset_mock()
-                    result3 = cli_runner.invoke(rm, ['3-5', '--force'])
+                    result3 = cli_runner.invoke(main, ["rm", "3-5", "--force"])
                     assert result3.exit_code == 0
                     assert mock_delete.call_count == 3
-                    
+
                     # Test mixed format
                     mock_delete.reset_mock()
-                    result4 = cli_runner.invoke(rm, ['3,4-5', '--force'])
+                    result4 = cli_runner.invoke(main, ["rm", "3,4-5", "--force"])
                     assert result4.exit_code == 0
                     assert mock_delete.call_count == 3
 
+
 def test_config_command(mock_config, cli_runner):
     """Test config command"""
-    from docvault.cli.commands import config
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Test config display (default)
-    with patch('docvault.config') as mock_config_module:
+    with patch("docvault.config") as mock_config_module:
         # Set some test config values
         mock_config_module.DB_PATH = "/test/db/path.db"
         mock_config_module.STORAGE_PATH = "/test/storage/path"
@@ -285,136 +307,164 @@ def test_config_command(mock_config, cli_runner):
         mock_config_module.OLLAMA_URL = "http://test:11434"
         mock_config_module.SERVER_HOST = "localhost"
         mock_config_module.SERVER_PORT = "8000"
-        
+
         # Run command
-        result = cli_runner.invoke(config)
-        
+        result = cli_runner.invoke(main, ["config"])
+
         # Verify output
         assert result.exit_code == 0
         assert "Current Configuration" in result.output
         assert "/test/db/path.db" in result.output
         assert "/test/storage/path" in result.output
         assert "test-model" in result.output
-        
+
     # Test config --init
-    with patch('docvault.config') as mock_config_module:
-        with patch('docvault.main.create_env_template', return_value="# Test env template"):
-            with patch('pathlib.Path.exists', return_value=False):
-                with patch('pathlib.Path.write_text') as mock_write:
+    with patch("docvault.config") as mock_config_module:
+        with patch(
+            "docvault.main.create_env_template", return_value="# Test env template"
+        ):
+            with patch("pathlib.Path.exists", return_value=False):
+                with patch("pathlib.Path.write_text") as mock_write:
                     # Set default base dir
                     mock_config_module.DEFAULT_BASE_DIR = "/test/base/dir"
-                    
+
                     # Run command with init flag
-                    result = cli_runner.invoke(config, ['--init'])
-                    
+                    result = cli_runner.invoke(main, ["config", "--init"])
+
                     # Verify command succeeded
                     assert result.exit_code == 0
                     assert "Created configuration file" in result.output
                     mock_write.assert_called_once()
 
+
 def test_init_db_command(mock_config, cli_runner):
     """Test init-db command"""
-    from docvault.cli.commands import init_db
-    
-    # Test successful initialization
-    with patch('docvault.db.schema.initialize_database') as mock_init_db:
-        # Run command
-        result = cli_runner.invoke(init_db)
-        
+    # Patch BEFORE importing main, so Click command uses the patched function
+    with patch("docvault.db.schema.initialize_database") as mock_init_db:
+        from docvault.main import create_main
+
+        main = create_main()
+        # Test successful initialization
+        result = cli_runner.invoke(main, ["init-db"])
+
         # Verify results
         assert result.exit_code == 0
         assert "Database initialized successfully" in result.output
         mock_init_db.assert_called_once_with(force_recreate=False)
-        
+
         # Test with force flag
-        result_force = cli_runner.invoke(init_db, ['--force'])
-        
+        result_force = cli_runner.invoke(main, ["init-db", "--force"])
+
         # Verify force results
         assert result_force.exit_code == 0
         assert "Database initialized successfully" in result_force.output
         mock_init_db.assert_called_with(force_recreate=True)
-        
+
     # Test error handling
-    with patch('docvault.db.schema.initialize_database', side_effect=Exception("Test error")):
+    with patch(
+        "docvault.db.schema.initialize_database", side_effect=Exception("Test error")
+    ):
+        from docvault.main import create_main
+
+        main = create_main()
         # Run command
-        result = cli_runner.invoke(init_db)
-        
+        result = cli_runner.invoke(main, ["init-db"])
+
         # Verify error is reported
         assert result.exit_code != 0
         assert "Error initializing database" in result.output
-        
+
+
 def test_backup_command(mock_config, cli_runner):
     """Test backup command"""
-    from docvault.cli.commands import backup
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Mock configuration and datetime
-    with patch('docvault.cli.commands.datetime') as mock_datetime:
+    with patch("docvault.cli.commands.datetime") as mock_datetime:
         # Ensure consistent timestamp
         mock_now = MagicMock()
         mock_now.strftime.return_value = "20240226_120000"
         mock_datetime.now.return_value = mock_now
-        
+
         # Mock configuration
-        with patch('docvault.config') as mock_config_module:
+        with patch("docvault.config") as mock_config_module:
             mock_config_module.DEFAULT_BASE_DIR = "/test/base/dir"
-            
+
             # Mock archive creation
-            with patch('shutil.make_archive') as mock_archive:
+            with patch("shutil.make_archive") as mock_archive:
                 # Test default (no destination specified)
-                result = cli_runner.invoke(backup)
-                
+                result = cli_runner.invoke(main, ["backup"])
+
                 # Verify command succeeded
                 assert result.exit_code == 0
                 assert "Backup created" in result.output
                 mock_archive.assert_called_once()
-                
+
                 # Test with custom destination
                 mock_archive.reset_mock()
-                result_custom = cli_runner.invoke(backup, ['custom_backup'])
-                
+                result_custom = cli_runner.invoke(main, ["backup", "custom_backup"])
+
                 # Verify custom backup
                 assert result_custom.exit_code == 0
                 assert "Backup created" in result_custom.output
                 mock_archive.assert_called_once()
                 assert "custom_backup" in mock_archive.call_args[0][0]
 
+
 def test_import_backup_command(mock_config, cli_runner):
     """Test import-backup command"""
-    from docvault.cli.commands import import_backup
-    
+    from docvault.main import create_main
+
+    main = create_main()
+
     # Create a temporary file for testing
     with cli_runner.isolated_filesystem():
         # Create a dummy backup file
-        with open('backup.zip', 'wb') as f:
-            f.write(b'dummy content')
-        
+        with open("backup.zip", "wb") as f:
+            f.write(b"dummy content")
+
         # Mock configuration
-        with patch('docvault.config') as mock_config_module:
+        with patch("docvault.config") as mock_config_module:
             mock_config_module.DB_PATH = "/test/db/path.db"
             mock_config_module.STORAGE_PATH = "/test/storage/path"
-            
+
             # Create parent directories for paths
-            with patch('pathlib.Path.parent') as mock_parent:
+            with patch("pathlib.Path.parent") as mock_parent:
                 mock_parent.mkdir = MagicMock()
-                
+
                 # Mock path operations
-                with patch('pathlib.Path.exists', return_value=True):
-                    with patch('pathlib.Path.iterdir', return_value=[MagicMock()]):
-                        with patch('tempfile.TemporaryDirectory') as mock_temp:
+                with patch("pathlib.Path.exists", return_value=True):
+                    with patch("pathlib.Path.iterdir", return_value=[MagicMock()]):
+                        with patch("tempfile.TemporaryDirectory") as mock_temp:
                             # Create mock context manager
-                            mock_temp.return_value.__enter__.return_value = "/tmp/backup"
-                            
-                            with patch('shutil.unpack_archive') as mock_unpack:
-                                with patch('shutil.copy2') as mock_copy:
-                                    with patch('shutil.rmtree') as mock_rmtree:
-                                        with patch('shutil.copytree') as mock_copytree:
+                            mock_temp.return_value.__enter__.return_value = (
+                                "/tmp/backup"
+                            )
+
+                            with patch("shutil.unpack_archive") as mock_unpack:
+                                with patch("shutil.copy2"):
+                                    with patch("shutil.rmtree"):
+                                        with patch("shutil.copytree"):
                                             # Test with force flag (no confirmation needed)
-                                            result = cli_runner.invoke(import_backup, ['backup.zip', '--force'])
-                                            
+                                            result = cli_runner.invoke(
+                                                main,
+                                                [
+                                                    "import-backup",
+                                                    "backup.zip",
+                                                    "--force",
+                                                ],
+                                            )
+
                                             # Verify force command
                                             assert result.exit_code == 0
-                                            assert "Backup imported successfully" in result.output
+                                            assert (
+                                                "Backup imported successfully"
+                                                in result.output
+                                            )
                                             mock_unpack.assert_called_once()
+
 
 # Skip the serve command test for now since we don't want to import MCP
 @pytest.mark.skip(reason="MCP module not available in test environment")

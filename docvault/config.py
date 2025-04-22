@@ -1,10 +1,13 @@
 import os
 import pathlib
+
 try:
     from dotenv import load_dotenv
 except ImportError:
+
     def load_dotenv(*args, **kwargs):
         return
+
 
 # Default paths
 HOME_DIR = pathlib.Path.home()
@@ -36,7 +39,9 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
 
 # Storage
-STORAGE_PATH = pathlib.Path(os.getenv("STORAGE_PATH", str(DEFAULT_BASE_DIR / "storage")))
+STORAGE_PATH = pathlib.Path(
+    os.getenv("STORAGE_PATH", str(DEFAULT_BASE_DIR / "storage"))
+)
 HTML_PATH = STORAGE_PATH / "html"
 MARKDOWN_PATH = STORAGE_PATH / "markdown"
 

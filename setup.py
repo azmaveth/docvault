@@ -2,7 +2,7 @@
 """
 DocVault setup script.
 """
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="docvault",
@@ -27,7 +27,7 @@ setup(
         "httpx-sse>=0.3.0",
         "mcp[cli]>=1.3.0",
         "sqlite-vec>=0.1.0",
-        "uvicorn>=0.17.6"
+        "uvicorn>=0.17.6",
     ],
     scripts=["scripts/dv"],
     classifiers=[
@@ -38,7 +38,7 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Topic :: Documentation",
         "Topic :: Text Processing",
-        "Topic :: Utilities"
+        "Topic :: Utilities",
     ],
     python_requires=">=3.12",
 )

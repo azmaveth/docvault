@@ -14,32 +14,52 @@
 # ]
 # ///
 
-import click
 import os
-import sys
-from pathlib import Path
 from datetime import datetime
+
+import click
 
 # Import CLI commands directly
 from docvault.cli.commands import (
-    search, read, list_docs, lookup,
-    config, init_db, add, rm, backup, import_backup, index
+    backup,
+    config_cmd,
+    import_backup,
+    import_cmd,
+    index,
+    init_cmd,
+    init_db_cmd,
+    list_cmd,
+    read_cmd,
+    remove,
+    search_cmd,
 )
 
 # Import initialization function
 from docvault.core.initialization import ensure_app_initialized
 
-@click.group()
-@click.pass_context
-def main(ctx):
-    """DocVault: Document management system"""
-    # Ensure initialization happens before any command
-    ensure_app_initialized()
+
+def create_main():
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def main(ctx, *args, **kwargs):
+        """DocVault: Document management system
+
+        If no command is given, defaults to 'search'.
+        """
+        ensure_app_initialized()
+        if ctx.invoked_subcommand is None:
+            # If no subcommand, treat as 'search'
+            # Forward arguments to search_cmd
+            ctx.forward(search_cmd)
+
+    register_commands(main)
+    return main
+
 
 def create_env_template():
     """Create a template .env file with default values and explanations"""
     from docvault import config as conf
-    
+
     template = f"""# DocVault Configuration
 # Created: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 # You can customize DocVault by modifying this file
@@ -70,34 +90,36 @@ LOG_FILE={os.path.basename(conf.LOG_FILE)}
 """
     return template
 
-# Add commands directly to main
-main.add_command(add)
-main.add_command(search)
-main.add_command(read)
-main.add_command(list_docs, name="list")
-main.add_command(rm)
-main.add_command(lookup)
-main.add_command(config)
-main.add_command(init_db)
-main.add_command(backup)
-main.add_command(import_backup)
-main.add_command(index)
 
-@main.command(name="serve")
-@click.option("--host", default=None, help="Host to bind the server to")
-@click.option("--port", default=None, type=int, help="Port to bind the server to")
-@click.option("--transport", default="stdio", type=click.Choice(["stdio", "sse"]),
-              help="Transport type for the MCP server (stdio or sse)")
-def serve(host, port, transport):
-    """Run the MCP server"""
-    try:
-        from docvault.mcp.server import run_server
-        run_server(host=host, port=port, transport=transport)
-    except ImportError as e:
-        click.echo(f"⚠️  Error importing MCP server: {e}")
-        click.echo("Make sure the 'modelcontextprotocol' package is installed.")
-        click.echo("Try: 'uv pip install modelcontextprotocol'")
-        sys.exit(1)
+def register_commands(main):
+    main.add_command(import_cmd, name="import")
+    main.add_command(import_cmd, name="add")
+    main.add_command(init_cmd, name="init")
+    main.add_command(init_db_cmd, name="init-db")
+    main.add_command(import_cmd, name="scrape")
+    main.add_command(import_cmd, name="fetch")
+
+    main.add_command(remove, name="remove")
+    main.add_command(remove, name="rm")
+
+    main.add_command(list_cmd, name="list")
+    main.add_command(list_cmd, name="ls")
+
+    main.add_command(read_cmd, name="read")
+    main.add_command(read_cmd, name="cat")
+
+    main.add_command(search_cmd, name="search")
+    main.add_command(search_cmd, name="find")
+
+    main.add_command(config_cmd, name="config")
+
+    main.add_command(backup, name="backup")
+    main.add_command(import_backup, name="import-backup")
+    main.add_command(index, name="index")
+
+
+# All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
 
 if __name__ == "__main__":
+    main = create_main()
     main()

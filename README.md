@@ -2,6 +2,17 @@
 
 A document management system with vector search and MCP integration for AI assistants.
 
+---
+
+**CLI Command Structure Updated!**
+
+- Canonical commands now have user-friendly aliases.
+- `search` is the default command (run `dv <query>` to search).
+- Library lookup is now `dv search lib <library>` or `dv search --library <library>`.
+- See below for updated usage examples and troubleshooting tips.
+
+---
+
 ## Purpose
 
 DocVault is designed to help AI assistants and developers access up-to-date documentation for libraries, frameworks, and tools. It solves key challenges:
@@ -86,41 +97,56 @@ Once installed, you can run DocVault directly using the `dv` command:
 > 3. Copy `scripts/dv` to a location in your PATH
 
 1. Initialize the database (recommended for a fresh start):
-   ```bashbash
-   dv init-db --wipe
-   ```bash
-   If you want to keep existing data, you can omit `--wipe`.
 
-2. Add your first document:
-   ```bashbash
-   dv add https://docs.python.org/3/library/sqlite3.html
-   ```bash
+```bash
+dv init --wipe
+# or using the alias
+dv init-db --wipe
+```
 
-3. Search for content:
-   ```bashbash
-   dv search "sqlite connection"
-   ```bash
+If you want to keep existing data, you can omit `--wipe`.
 
-4. Start the MCP server for AI assistant integration:
-   ```bashbash
-   dv serve --transport sse
-   ```bash
-   This will start a server at http://127.0.0.1:8000 that AI assistants can interact with.
+1. Import your first document:
+
+```bash
+dv import https://docs.python.org/3/library/sqlite3.html
+# or use an alias:
+dv add https://docs.python.org/3/library/sqlite3.html
+dv scrape https://docs.python.org/3/library/sqlite3.html
+dv fetch https://docs.python.org/3/library/sqlite3.html
+```
+
+1. Search for content (or just type your query, since 'search' is default):
+
+```bash
+dv search "sqlite connection"
+# or simply
+dv "sqlite connection"
+# or use alias
+dv find "sqlite connection"
+```
+
+1. Start the MCP server for AI assistant integration:
+
+```bash
+dv serve --transport sse
+```
+
+This will start a server at [http://127.0.0.1:8000](http://127.0.0.1:8000) that AI assistants can interact with.
 
 ### Running with UV
 
 You can also run DocVault directly with UV without installation:
 
-```bashbash
+```bash
 ./dv add https://docs.python.org/3/
 # or
 uv run dv add https://docs.python.org/3/
-```bash
+```
 
-All configuration is automatically managed in `~/.docvault/`. 
+All configuration is automatically managed in `~/.docvault/`.
 To customize settings, run:
-```bashbash
-dv config --init
+
 ```bash
 Then edit the `.env` file in `~/.docvault/`.
 
@@ -151,30 +177,31 @@ To ensure code and documentation quality, DocVault uses [pre-commit](https://pre
    pre-commit run --all-files
    ```
 
-- `dv add <url>` - Scrape and store a document (supports `--depth` parameter)
-- `dv rm <id1> [id2...]` - Delete documents from the vault
-- `dv search <query>` - Search documents with semantic search
-- `dv read <id>` - Read a document (markdown or HTML)
-- `dv list` - List all documents in the vault
-- `dv lookup <library_name> [--version <version>]` - Lookup and fetch library documentation
+- `dv import <url>` - Import documentation from a URL (aliases: add, scrape, fetch)
+- `dv remove <id1> [id2...]` - Remove documents from the vault (alias: rm)
+- `dv list` - List all documents in the vault (alias: ls)
+- `dv read <id>` - Read a document (alias: cat)
+- `dv search <query>` - Search documents with semantic search (alias: find, default command)
+- `dv search lib <library> [--version <version>]` - Lookup and fetch library documentation
 - `dv backup [destination]` - Backup the vault to a zip file
 - `dv import-backup <file>` - Import a backup file
 - `dv config` - Manage configuration
-- `dv init-db [--wipe]` - Initialize the database (use `--wipe` to clear all existing data)
+- `dv init [--wipe]` - Initialize the database (alias: init-db, use `--wipe` to clear all data)
 - `dv serve` - Start the MCP server
 - `dv index` - Index or re-index documents for vector search
 
 ### Library Lookup Example
 
-```bashbash
+```bash
 # Lookup latest version of a library
-dv lookup pandas
+dv search lib pandas
 
 # Lookup specific version
-dv lookup tensorflow --version 2.0.0
-```bash
+dv search lib tensorflow --version 2.0.0
 
-## Connecting DocVault to AI Assistants
+# Alternate syntax (option flag):
+dv search --library pandas
+```## Connecting DocVault to AI Assistants
 
 ### What is MCP?
 
@@ -282,7 +309,7 @@ For detailed instructions for AI assistants using DocVault, see [CLAUDE.md](CLAU
 - **GitHub Scraping**: DocVault may have difficulty scraping GitHub repositories. Try using specific documentation URLs instead of repository root URLs.
 - **Documentation Websites**: Some documentation websites with complex structures may not be scraped correctly. Try adjusting the depth parameter (`--depth`).
 - **Embedding Model**: The default embedding model is `nomic-embed-text` via Ollama. Ensure Ollama is running and has this model available.
-- **dv command not found**: If `dv` is not recognized, use `uv run dv` or run `./scripts/dv` from the project directory.
+- **dv command not found**: If `dv` is not recognized, use `uv run dv` or run `./scripts/dv` from the project directory. Some shells may require you to activate your virtual environment, or add the scripts directory to your PATH. See troubleshooting above.
 - **Failed to fetch URL**: If you see errors like 'Failed to fetch URL' when adding documents, verify the URL is accessible and check your network connection. Some sites may block automated scraping.
 
 ## Requirements

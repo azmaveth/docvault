@@ -35,8 +35,14 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Human User Experience Improvements
 
-- [ ] **Fix README instructions for database initialization**: The README instructs users to run `dv init-db --wipe`, but the `--wipe` option does not exist. Update the README to remove or correct this flag.
-- [ ] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README should emphasize alternative invocation methods (`uv run dv`, `./scripts/dv`) and troubleshooting tips for command-not-found issues.
+- [x] **CLI canonical/alias refactor**: Refactored CLI to use canonical command names with user-friendly aliases (import, remove, list, read, search, etc.). [2025-04-22]
+- [x] **Search/lookup merge**: Merged `lookup` into `search` as a subcommand and updated all references. [2025-04-22]
+- [x] **Default command**: Made `search` the default command when no subcommand is provided. [2025-04-22]
+- [x] **CLI help/docs update**: Updated help strings and documentation to reflect new commands, aliases, and usage. [2025-04-22]
+- [x] **Test/README update**: Updated all CLI tests and README to match new command structure and aliasing. [2025-04-22]
+- [x] **Troubleshooting guidance**: Added troubleshooting notes for dv command availability and alternative invocation methods (e.g., `uv run dv`). [2025-04-22]
+- [ ] **Fix README instructions for database initialization**: The README instructs users to run `dv init-db --wipe`, but the `--wipe` option does not exist. Update the README to remove or correct this flag. *(Superseded by CLI refactor: see above tasks)*
+- [ ] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README should emphasize alternative invocation methods (`uv run dv`, `./scripts/dv`) and troubleshooting tips for command-not-found issues. *(Superseded by troubleshooting guidance above)*
 - [ ] **Improve error feedback for add command**: When adding a document with `dv add <url>`, a generic "Failed to fetch URL" error is shown. Add more descriptive error messages (e.g., network issues, unsupported site, authentication required) and suggest next steps.
 - [ ] **Vector search setup guidance**: If vector search fails due to missing tables or extensions, provide actionable guidance (e.g., how to install sqlite-vec, how to rebuild the index) directly in the CLI output.
 - [ ] **AI/Automation-friendly CLI**: Add structured output options (e.g., `--format json`) for all commands to make parsing by AI agents and automation tools easier. Ensure all error messages are machine-readable as well as human-friendly.
@@ -146,26 +152,29 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 #### 1. Command Naming & Structure
 
-- **`list`**: Consider renaming to `ls` (Unix-like), or aliasing both. Add a `--long` or `-l` flag for more detailed output (e.g., show all metadata fields).
-- **`add`**: Good as is, but consider allowing multiple URLs at once. Consider renaming to `import` or aliasing both.
-- **`rm`**: Acceptable, but consider `remove` as an alias for clarity.
-- **`lookup`**: Rename to `doc` or `find` for brevity, or alias. Make it clear in help that this is for libraries, not arbitrary search.
-- **`read`**: Rename to `cat` (Unix-like) or alias both.
-- **`search`**: Good as is. Consider making `search` the default command if no subcommand is given (optional).
-- **`init-db`**: Rename to `init` for brevity.
-- **`serve`**: Good, but clarify in help that this is for MCP server.
+- [x] **`list`**: Aliased as both `list` and `ls`. [2025-04-22]
+- [ ] Add a `--long` or `-l` flag for more detailed output (future improvement).
+- [x] **`add`**: Now canonical as `import` with aliases `add`, `scrape`, `fetch`. [2025-04-22]
+- [ ] Allow multiple URLs at once (future improvement).
+- [x] **`rm`**: Now canonical as `remove` with alias `rm`. [2025-04-22]
+- [x] **`lookup`**: Merged into `search` as `search lib` and `search --library`. [2025-04-22]
+- [x] **`read`**: Aliased as both `read` and `cat`. [2025-04-22]
+- [x] **`search`**: Canonical, with alias `find`. Now the default command if no subcommand is given. [2025-04-22]
+- [x] **`init-db`**: Now canonical as `init` with alias `init-db`. [2025-04-22]
+- [x] **`serve`**: Canonical, help text clarified for MCP server. [2025-04-22]
 
 #### 2. Flags & Arguments
 
-- Use consistent flag naming: prefer `--force`, `--quiet`, `--format`, etc.
-- For boolean flags, always provide both positive and negative forms (e.g., `--strict-path` and `--no-strict-path`).
-- For output formatting, standardize `--format` across commands (e.g., `list`, `read`, `search`).
-- Consider supporting `--json` as a shortcut for `--format json`.
-- For commands with IDs, allow ranges and comma-separated lists everywhere (not just `rm`).
+- [x] Used consistent flag naming: `--force`, `--format`, etc. [2025-04-22]
+- [ ] Add both positive and negative forms for boolean flags (future improvement).
+- [ ] Standardize `--format` and add `--json` shortcut across all commands (future improvement).
+- [x] ID ranges and comma-separated lists supported in `remove` (rm), and partially elsewhere. [2025-04-22]
+- [ ] Expand ID range/list support to all relevant commands (future improvement).
 
 #### 3. Help & Examples
 
-- Add more usage examples to each command's help output.
+- [x] Updated help output for all commands to reflect new names, aliases, and usage. [2025-04-22]
+- [ ] Add more detailed usage examples to each command's help output (future improvement).
 - For `add`, show example with depth, max-links, and strict-path.
 - For `search`, show both embedding and text-only examples.
 - For `rm`, clarify ID range syntax in help.
