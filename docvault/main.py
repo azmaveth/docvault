@@ -32,6 +32,7 @@ from docvault.cli.commands import (
     remove_cmd,
     search_cmd,
     serve_cmd,
+    version_cmd,
 )
 
 # Import initialization function
@@ -61,36 +62,6 @@ class DefaultGroup(click.Group):
                     query = " ".join(ctx.protected_args + ctx.args)
                     return ctx.invoke(search_text_cmd, query=query)
         return super().invoke(ctx)
-
-
-def create_main():
-    class MainGroup(DefaultGroup):
-        pass
-
-    @click.group(cls=MainGroup, invoke_without_command=True, default_cmd="search")
-    @click.pass_context
-    def main(ctx, *args, **kwargs):
-        """DocVault: Document management system
-
-        If no command is given, defaults to 'search'.
-        """
-        # Call initializer (patched in tests via docvault.core.initialization)
-        from docvault.core.initialization import ensure_app_initialized as _ensure_init
-
-        _ensure_init()
-        if ctx.invoked_subcommand is None:
-            if not ctx.args:
-                click.echo(ctx.get_help())
-                ctx.exit()
-            # Forward all args as a single query to search_cmd.text
-            from docvault.cli.commands import search_cmd
-
-            text_cmd = search_cmd.get_command(ctx, "text")
-            ctx.invoke(text_cmd, query=" ".join(ctx.args))
-            ctx.exit()
-
-    register_commands(main)
-    return main
 
 
 def create_env_template():
@@ -129,6 +100,53 @@ LOG_DIR={conf.LOG_DIR}
 LOG_FILE={os.path.basename(conf.LOG_FILE)}
 """
     return template
+
+
+@click.group(
+    cls=DefaultGroup,
+    name="dv",
+    default_cmd="search",
+    invoke_without_command=True,
+    help="DocVault CLI - Manage and search documentation",
+    context_settings={"help_option_names": ["-h", "--help", "--version"]},
+)
+@click.option("--version", is_flag=True, is_eager=True, help="Show version and exit")
+@click.pass_context
+def create_main(ctx, version):
+    if version:
+        from docvault.version import __version__
+
+        click.echo(f"DocVault version {__version__}")
+        ctx.exit()
+    # Call initializer (patched in tests via docvault.core.initialization)
+    from docvault.core.initialization import ensure_app_initialized as _ensure_init
+
+    _ensure_init()
+    if ctx.invoked_subcommand is None:
+        if not ctx.args:
+            click.echo(ctx.get_help())
+            ctx.exit()
+        # Forward all args as a single query to search_cmd.text
+        from docvault.cli.commands import search_cmd
+
+        text_cmd = search_cmd.get_command(ctx, "text")
+        ctx.invoke(text_cmd, query=" ".join(ctx.args))
+        ctx.exit()
+
+
+# Register commands after definition
+create_main.add_command(init_cmd)
+create_main.add_command(import_cmd)
+create_main.add_command(list_cmd)
+create_main.add_command(read_cmd)
+create_main.add_command(remove_cmd)
+create_main.add_command(search_cmd)
+create_main.add_command(index_cmd)
+create_main.add_command(config_cmd)
+create_main.add_command(serve_cmd)
+create_main.add_command(backup)
+create_main.add_command(import_backup)
+create_main.add_command(version_cmd)
 
 
 def register_commands(main):

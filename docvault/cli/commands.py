@@ -2,6 +2,7 @@ import asyncio
 import logging
 import shutil
 import sqlite3
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -11,11 +12,18 @@ from rich.table import Table
 
 from docvault.core.storage import read_markdown
 from docvault.db import operations
+from docvault.version import __version__
 
 # Export all commands
 # __all__ removed: no actual exports defined in this file yet.
 
 console = Console()
+
+
+@click.command("version", help="Show DocVault version")
+def version_cmd():
+    """Show DocVault version"""
+    click.echo(f"DocVault version {__version__}")
 
 
 @click.command()
@@ -409,7 +417,6 @@ def search_lib(library_name, version):
 @click.option("--text-only", is_flag=True, help="Use only text search (no embeddings)")
 @click.option("--context", default=2, help="Number of context lines to show")
 def search_text(query, limit, debug, text_only, context):
-    import sys
 
     print(f"[DEBUG search_text] query={query!r} sys.argv={sys.argv}")
     """Search documents in the vault (default subcommand)."""
@@ -803,7 +810,6 @@ def import_backup(backup_file, force):
 def serve_cmd(host, port, transport):
     """Start the DocVault MCP server (stdio for AI, sse for web clients)"""
     import logging
-    import sys
 
     from docvault.mcp.server import run_server
 
@@ -813,6 +819,3 @@ def serve_cmd(host, port, transport):
     except Exception as e:
         click.echo(f"[bold red]Failed to start MCP server: {e}[/]", err=True)
         sys.exit(1)
-
-
-# ... (rest of your commands unchanged) ...
