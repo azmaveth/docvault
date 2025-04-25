@@ -51,8 +51,13 @@ LOG_FILE = LOG_DIR / os.getenv("LOG_FILE", "docvault.log")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # Server
+# For stdio/AI mode (legacy)
 SERVER_HOST = os.getenv("SERVER_HOST", "127.0.0.1")
 SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
+
+# For SSE/web mode (Uvicorn/FastMCP)
+HOST = os.getenv("HOST", "127.0.0.1")
+PORT = int(os.getenv("PORT", "8000"))
 SERVER_WORKERS = int(os.getenv("SERVER_WORKERS", "4"))
 
 # Ensure directories exist

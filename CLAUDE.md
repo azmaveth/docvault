@@ -8,6 +8,8 @@ DocVault is a tool for searching, fetching, and managing documentation for libra
 
 DocVault integrates with AI assistants via the Model Context Protocol (MCP). The server exposes tools that can be used to search for and retrieve documentation.
 
+**Note:** For web/SSE mode, set the server bind address using `HOST` and `PORT` in your `.env` file. `SERVER_HOST` and `SERVER_PORT` are only used for legacy stdio/AI mode.
+
 ### Available MCP Tools
 
 1. **scrape_document**: Adds documentation from a URL to the vault

@@ -31,6 +31,7 @@ from docvault.cli.commands import (
     read_cmd,
     remove_cmd,
     search_cmd,
+    serve_cmd,
 )
 
 # Import initialization function
@@ -115,6 +116,9 @@ EMBEDDING_MODEL={conf.EMBEDDING_MODEL}
 STORAGE_PATH={conf.STORAGE_PATH}
 
 # Server Configuration
+HOST={conf.HOST}
+PORT={conf.PORT}
+# (legacy/stdio only)
 SERVER_HOST={conf.SERVER_HOST}
 SERVER_PORT={conf.SERVER_PORT}
 SERVER_WORKERS={conf.SERVER_WORKERS}
@@ -157,6 +161,7 @@ def register_commands(main):
     main.add_command(backup, name="backup")
     main.add_command(import_backup, name="import-backup")
     main.add_command(index_cmd, name="index")
+    main.add_command(serve_cmd, name="serve")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

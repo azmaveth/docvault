@@ -349,8 +349,12 @@ def test_config_command(mock_config, cli_runner):
         mock_config_module.LOG_LEVEL = "INFO"
         mock_config_module.EMBEDDING_MODEL = "test-model"
         mock_config_module.OLLAMA_URL = "http://test:11434"
-        mock_config_module.SERVER_HOST = "localhost"
-        mock_config_module.SERVER_PORT = "8000"
+        mock_config_module.HOST = "localhost"
+        mock_config_module.PORT = "8000"
+        mock_config_module.HOST = "localhost"
+        mock_config_module.PORT = "8000"
+        mock_config_module.SERVER_HOST = "localhost"  # legacy
+        mock_config_module.SERVER_PORT = "8000"  # legacy
         mock_config_module.DEFAULT_BASE_DIR = "/test/base/dir"
 
         main = create_main()

@@ -689,8 +689,8 @@ def config_cmd(init):
             ("Log Level", app_config.LOG_LEVEL),
             ("Embedding Model", app_config.EMBEDDING_MODEL),
             ("Ollama URL", app_config.OLLAMA_URL),
-            ("Server Host", app_config.SERVER_HOST),
-            ("Server Port", str(app_config.SERVER_PORT)),
+            ("Server Host (HOST)", app_config.HOST),
+            ("Server Port (PORT)", str(app_config.PORT)),
         ]
         for name, value in config_items:
             table.add_row(name, str(value))
@@ -786,6 +786,33 @@ def import_backup(backup_file, force):
     except Exception as e:
         console.print(f"❌ Error importing backup: {e}", style="bold red")
         raise click.Abort()
+
+
+@click.command(name="serve", help="Start the DocVault MCP server")
+@click.option("--host", default=None, help="Host for SSE server (default from config)")
+@click.option(
+    "--port", type=int, default=None, help="Port for SSE server (default from config)"
+)
+@click.option(
+    "--transport",
+    type=click.Choice(["stdio", "sse"]),
+    default="stdio",
+    show_default=True,
+    help="Transport type: stdio (for AI clients) or sse (for web clients)",
+)
+def serve_cmd(host, port, transport):
+    """Start the DocVault MCP server (stdio for AI, sse for web clients)"""
+    import logging
+    import sys
+
+    from docvault.mcp.server import run_server
+
+    logging.basicConfig(level=logging.INFO)
+    try:
+        run_server(host=host, port=port, transport=transport)
+    except Exception as e:
+        click.echo(f"[bold red]Failed to start MCP server: {e}[/]", err=True)
+        sys.exit(1)
 
 
 # ... (rest of your commands unchanged) ...

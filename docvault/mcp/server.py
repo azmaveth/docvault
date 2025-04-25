@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Optional
 
@@ -9,7 +8,6 @@ import mcp.types as types
 
 # Import the FastMCP server
 from mcp.server.fastmcp import FastMCP
-from mcp.server.sse import SseServerTransport
 
 import docvault.core.storage as storage
 from docvault import config
@@ -257,85 +255,8 @@ def create_server() -> FastMCP:
 
 async def _run_stdio_server(server: FastMCP):
     """Run the server with stdio transport"""
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream)
-
-
-async def _run_sse_server(server: FastMCP, host: str, port: int):
-    """Run the server with SSE transport"""
-    from aiohttp import web
-
-    # Create a new web application
-    app = web.Application()
-
-    # Create SSE transport
-    transport = SseServerTransport()
-
-    # Set up route handlers for the SSE transport
-    async def sse_handler(request):
-        """Handler for SSE connection"""
-        response = web.Response(
-            content_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Access-Control-Allow-Origin": "*",
-            },
-        )
-        await transport.handle_sse_request(request, response)
-        return response
-
-    async def message_handler(request):
-        """Handler for client messages"""
-        body = await request.text()
-        await transport.handle_message(body)
-        return web.Response(text="OK")
-
-    # Set up routes
-    app.router.add_get("/sse", sse_handler)
-    app.router.add_post("/message", message_handler)
-
-    # Set up a simple index page
-    async def index_handler(request):
-        html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>DocVault MCP Server</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                h1 { color: #333; }
-                h2 { color: #444; margin-top: 30px; }
-                pre { background-color: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
-            </style>
-        </head>
-        <body>
-            <h1>DocVault MCP Server</h1>
-            <p>This server implements the Model Context Protocol for accessing documentation via DocVault.</p>
-            
-            <h2>Usage</h2>
-            <p>Connect to this server using an MCP client. The SSE endpoint is at <code>/sse</code> and the message endpoint is at <code>/message</code>.</p>
-        </body>
-        </html>
-        """
-        return web.Response(text=html, content_type="text/html")
-
-    app.router.add_get("/", index_handler)
-
-    # Connect server to transport
-    await server.connect(transport)
-
-    # Start the web server
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host, port)
-    await site.start()
-
-    logger.info(f"SSE server started at http://{host}:{port}")
-
-    # Keep the server running
-    while True:
-        await asyncio.sleep(3600)  # Sleep for an hour
+    async with mcp.server.stdio.stdio_server():
+        await server.run()
 
 
 def run_server(
@@ -357,12 +278,12 @@ def run_server(
 
         # Use the appropriate transport
         if transport == "stdio":
-            asyncio.run(_run_stdio_server(server))
+            server.run()
         else:
-            host = host or config.SERVER_HOST
-            port = port or config.SERVER_PORT
-
+            # Use HOST/PORT for SSE/web mode (Uvicorn)
+            host = host or config.HOST
+            port = port or config.PORT
             logger.info(f"Server will be available at http://{host}:{port}")
-            asyncio.run(_run_sse_server(server, host, port))
+            server.run("sse")
     except Exception as e:
         logger.exception(f"Error running server: {e}")

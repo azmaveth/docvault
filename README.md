@@ -334,8 +334,10 @@ Available configuration options include:
 - `OLLAMA_URL` - URL for Ollama API
 - `EMBEDDING_MODEL` - Embedding model to use
 - `STORAGE_PATH` - Path for document storage
-- `SERVER_HOST` - MCP server host
-- `SERVER_PORT` - MCP server port
+- `HOST` - MCP server host (for SSE/web mode, required by Uvicorn)
+- `PORT` - MCP server port (for SSE/web mode, required by Uvicorn)
+- `SERVER_HOST` - [legacy/stdio mode only] MCP server host (not used by Uvicorn)
+- `SERVER_PORT` - [legacy/stdio mode only] MCP server port (not used by Uvicorn)
 - `LOG_LEVEL` - Logging level (INFO, DEBUG, etc.)
 
 ## Development
