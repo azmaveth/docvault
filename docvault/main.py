@@ -147,6 +147,10 @@ def register_commands(main):
 
     main.add_command(search_cmd, name="search")
     main.add_command(search_cmd, name="find")
+    # Add 'lib' as a direct alias to 'search_lib' for 'dv lib <query>'
+    from docvault.cli.commands import search_lib
+
+    main.add_command(search_lib, name="lib")
 
     main.add_command(config_cmd, name="config")
 

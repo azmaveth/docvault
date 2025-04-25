@@ -36,6 +36,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ## Human User Experience Improvements
 
 - [x] **CLI canonical/alias refactor**: Refactored CLI to use canonical command names with user-friendly aliases (import, remove, list, read, search, etc.). [2025-04-22]
+- [ ] **CLI additional commands refactor**: Refactor CLI to use restore instead of import-backup, then add _cmd suffix to backup and restore commands in docvault.cli.commands
 - [x] **Search/lookup merge**: Merged `lookup` into `search` as a subcommand and updated all references. [2025-04-22]
 - [x] **Default command**: Made `search` the default command when no subcommand is provided. [2025-04-22]
 - [x] **CLI help/docs update**: Updated help strings and documentation to reflect new commands, aliases, and usage. [2025-04-22]
@@ -61,8 +62,8 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 - [ ] **Document Update-on-Add & Timestamps**: When `dv add <url>` is run on a URL that already exists, update all existing data for that document (re-scrape and overwrite). Ensure the database has a timestamp for each document addition/update and display the date when viewing stored documents.
 
-- [ ] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues.
-
+- [ ] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging.
+- [ ] **SQLi prevention**: Implement SQL injection prevention measures in database queries. Use SQLAlchemy library to parameterize queries.
 - [ ] **Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH or provide a reliable fallback method for all supported OSes and shells.
 - [ ] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates.
 - [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.

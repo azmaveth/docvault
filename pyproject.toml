@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "docvault"
 version = "0.1.0"
-description = "Document management system with vector search and MCP integration"
+description = "Document fetching and management system with vector search and MCP integration"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
-    {name = "azmaveth"},
+    {name = "Hysun Chung", email = "hysun@hysun.com"},
 ]
 dependencies = [
     "click>=8.1.3",
@@ -27,6 +27,9 @@ dependencies = [
     "mcp[cli]>=1.3.0",
     "sqlite-vec>=0.1.6",
 ]
+
+[tool.setuptools]
+packages = ["docvault"]
 
 [project.optional-dependencies]
 dev = [
