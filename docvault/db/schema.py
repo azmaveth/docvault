@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import sqlite3
 
@@ -17,14 +18,21 @@ def initialize_database(force_recreate=False):
 
     conn = sqlite3.connect(config.DB_PATH)
 
-    # Load sqlite-vec extension
+    # Load sqlite-vec extension (if available)
     try:
-        # Import the Python package for sqlite-vec
+        import sqlite_vec  # type: ignore
 
-        print("✅ sqlite-vec extension loaded successfully")
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        logging.getLogger(__name__).info("sqlite-vec extension loaded successfully")
     except ImportError:
-        print("⚠️ Warning: sqlite-vec Python package not found")
-        print("Vector search functionality may be limited")
+        logging.getLogger(__name__).warning(
+            "sqlite-vec Python package not found; vector search disabled"
+        )
+    except (AttributeError, sqlite3.OperationalError) as e:
+        logging.getLogger(__name__).warning(
+            "sqlite-vec extension cannot be loaded: %s; vector search disabled", e
+        )
 
     conn.executescript(
         """
@@ -81,7 +89,10 @@ def initialize_database(force_recreate=False):
         """
         )
     except sqlite3.OperationalError:
-        pass
+        # Likely sqlite-vec not available
+        logging.getLogger(__name__).debug(
+            "Skipping creation of vector table; sqlite-vec unavailable"
+        )
 
     conn.commit()
     conn.close()

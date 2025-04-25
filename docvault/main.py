@@ -34,22 +34,59 @@ from docvault.cli.commands import (
 )
 
 # Import initialization function
-from docvault.core.initialization import ensure_app_initialized
+# from docvault.core.initialization import ensure_app_initialized
+
+
+class DefaultGroup(click.Group):
+    def __init__(self, *args, default_cmd=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_cmd = default_cmd
+
+    def get_command(self, ctx, cmd_name):
+        rv = click.Group.get_command(self, ctx, cmd_name)
+        if rv is not None:
+            return rv
+        # If the command is not found, just return None (invoke will handle forwarding)
+        return None
+
+    def invoke(self, ctx):
+        # If the command is not found, treat all args as a query for the default subcommand
+        if ctx.protected_args and self.default_cmd is not None:
+            cmd_name = ctx.protected_args[0]
+            if click.Group.get_command(self, ctx, cmd_name) is None:
+                default_cmd_obj = click.Group.get_command(self, ctx, self.default_cmd)
+                if isinstance(default_cmd_obj, click.Group):
+                    search_text_cmd = default_cmd_obj.get_command(ctx, "text")
+                    query = " ".join(ctx.protected_args + ctx.args)
+                    return ctx.invoke(search_text_cmd, query=query)
+        return super().invoke(ctx)
 
 
 def create_main():
-    @click.group(invoke_without_command=True)
+    class MainGroup(DefaultGroup):
+        pass
+
+    @click.group(cls=MainGroup, invoke_without_command=True, default_cmd="search")
     @click.pass_context
     def main(ctx, *args, **kwargs):
         """DocVault: Document management system
 
         If no command is given, defaults to 'search'.
         """
-        ensure_app_initialized()
+        # Call initializer (patched in tests via docvault.core.initialization)
+        from docvault.core.initialization import ensure_app_initialized as _ensure_init
+
+        _ensure_init()
         if ctx.invoked_subcommand is None:
-            # If no subcommand, treat as 'search'
-            # Forward arguments to search_cmd
-            ctx.forward(search_cmd)
+            if not ctx.args:
+                click.echo(ctx.get_help())
+                ctx.exit()
+            # Forward all args as a single query to search_cmd.text
+            from docvault.cli.commands import search_cmd
+
+            text_cmd = search_cmd.get_command(ctx, "text")
+            ctx.invoke(text_cmd, query=" ".join(ctx.args))
+            ctx.exit()
 
     register_commands(main)
     return main
@@ -120,6 +157,7 @@ def register_commands(main):
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
 
+main = create_main()
+
 if __name__ == "__main__":
-    main = create_main()
     main()

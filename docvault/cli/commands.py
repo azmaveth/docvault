@@ -261,10 +261,12 @@ def remove_cmd(id_ranges, force):
         try:
             html_path = Path(doc["html_path"])
             md_path = Path(doc["markdown_path"])
+
             if html_path.exists():
                 html_path.unlink()
             if md_path.exists():
                 md_path.unlink()
+
             operations.delete_document(doc["id"])
             console.print(f"✅ Deleted: {doc['title']} (ID: {doc['id']})")
         except Exception as e:
@@ -330,15 +332,25 @@ def read_cmd(document_id, format):
 
 class DefaultGroup(click.Group):
     def get_command(self, ctx, cmd_name):
+        import logging
+
+        logging.getLogger(__name__).debug(
+            f"[search.DefaultGroup] cmd_name={cmd_name!r}, ctx.args={ctx.args!r}, ctx.protected_args={getattr(ctx, 'protected_args', None)!r}"
+        )
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
-        # If the command is not found, treat it as the default subcommand
-        # Only do this for the 'search' group
+        # If the command is not found, treat as the default subcommand
         if self.name == "search" and cmd_name:
-            # Insert the default subcommand and re-parse args
-            ctx.protected_args = ["text"] + [cmd_name] + ctx.args
-            ctx.args = []
+            if cmd_name in self.commands:
+                return click.Group.get_command(self, ctx, cmd_name)
+            # Else treat as free-form query for the default 'text' subcommand
+            query = " ".join([cmd_name] + ctx.args)
+            logging.getLogger(__name__).debug(
+                f"[search.DefaultGroup] forwarding to 'text' with query={query!r}"
+            )
+            ctx.protected_args = ["text"]
+            ctx.args = [query]
             return click.Group.get_command(self, ctx, "text")
         return None
 
@@ -397,6 +409,9 @@ def search_lib(library_name, version):
 @click.option("--text-only", is_flag=True, help="Use only text search (no embeddings)")
 @click.option("--context", default=2, help="Number of context lines to show")
 def search_text(query, limit, debug, text_only, context):
+    import sys
+
+    print(f"[DEBUG search_text] query={query!r} sys.argv={sys.argv}")
     """Search documents in the vault (default subcommand)."""
     import asyncio
     import logging
@@ -417,15 +432,17 @@ def search_text(query, limit, debug, text_only, context):
         try:
             conn.enable_load_extension(True)
             conn.load_extension("sqlite_vec")
-            console.print("[green]sqlite-vec extension is loaded successfully[/]")
+            logging.getLogger(__name__).info("sqlite-vec extension loaded successfully")
         except sqlite3.OperationalError as e:
-            console.print(f"[red]sqlite-vec extension cannot be loaded: {e}[/]")
-            console.print("[yellow]Will use text-based fallback search[/]")
+            logging.getLogger(__name__).warning(
+                "sqlite-vec extension cannot be loaded: %s. Falling back to text search.",
+                e,
+            )
         finally:
             conn.close()
     except Exception as e:
         if debug:
-            console.print(f"[red]Error checking sqlite-vec: {e}[/]")
+            logging.getLogger(__name__).exception("Error checking sqlite-vec: %s", e)
     with console.status(f"[bold blue]Searching for '{query}'...[/]", spinner="dots"):
         results = asyncio.run(search_docs(query, limit=limit, text_only=text_only))
     if not results:
@@ -498,11 +515,13 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
         if rebuild_table:
             try:
                 conn.execute("DROP TABLE IF EXISTS document_segments_vec;")
-                console.print(
-                    "[yellow]Dropped existing document_segments_vec table.[/]"
+                logging.getLogger(__name__).info(
+                    "Dropped existing document_segments_vec table."
                 )
             except Exception as e:
-                console.print(f"[red]Error dropping vector table: {e}[/]")
+                logging.getLogger(__name__).warning(
+                    "Error dropping vector table: %s", e
+                )
         # Try to create the vector table if missing
         conn.execute(
             """
@@ -516,11 +535,11 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
         )
         conn.commit()
     except Exception as e:
-        console.print(
-            "[red]Error initializing vector table.\nMake sure the sqlite-vec extension is installed and enabled.[/]"
+        logging.getLogger(__name__).error(
+            "Error initializing vector table.\nMake sure the sqlite-vec extension is installed and enabled."
         )
-        console.print(f"[red]Details: {e}[/]")
-        console.print("[yellow]Try: pip install sqlite-vec && dv init-db[/]")
+        logging.getLogger(__name__).error("Details: %s", e)
+        logging.getLogger(__name__).warning("Try: pip install sqlite-vec && dv init-db")
         return
     finally:
         conn.close()
