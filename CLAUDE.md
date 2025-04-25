@@ -35,17 +35,68 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
 ## Usage Tips
 
 1. **Context-Aware Responses**: When using documentation from DocVault, remember to include proper citations and acknowledge the source.
-
 2. **Handling Missing Documentation**: If the documentation you need isn't in the vault, suggest using `scrape_document` to add it. Be specific about the URL and appropriate depth.
-
 3. **Fallback Strategy**: If DocVault fails to provide necessary documentation, consider other approaches like:
    - Looking for similar libraries or tools that might have documentation in the vault
    - Using general knowledge to provide best-effort guidance
    - Suggesting the user add the documentation using the CLI: `dv add <url>`
 
-4. **Library Lookups**: When a user asks about a specific library, use `lookup_library_docs` to find available documentation.
+## Troubleshooting: sqlite-vec Extension and Vector Search
 
-5. **Search First**: Use `search_documents` to find relevant documentation before trying more specific queries.
+If you see errors like:
+
+```text
+sqlite-vec extension cannot be loaded: dlopen(sqlite_vec.dylib, ...): ... Falling back to text search.
+```
+
+or
+
+```text
+ModuleNotFoundError: No module named 'sqlite_vec'
+```
+
+**Follow these steps:**
+
+1. **Ensure the Python package is installed:**
+
+   - Run: `uv pip install sqlite-vec`
+   - This installs both the Python wrapper and the native extension for your platform.
+
+2. **Always use `uv run ...` to execute scripts or commands:**
+
+   - Example: `uv run python -c "import sqlite_vec; ..."`
+   - This ensures the correct environment and libraries are used.
+
+3. **Verify installation:**
+
+   - Test in a shell:
+
+     ```sh
+     uv run python -c "import sqlite3; import sqlite_vec; db = sqlite3.connect(':memory:'); db.enable_load_extension(True); sqlite_vec.load(db); print('sqlite-vec loaded successfully')"
+     ```
+
+   - If you see `sqlite-vec loaded successfully`, the extension is available.
+
+4. **No need to manually manage `.dylib` files:**
+
+   - The Python package handles loading the native extension if installed via `uv` or `pip`.
+
+5. **If you still have issues:**
+
+   - Double-check your environment with `uv pip list` and ensure you are not mixing environments.
+   - Reinstall with `uv pip install --force-reinstall sqlite-vec` if necessary.
+
+**Summary:**
+
+- Use `uv` for all dependency management and execution.
+- Install `sqlite-vec` via `uv pip`.
+- The Python package will load the extension; no manual copying of files is needed.
+
+### Best Practices for sqlite-vec
+
+- Use `uv` for all dependency management and execution.
+- Install `sqlite-vec` via `uv pip`.
+- The Python package will load the extension; no manual copying of files is needed.
 
 ## Known Limitations
 
