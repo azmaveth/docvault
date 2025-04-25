@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.12"
-# dependencies = [
-#     "click>=8.1.3",
-#     "rich>=13.3.1",
-#     "python-dotenv>=1.0.0",
-#     "requests>=2.28.1",
-#     "beautifulsoup4>=4.11.1",
-#     "html2text>=2020.1.16",
-#     "aiohttp>=3.8.4",
-#     "numpy>=1.24.0",
-#     "modelcontextprotocol>=0.1.0"
-# ]
-# ///
 
 import os
 from datetime import datetime
@@ -184,7 +170,7 @@ def register_commands(main):
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
 
-main = create_main()
+cli = create_main
 
 if __name__ == "__main__":
-    main()
+    cli()

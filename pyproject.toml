@@ -41,8 +41,8 @@ dev = [
 ]
 
 [project.scripts]
-dv = "docvault.main:main"
-docvault = "docvault.main:main"
+dv = "docvault.main:cli"
+docvault = "docvault.main:cli"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

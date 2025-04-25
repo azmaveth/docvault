@@ -9,6 +9,7 @@ repos:
     rev: v0.11.6
     hooks:
       - id: ruff
+        args: [--fix]
 
   - repo: https://github.com/PyCQA/isort
     rev: 6.0.1
