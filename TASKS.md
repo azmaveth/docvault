@@ -58,6 +58,98 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Import from Project Files**: Add ability to scan project files (package.json, mix.exs, requirements.txt, etc.) to fetch documentation for all dependencies automatically
 - [ ] **User-Friendly Installation**: Simplify the installation process and dependencies
 
+## Suggestions to Improve the Utility of docvault for Coding
+
+1. **Context-Aware Searching and Tagging**
+   - [ ] Allow tagging documents with keywords related to specific projects or libraries (e.g., "pygame", "networking", "GUI").
+   - [ ] Enable searching within specific tags or categories to quickly find relevant documentation.
+
+2. **Incremental and Sectioned Storage**
+   - [ ] Support scraping and storing only specific sections or pages of documentation rather than entire documents.
+     - **Examples of Scraping and Storing Specific Sections:**
+       - *What to keep:*
+         - Function definitions, signatures, and descriptions
+         - Class definitions, inheritance structure, and methods
+         - Relevant code snippets demonstrating usage (if concise)
+       - *What to leave out:*
+         - Overview or introduction sections
+         - External links, advertisements, or unrelated topics
+         - Large examples that are not directly relevant or too verbose
+       - *How to do it:*
+         - Schedule scraping with parameters targeting specific HTML headings or sections, e.g., "Functions" or "Classes" in the documentation.
+     - **How to Call a Tool for Section-Specific Scraping:**
+       - Parameters to send:
+         - `url`: The documentation URL
+         - `sections`: Array of section headings or identifiers (e.g., `["Functions", "Classes"]`)
+         - `depth`: Optional, for limiting nested content
+         - `filter_selector`: Optional CSS selector or XPath to target specific parts of the page
+       - Example call:
+
+         ```json
+         {
+           "url": "https://www.pygame.org/docs/",
+           "sections": ["Functions", "Classes"],
+           "filter_selector": "div.section"
+         }
+         ```
+
+     - **Prompt for LLM Scraper to Collect Desired Sections:**
+       - Sample prompt:
+         > "Please extract and store only the sections titled 'Functions' and 'Classes' from the page at [URL]. Include function signatures, descriptions, class details, and relevant code snippets. Omit introductory or unrelated content."
+       - Alternatives:
+         - Use explicit section headers or CSS selectors in the prompt for deterministic scraping if the structure is consistent.
+         - Use heuristics (e.g., headings `h2`, `h3`) to identify sections.
+       - Deterministic approach vs. LLM:
+         - For highly structured docs, deterministic extraction using CSS selectors or XPath is more reliable.
+         - For semi-structured or inconsistent docs, an LLM can interpret headings and decide what to extract, which is more flexible but less predictable.
+   - [ ] Allow splitting large documents into smaller, manageable sections for easier recall.
+     - **Splitting Large Documents:**
+       - *Recommended approaches:*
+         - By Topic: Use structured headings (`h1`, `h2`, `h3`, etc.) to identify topics.
+         - Pre-defined Topics: For documentation, common topics include:
+           - Overview / Introduction
+           - Installation / Setup
+           - Usage / Examples
+           - API Reference (Functions, Classes, Methods)
+           - Tutorials / Guides
+       - *Implementation:*
+         - Parse the document HTML or markdown, and split based on headers.
+         - Store each section separately, labeled with its heading, for quick access.
+
+3. **Summarization and Highlights**
+   - [ ] Provide automatic summaries or key points from stored documents for quick reference.
+     - **Prompt for Summarizing While Preserving Code Snippets:**
+       - Sample prompt:
+         > "Summarize the following documentation content, highlighting key points and features. Ensure all code snippets and examples are included verbatim and are easily accessible. Present the summary in a clear, concise format."
+     - Additional tips:
+       - Tag code snippets with their relevant functions or classes.
+       - Keep a boolean option to include/exclude code snippets depending on needs.
+   - [ ] Highlight relevant code snippets or function explanations based on queries.
+
+4. **Deep Linking and Cross-References**
+   - [ ] Enable creating links between related document sections, so I can easily navigate through interconnected concepts.
+     - **Implementing Deep Links and Cross-References:**
+       - *Approach:*
+         - Linking topics: When scraping, identify anchor links or headers with unique IDs. Store these IDs as references.
+         - Cross-referencing: Maintain a map of related topics, e.g., function `foo()` is referenced in `bar()`; create links in your stored data pointing from `bar()` to `foo()`.
+         - Automation: Generate a small index or map of core topics. When a user asks about a concept, provide quick links.
+       - *Example:*
+         - Append a "Related functions" section with links to other relevant parts of the stored documentation.
+         - Use a graph-like structure to connect related entities (functions, classes, modules).
+   - [ ] Support cross-referencing between stored documents and our internal notes or projects.
+
+5. **Dynamic Updates & Version Control**
+   - [ ] Automatically update stored docs when newer versions are available.
+   - [ ] Keep track of different versions of documentation for comparison.
+
+6. **Recall with Context and Usage Examples**
+   - [ ] When recalling documentation, include usage examples, common pitfalls, and best practices.
+   - [ ] Suggest relevant functions, classes, or modules based on the current task.
+
+7. **Automatic Context Building for Projects**
+   - [ ] When starting a new project, scrape and store related docs automatically based on project goals or libraries.
+   - [ ] Build a comprehensive, interconnected knowledge graph of docs and features.
+
 ## Technical Improvements
 
 - [ ] **Document Update-on-Add & Timestamps**: When `dv add <url>` is run on a URL that already exists, update all existing data for that document (re-scrape and overwrite). Ensure the database has a timestamp for each document addition/update and display the date when viewing stored documents.
