@@ -32,9 +32,12 @@ class WebScraper:
     def __init__(self):
         import os
 
-        log_dir = os.path.join(os.getcwd(), "logs")
+        from docvault import config
+
+        log_dir = str(config.LOG_DIR)
+        log_file = str(config.LOG_FILE)
+        log_level = getattr(logging, str(config.LOG_LEVEL).upper(), logging.INFO)
         os.makedirs(log_dir, exist_ok=True)
-        log_file = os.path.join(log_dir, "docvault.log")
         self.visited_urls = set()
         self.logger = logging.getLogger("docvault.scraper")
         # Set up logging to file and console if not already set
@@ -43,14 +46,14 @@ class WebScraper:
                 "[%(asctime)s] %(levelname)s %(name)s: %(message)s"
             )
             file_handler = logging.FileHandler(log_file)
-            file_handler.setLevel(logging.DEBUG)
+            file_handler.setLevel(log_level)
             file_handler.setFormatter(formatter)
             console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.DEBUG)
+            console_handler.setLevel(log_level)
             console_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
-            self.logger.setLevel(logging.DEBUG)
+            self.logger.setLevel(log_level)
         # Stats tracking
         self.stats = {"pages_scraped": 0, "pages_skipped": 0, "segments_created": 0}
 

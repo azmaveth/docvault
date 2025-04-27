@@ -66,3 +66,4 @@ docs/_build/
 
 # Local development-specific files
 local_settings.py
+.aider*
