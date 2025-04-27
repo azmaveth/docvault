@@ -50,6 +50,24 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Installation troubleshooting section**: Add a section to the README for common installation issues and their solutions, especially for virtual environments, dependency problems, and OS-specific quirks.
 - [ ] **Quick test script**: Provide a script or command sequence in the README for users (and AIs) to verify that DocVault is installed and functioning correctly after setup.
 
+- [ ] **Search Results Improvements**:
+  - [x] Enhance search result previews to show more complete context instead of truncated snippets [2025-04-27]
+  - [x] Add keyword highlighting in search results to quickly identify matched terms [2025-04-27]
+  - [ ] Implement navigation aids to jump to specific sections within retrieved documents
+  - [ ] Add pagination for search results with many matches
+  - [ ] Provide options to filter and refine search results
+
+- [ ] **Document Navigation and Structure**:
+  - [ ] Add ability to navigate between related sections in retrieved documents
+  - [ ] Better preserve document structure when rendering in different formats
+  - [ ] Implement a "related content" suggestion feature based on current viewing history
+  - [ ] Add document history tracking to easily return to previously viewed documents
+
+- [ ] **Metadata Utilization**:
+  - [ ] Improve integration of document metadata into search functionality
+  - [ ] Display document timestamps and version information in results
+  - [ ] Add metadata-based filtering options (e.g., by date, source, type)
+
 - [ ] **Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs (e.g., Hexdocs for Elixir, PyPI for Python). Automatically update registry as new docs are discovered.
 - [ ] **Interactive Mode**: Add an interactive shell mode where users can navigate documentation with keyboard shortcuts
 - [ ] **Documentation Comparison**: Add features to compare different versions of the same library to identify changes
@@ -179,6 +197,11 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [ ] Add progress notes as improvements are made
   - [ ] [Progress] 2025-04-21: Plan drafted. Will begin with adaptive extraction pipeline after vector search CLI command.
 
+- [ ] **Scraping Depth Control Enhancements**:
+  - [ ] Improve documentation of the "depth" parameter for scraping to clearly explain its purpose and impact
+  - [ ] Add examples of different depth settings and their effects in the CLI help
+  - [ ] Implement smart depth detection that adjusts based on site structure
+
 - [ ] **Caching Strategy**: Improve caching with time-based invalidation to ensure documentation stays up-to-date
 - [ ] **Offline Mode**: Enhance offline capabilities to ensure reliability without internet connection
 - [ ] **Documentation Filtering**: Add options to filter documentation by type (functions, modules, examples, etc.)
@@ -274,7 +297,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 #### 4. User Experience
 
-- On errors, suggest next steps (e.g., “Try `dv list` to see available documents”).
+- On errors, suggest next steps (e.g., "Try `dv list` to see available documents").
 - Support tab completion (if not already).
 - Print summary tables in a more compact format by default; use `--long` for full details.
 - For interactive commands (like `rm`), support `--yes` or `-y` to skip confirmation.
@@ -282,7 +305,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 #### 5. Advanced Suggestions
 
 - Add a `help` subcommand: `dv help <command>`.
-- Support config profiles: `dv config --profile <name>`.
+- Support config profiles: `dv config --profile <n>`.
 - Add a `status` command to show DB health, number of docs, etc.
 - Allow piping and redirection for output (e.g., `dv search ... | jq`).
 
