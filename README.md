@@ -96,6 +96,252 @@ Once installed, you can run DocVault directly using the `dv` command:
 > 2. Use `uv run dv` which will use the UV dependency resolver
 > 3. Copy `scripts/dv` to a location in your PATH
 
+## Verifying Your Installation
+
+To verify that DocVault is installed and working correctly, you can run the following test script:
+
+```bash
+#!/bin/bash
+
+# Test basic CLI functionality
+echo "Testing DocVault installation..."
+
+# Check if dv command is available
+if ! command -v dv &> /dev/null; then
+    echo "❌ 'dv' command not found. Make sure to add it to your PATH or use './scripts/dv'"
+    exit 1
+fi
+
+# Test --version flag
+echo -n "Checking version... "
+dv --version
+
+# Test database initialization
+echo -n "Initializing database... "
+dv init-db --force
+
+# Test search with no documents
+echo -n "Testing search (no documents yet)... "
+if ! dv search "test" &> /dev/null; then
+    echo "❌ Search test failed"
+    exit 1
+else
+    echo "✅ Search working"
+fi
+
+# Test adding a test document
+echo -n "Adding test document... "
+TEST_URL="https://raw.githubusercontent.com/azmaveth/docvault/main/README.md"
+if ! dv add "$TEST_URL" &> /dev/null; then
+    echo "❌ Failed to add test document"
+    exit 1
+else
+    echo "✅ Test document added"
+fi
+
+# Test search with the added document
+echo -n "Testing search with documents... "
+if ! dv search "DocVault" &> /dev/null; then
+    echo "❌ Search with documents failed"
+    exit 1
+else
+    echo "✅ Search with documents working"
+fi
+
+echo "\n🎉 All tests passed! DocVault is installed and working correctly."
+echo "Try running 'dv search \"your query\"' to search your documents."
+```
+
+Save this script as `test_docvault.sh`, make it executable with `chmod +x test_docvault.sh`, and run it to verify your installation.
+
+## Troubleshooting
+
+### Command Not Found: `dv`
+
+If you get a "command not found" error when running `dv`, try these solutions:
+
+1. **Activate the virtual environment**
+
+   ```bash
+   source .venv/bin/activate  # On Unix/macOS
+   .venv\Scripts\activate    # On Windows
+   ```
+
+2. **Use the full path**
+
+   ```bash
+   # From the project root
+   ./scripts/dv --help
+   ```
+
+3. **Install with pipx for global access**
+
+   ```bash
+   pipx install git+https://github.com/azmaveth/docvault.git
+   ```
+
+### Database Connection Issues
+
+If you encounter database-related errors:
+
+1. **Check file permissions**
+
+   ```bash
+   ls -la ~/.docvault/docvault.db
+   ```
+
+2. **Rebuild the database**
+
+   ```bash
+   dv init-db --force
+   ```
+
+### Missing Dependencies
+
+If you see import errors or missing modules:
+
+1. **Reinstall dependencies**
+
+   ```bash
+   uv pip install -r requirements.txt
+   ```
+
+2. **Check Python version** (requires Python 3.8+)
+
+   ```bash
+   python --version
+   ```
+
+### Vector Search Not Working
+
+If vector search fails or falls back to text search:
+
+1. **Verify sqlite-vec installation**
+
+   ```bash
+   python -c "import sqlite_vec; print('sqlite-vec version:', sqlite_vec.__version__)"
+   ```
+
+2. **Rebuild the vector index**
+
+   ```bash
+   dv init-db --force
+   ```
+
+### Network Issues
+
+If you experience timeouts or connection errors:
+
+1. **Check your internet connection**
+2. **Set HTTP proxy if needed**
+
+   ```bash
+   export HTTP_PROXY=http://your-proxy:port
+   export HTTPS_PROXY=http://your-proxy:port
+   ```
+
+### Getting Help
+
+If you're still having issues:
+
+1. Check the [GitHub Issues](https://github.com/azmaveth/docvault/issues) for similar problems
+2. Run with `--debug` flag for more detailed error messages:
+
+   ```bash
+   dv --debug <command>
+   ```
+
+3. Create a new issue with your error message and environment details
+
+## Database Initialization
+
+Before using DocVault, you need to initialize the database:
+
+```bash
+dv init-db --force
+```
+
+This will create a new SQLite database at `~/.docvault/docvault.db` with the necessary tables and vector index.
+
+> **Note**: Use the `--force` flag to recreate the database if it already exists.
+
+## Vector Search Setup
+
+DocVault uses vector embeddings for semantic search. For optimal search functionality, you'll need to ensure the `sqlite-vec` extension is properly installed.
+
+### Verifying Vector Search
+
+To check if vector search is working:
+
+```bash
+dv search "your search query" --debug
+```
+
+If you see a warning about `sqlite-vec` not being loaded, you'll need to install it.
+
+### Installing sqlite-vec
+
+1. Install the Python package:
+
+   ```bash
+   pip install sqlite-vec
+   ```
+
+2. Or install from source:
+
+   ```bash
+   git clone https://github.com/asg017/sqlite-vec
+   cd sqlite-vec
+   make
+   make loadable
+   ```
+
+3. Ensure the extension is in your `LD_LIBRARY_PATH` or provide the full path when loading.
+
+### Common Issues
+
+1. **Missing Extension**: If you see `sqlite-vec extension cannot be loaded`, ensure the package is installed in your Python environment.
+
+2. **Vector Table Not Found**: If you get errors about missing vector tables, try recreating the database with `dv init-db --force`.
+
+3. **Performance**: For large document collections, consider increasing SQLite's cache size:
+
+   ```bash
+   export SQLITE_CACHE_SIZE=1000000  # 1GB cache
+   ```
+
+4. **Text-Only Fallback**: If vector search isn't available, DocVault will automatically fall back to text search. You can force text-only search with:
+
+   ```bash
+   dv search "query" --text-only
+   ```
+
+## Adding Documents
+
+### From a URL
+
+To add a document from a URL:
+
+```bash
+dv add https://example.com/document
+```
+
+### From a Local File
+
+To add a document from a local file:
+
+```bash
+dv add /path/to/document.pdf
+```
+
+### From a Directory
+
+To add all documents from a directory:
+
+```bash
+dv add /path/to/documents/
+```
+
 1. Initialize the database (recommended for a fresh start):
 
 ```bash

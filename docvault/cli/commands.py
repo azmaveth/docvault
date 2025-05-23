@@ -613,7 +613,13 @@ def search_cmd(ctx):
 @search_cmd.command("lib")
 @click.argument("library_name", required=True)
 @click.option("--version", help="Library version (default: latest)")
-def search_lib(library_name, version):
+@click.option(
+    "--format",
+    type=click.Choice(["text", "json"], case_sensitive=False),
+    default="text",
+    help="Output format (text or json)",
+)
+def search_lib(library_name, version, format):
     """Search library documentation (formerly 'lookup')."""
     import asyncio
 
@@ -622,9 +628,54 @@ def search_lib(library_name, version):
     async def run_lookup():
         manager = LibraryManager()
         docs = await manager.get_library_docs(library_name, version or "latest")
+
+        if format == "json":
+            import json
+
+            if not docs:
+                print(
+                    json.dumps(
+                        {
+                            "status": "success",
+                            "count": 0,
+                            "library": library_name,
+                            "version": version or "latest",
+                            "results": [],
+                        },
+                        indent=2,
+                    )
+                )
+                return
+
+            json_results = [
+                {
+                    "title": doc.get("title") or "Untitled",
+                    "url": doc.get("url"),
+                    "version": doc.get("resolved_version", "unknown"),
+                    "description": doc.get("description", ""),
+                }
+                for doc in docs
+            ]
+
+            print(
+                json.dumps(
+                    {
+                        "status": "success",
+                        "count": len(json_results),
+                        "library": library_name,
+                        "version": version or "latest",
+                        "results": json_results,
+                    },
+                    indent=2,
+                )
+            )
+            return
+
+        # Default text output
         if not docs:
             console.print(f"No documentation found for {library_name}")
             return
+
         table = Table(title=f"Documentation for {library_name}")
         table.add_column("Title", style="green")
         table.add_column("URL", style="blue")
@@ -646,7 +697,13 @@ def search_lib(library_name, version):
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--text-only", is_flag=True, help="Use only text search (no embeddings)")
 @click.option("--context", default=2, help="Number of context lines to show")
-def search_text(query, limit, debug, text_only, context):
+@click.option(
+    "--format",
+    type=click.Choice(["text", "json"], case_sensitive=False),
+    default="text",
+    help="Output format (text or json)",
+)
+def search_text(query, limit, debug, text_only, context, format):
 
     print(f"[DEBUG search_text] query={query!r} sys.argv={sys.argv}")
     """Search documents in the vault (default subcommand)."""
@@ -683,8 +740,51 @@ def search_text(query, limit, debug, text_only, context):
     with console.status(f"[bold blue]Searching for '{query}'...[/]", spinner="dots"):
         results = asyncio.run(search_docs(query, limit=limit, text_only=text_only))
     if not results:
-        console.print("No matching documents found")
+        if format == "json":
+            import json
+
+            print(
+                json.dumps(
+                    {"status": "success", "count": 0, "results": [], "query": query}
+                )
+            )
+        else:
+            console.print("No matching documents found")
         return
+
+    if format == "json":
+        import json
+
+        # Prepare results for JSON output
+        json_results = []
+        for result in results:
+            json_results.append(
+                {
+                    "score": float(f"{result['score']:.2f}"),
+                    "title": result["title"] or "Untitled",
+                    "url": result["url"],
+                    "content": result["content"],
+                    "content_preview": result["content"][:200]
+                    + ("..." if len(result["content"]) > 200 else ""),
+                    "document_id": result.get("document_id"),
+                    "segment_id": result.get("segment_id"),
+                }
+            )
+
+        print(
+            json.dumps(
+                {
+                    "status": "success",
+                    "count": len(json_results),
+                    "query": query,
+                    "results": json_results,
+                },
+                indent=2,
+            )
+        )
+        return
+
+    # Default text output
     console.print(f"Found {len(results)} results for '{query}'")
     if debug and not text_only:
         console.print("[bold]Query embedding diagnostics:[/]")
