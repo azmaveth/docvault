@@ -62,10 +62,10 @@ uv pip install -e .
 uv pip install .
 
 # Initialise the database (sets up vector tables)
-dv init-db --wipe
+dv init-db --force
 ```bash
 
-> **Note:** The `--wipe` flag will clear all existing data and fully reset the database. Use this if you want to start fresh or if you encounter issues with old or corrupted data.
+> **Note:** The `--force` flag will clear all existing data and fully reset the database. Use this if you want to start fresh or if you encounter issues with old or corrupted data.
 
 ### Using Traditional Pip
 
@@ -99,12 +99,12 @@ Once installed, you can run DocVault directly using the `dv` command:
 1. Initialize the database (recommended for a fresh start):
 
 ```bash
-dv init --wipe
+dv init --force
 # or using the alias
-dv init-db --wipe
+dv init-db --force
 ```
 
-If you want to keep existing data, you can omit `--wipe`.
+If you want to keep existing data, you can omit `--force`.
 
 1. Import your first document:
 
