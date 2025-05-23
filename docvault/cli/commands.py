@@ -692,7 +692,7 @@ def search_lib(library_name, version, format):
 
 
 @search_cmd.command("text")
-@click.argument("query", required=True)
+@click.argument("query", required=False)
 @click.option("--limit", default=5, help="Maximum number of results to return")
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--text-only", is_flag=True, help="Use only text search (no embeddings)")
@@ -703,7 +703,35 @@ def search_lib(library_name, version, format):
     default="text",
     help="Output format (text or json)",
 )
-def search_text(query, limit, debug, text_only, context, format):
+@click.option(
+    "--min-score", type=float, default=0.0, help="Minimum similarity score (0.0 to 1.0)"
+)
+@click.option("--version", help="Filter by document version")
+@click.option("--library", is_flag=True, help="Only show library documentation")
+@click.option("--title-contains", help="Filter by document title containing text")
+@click.option("--updated-after", help="Filter by last updated after date (YYYY-MM-DD)")
+def search_text(
+    query,
+    limit,
+    debug,
+    text_only,
+    context,
+    format,
+    min_score,
+    version,
+    library,
+    title_contains,
+    updated_after,
+):
+    """Search documents in the vault with metadata filtering.
+
+    Examples:
+        dv search "python sqlite" --version 3.10
+        dv search --library --title-contains "API"
+        dv search --updated-after 2023-01-01
+
+    If no query is provided, returns random documents matching the filters.
+    """
 
     print(f"[DEBUG search_text] query={query!r} sys.argv={sys.argv}")
     """Search documents in the vault (default subcommand)."""
@@ -737,8 +765,42 @@ def search_text(query, limit, debug, text_only, context, format):
     except Exception as e:
         if debug:
             logging.getLogger(__name__).exception("Error checking sqlite-vec: %s", e)
-    with console.status(f"[bold blue]Searching for '{query}'...[/]", spinner="dots"):
-        results = asyncio.run(search_docs(query, limit=limit, text_only=text_only))
+    # Prepare document filters
+    doc_filter = {}
+    if version:
+        doc_filter["version"] = version
+    if library:
+        doc_filter["is_library_doc"] = True
+    if title_contains:
+        doc_filter["title_contains"] = title_contains
+    if updated_after:
+        try:
+            from datetime import datetime
+
+            # Parse and reformat date to ensure it's in the correct format
+            parsed_date = datetime.strptime(updated_after, "%Y-%m-%d")
+            doc_filter["updated_after"] = parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            console.print(
+                "[red]Error:[/] Invalid date format. Use YYYY-MM-DD", style="bold"
+            )
+            return
+
+    status_msg = (
+        f"[bold blue]Searching for '{query}'...[/]"
+        if query
+        else "[bold blue]Searching documents...[/]"
+    )
+    with console.status(status_msg, spinner="dots"):
+        results = asyncio.run(
+            search_docs(
+                query,
+                limit=limit,
+                text_only=text_only,
+                min_score=min_score,
+                doc_filter=doc_filter if doc_filter else None,
+            )
+        )
     if not results:
         if format == "json":
             import json
@@ -806,29 +868,57 @@ def search_text(query, limit, debug, text_only, context, format):
 
     # Group results by document and section
     doc_results = defaultdict(
-        lambda: {"title": None, "url": None, "sections": defaultdict(list)}
+        lambda: {
+            "title": None,
+            "url": None,
+            "version": None,
+            "updated_at": None,
+            "is_library_doc": False,
+            "library_name": None,
+            "sections": defaultdict(list),
+        }
     )
 
     for result in results:
         doc_id = result["document_id"]
-        doc_results[doc_id]["title"] = result.get("title") or "Untitled"
-        doc_results[doc_id]["url"] = result.get("url", "")
+        doc = doc_results[doc_id]
+        doc["title"] = result.get("title") or "Untitled"
+        doc["url"] = result.get("url", "")
+        doc["version"] = result.get("version")
+        doc["updated_at"] = result.get("updated_at")
+        doc["is_library_doc"] = result.get("is_library_doc", False)
+        doc["library_name"] = result.get("library_name")
 
         # Group by section path to avoid duplicate sections
         section_path = result.get("section_path", "0")
-        doc_results[doc_id]["sections"][section_path].append(result)
+        doc["sections"][section_path].append(result)
 
     # Display results by document and section
     for doc_id, doc_info in doc_results.items():
         doc_title = doc_info["title"]
         doc_url = doc_info["url"]
 
-        # Document header with total matches
+        # Document header with total matches and metadata
         total_matches = sum(
             len(section_hits) for section_hits in doc_info["sections"].values()
         )
+
+        # Build metadata line
+        metadata_parts = []
+        if doc_info["version"]:
+            metadata_parts.append(f"v{doc_info['version']}")
+        if doc_info["updated_at"]:
+            updated = doc_info["updated_at"]
+            if isinstance(updated, str):
+                updated = updated.split("T")[0]  # Just show date part
+            metadata_parts.append(f"updated: {updated}")
+        if doc_info["is_library_doc"] and doc_info["library_name"]:
+            metadata_parts.append(f"library: {doc_info['library_name']}")
+
         console.print(f"\n[bold green]📄 {doc_title}[/]")
         console.print(f"[blue]{doc_url}[/]")
+        if metadata_parts:
+            console.print(f"[dim]{' • '.join(metadata_parts)}[/]")
         console.print(
             f"[dim]Found {total_matches} matches in {len(doc_info['sections'])} sections[/]"
         )

@@ -279,11 +279,50 @@ def add_document_segment(
 
 
 def search_segments(
-    embedding: bytes = None, limit: int = 5, text_query: str = None
+    embedding: bytes = None,
+    limit: int = 5,
+    text_query: str = None,
+    min_score: float = 0.0,
+    doc_filter: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Search for similar document segments"""
+    """Search for similar document segments with metadata filtering
+
+    Args:
+        embedding: Vector embedding for semantic search
+        limit: Maximum number of results to return
+        text_query: Text query for full-text search
+        min_score: Minimum similarity score (0.0 to 1.0)
+        doc_filter: Dictionary of document filters (e.g., {'version': '1.0', 'is_library_doc': True})
+
+    Returns:
+        List of matching document segments with metadata
+    """
     conn = get_connection()
     cursor = conn.cursor()
+
+    # Prepare document filters
+    filter_conditions = []
+    filter_params = []
+
+    if doc_filter:
+        for key, value in doc_filter.items():
+            if value is not None:
+                if key == "version":
+                    filter_conditions.append("d.version = ?")
+                    filter_params.append(str(value))
+                elif key == "is_library_doc":
+                    filter_conditions.append("d.is_library_doc = ?")
+                    filter_params.append(1 if value else 0)
+                elif key == "title_contains":
+                    filter_conditions.append("LOWER(d.title) LIKE LOWER(?)")
+                    filter_params.append(f"%{value}%")
+                elif key == "updated_after":
+                    filter_conditions.append("d.updated_at >= ?")
+                    filter_params.append(value)
+
+    filter_clause = (
+        f"AND {' AND '.join(filter_conditions)}" if filter_conditions else ""
+    )
 
     # Check if we should skip vector search
     use_text_search = embedding is None
@@ -293,7 +332,7 @@ def search_segments(
         try:
             # Search using vector similarity with section information
             cursor.execute(
-                """
+                f"""
             WITH ranked_segments AS (
                 SELECT 
                     s.id, 
@@ -305,22 +344,33 @@ def search_segments(
                     s.parent_segment_id,
                     d.title, 
                     d.url,
+                    d.version,
+                    d.updated_at,
+                    d.is_library_doc,
+                    d.library_id,
+                    l.name as library_name,
                     vec_cosine_similarity(v.embedding, ?) AS score,
                     ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY vec_cosine_similarity(v.embedding, ?) DESC) as rn
                 FROM document_segments_vec v
                 JOIN document_segments s ON v.id = s.id
                 JOIN documents d ON s.document_id = d.id
+                LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
+                {filter_clause}
                 ORDER BY score DESC
                 LIMIT ?
             )
-            SELECT * FROM ranked_segments WHERE rn = 1
+            SELECT * FROM ranked_segments 
+            WHERE rn = 1 AND score >= ?
+            ORDER BY score DESC
             """,
                 (
                     embedding,
                     embedding,
-                    limit * 3,
-                ),  # Get more results to account for section grouping
+                    limit * 3,  # Get more results to account for section grouping
+                    min_score,
+                )
+                + tuple(filter_params),
             )
 
             rows = cursor.fetchall()
@@ -367,12 +417,24 @@ def search_segments(
                     s.segment_type, 
                     d.title, 
                     d.url,
+                    d.version,
+                    d.updated_at,
+                    d.is_library_doc,
+                    d.library_id,
+                    l.name as library_name,
                     (CASE 
             """
 
             # Score for exact matches
             score_cases = []
             for i, term in enumerate(search_terms[:3]):
+                # Higher score for matches in title or section title
+                score_cases.append(
+                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(s.section_title) LIKE ?) THEN {10.0 - i*0.5}"
+                )
+                score_cases.append(
+                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(d.title) LIKE ?) THEN {8.0 - i*0.5}"
+                )
                 score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i*0.5}")
 
             # Add default case
@@ -386,22 +448,27 @@ def search_segments(
                     END) AS score,
                     ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY 
                         (CASE 
-            """
+                """
                 + "\n".join(score_cases)
-                + """
+                + f"""
                         END) DESC
                     ) as rn
                 FROM document_segments s
                 JOIN documents d ON s.document_id = d.id
+                LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
+                {filter_clause}
                 AND (
-            """
+                """
             )
 
             # Add WHERE conditions for each term with OR
             where_clauses = []
-            for _ in like_patterns:
-                where_clauses.append("LOWER(s.content) LIKE ?")
+            for _ in search_terms[:3]:
+                # Search in content, section title, and document title
+                where_clauses.append(
+                    "LOWER(s.content) LIKE ? OR LOWER(s.section_title) LIKE ? OR LOWER(d.title) LIKE ?"
+                )
 
             query += " OR ".join(where_clauses)
             query += """
@@ -409,19 +476,35 @@ def search_segments(
                 GROUP BY s.document_id, s.section_path
             )
             SELECT * FROM ranked_segments 
-            WHERE rn = 1
+            WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
             LIMIT ?
             """
 
-            # Prepare all parameters
-            params = like_patterns + like_patterns + [limit]
+            # Prepare all parameters - for each term, we need to add it multiple times for each condition
+            params = []
+            # For the score calculation
+            for term in like_patterns:
+                # For each term, add it for each condition in the CASE statement
+                params.extend(
+                    [f"%{term}%", f"%{term}%"] * 3
+                )  # For each of the 3 conditions
+
+            # For the WHERE clause
+            where_params = []
+            for term in like_patterns:
+                where_params.extend(
+                    [f"%{term}%"] * 3
+                )  # For each of the 3 fields we search in
+
+            # Combine all parameters: CASE params + WHERE params + min_score + limit
+            params = params * 2 + where_params + [min_score, limit]
 
             cursor.execute(query, params)
         else:
-            # No text query available, just return some documents
+            # No text query available, return random documents with metadata
             cursor.execute(
-                """
+                f"""
             WITH ranked_segments AS (
                 SELECT 
                     s.id, 
@@ -434,18 +517,25 @@ def search_segments(
                     s.segment_type, 
                     d.title, 
                     d.url,
+                    d.version,
+                    d.updated_at,
+                    d.is_library_doc,
+                    d.library_id,
+                    l.name as library_name,
                     0.1 AS score,
                     ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY RANDOM()) as rn
                 FROM document_segments s
                 JOIN documents d ON s.document_id = d.id
+                LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
+                {filter_clause}
             )
             SELECT * FROM ranked_segments 
-            WHERE rn = 1
+            WHERE rn = 1 AND score >= ?
             ORDER BY RANDOM()
             LIMIT ?
             """,
-                (limit,),
+                (min_score, limit) + tuple(filter_params),
             )
 
     # Fetch rows and close connection

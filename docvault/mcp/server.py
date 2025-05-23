@@ -11,7 +11,6 @@ from mcp.server.fastmcp import FastMCP
 
 import docvault.core.storage as storage
 from docvault import config
-from docvault.core.embeddings import search
 from docvault.core.library_manager import lookup_library_docs
 from docvault.core.scraper import get_scraper
 from docvault.db import operations
@@ -61,26 +60,117 @@ def create_server() -> FastMCP:
 
     # Add document search tool
     @server.tool()
-    async def search_documents(query: str, limit: int = 5) -> types.CallToolResult:
-        """Search documents in the vault using semantic search"""
+    async def search_documents(
+        query: Optional[str] = None,
+        limit: int = 5,
+        min_score: float = 0.0,
+        version: Optional[str] = None,
+        library: bool = False,
+        title_contains: Optional[str] = None,
+        updated_after: Optional[str] = None,
+    ) -> types.CallToolResult:
+        """Search documents in the vault using semantic search with metadata filtering.
+
+        Args:
+            query: The search query (optional if using filters)
+            limit: Maximum number of results to return (default: 5)
+            min_score: Minimum similarity score (0.0 to 1.0, default: 0.0)
+            version: Filter by document version
+            library: Only show library documentation
+            title_contains: Filter by document title containing text
+            updated_after: Filter by last updated after date (YYYY-MM-DD)
+
+        Examples:
+            search_documents("python sqlite", version="3.10")
+            search_documents(library=True, title_contains="API")
+            search_documents(updated_after="2023-01-01")
+        """
         try:
-            results = await search(query, limit=limit)
+            # Prepare document filters
+            doc_filter = {}
+            if version:
+                doc_filter["version"] = version
+            if library:
+                doc_filter["is_library_doc"] = True
+            if title_contains:
+                doc_filter["title_contains"] = title_contains
+            if updated_after:
+                try:
+                    from datetime import datetime
+
+                    # Parse and validate date format
+                    parsed_date = datetime.strptime(updated_after, "%Y-%m-%d")
+                    doc_filter["updated_after"] = parsed_date.strftime("%Y-%m-%d")
+                except ValueError as e:
+                    error_msg = f"Invalid date format. Use YYYY-MM-DD: {e}"
+                    logger.error(error_msg)
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=error_msg)],
+                        metadata={"success": False, "error": error_msg},
+                    )
+
+            # Use text-only search if no query but filters are provided
+            text_only = not bool(query) and bool(doc_filter)
+
+            # Import here to avoid circular imports
+            from docvault.core.embeddings import search
+
+            results = await search(
+                query=query,
+                limit=limit,
+                text_only=text_only,
+                min_score=min_score,
+                doc_filter=doc_filter if doc_filter else None,
+            )
 
             content_items = []
             for r in results:
-                result_text = f"Document: {r['title']} (ID: {r['document_id']})\n"
-                result_text += f"Score: {r['score']:.2f}\n"
-                result_text += f"Content: {r['content'][:200]}{'...' if len(r['content']) > 200 else ''}\n\n"
+                # Build metadata line
+                metadata_parts = []
+                if r.get("version"):
+                    metadata_parts.append(f"v{r['version']}")
+                if r.get("updated_at"):
+                    updated = (
+                        r["updated_at"].split("T")[0]
+                        if isinstance(r.get("updated_at"), str)
+                        else r.get("updated_at")
+                    )
+                    metadata_parts.append(f"updated: {updated}")
+                if r.get("is_library_doc") and r.get("library_name"):
+                    metadata_parts.append(f"library: {r['library_name']}")
+
+                result_text = f"Document: {r.get('title', 'Untitled')} (ID: {r.get('document_id', 'N/A')})\n"
+                if metadata_parts:
+                    result_text += f"{' • '.join(metadata_parts)}\n"
+                result_text += f"Score: {r.get('score', 0):.2f}\n"
+                result_text += f"Content: {r.get('content', '')[:200]}{'...' if len(r.get('content', '')) > 200 else ''}\n"
+                if r.get("section_title"):
+                    result_text += f"Section: {r['section_title']}\n"
+                result_text += "\n"
 
                 content_items.append(types.TextContent(type="text", text=result_text))
 
             # If no results, add a message
             if not content_items:
-                content_items.append(
-                    types.TextContent(
-                        type="text", text=f"No results found for '{query}'."
-                    )
-                )
+                if query:
+                    msg = f"No results found for '{query}'".strip()
+                else:
+                    msg = "No documents found matching the specified filters"
+
+                filter_msg = []
+                if version:
+                    filter_msg.append(f"version={version}")
+                if library:
+                    filter_msg.append("library=True")
+                if title_contains:
+                    filter_msg.append(f"title_contains={title_contains}")
+                if updated_after:
+                    filter_msg.append(f"updated_after={updated_after}")
+
+                if filter_msg:
+                    msg += f" with filters: {', '.join(filter_msg)}"
+
+                content_items.append(types.TextContent(type="text", text=msg))
 
             return types.CallToolResult(
                 content=content_items,
@@ -88,6 +178,7 @@ def create_server() -> FastMCP:
                     "success": True,
                     "result_count": len(results),
                     "query": query,
+                    "filters": doc_filter if doc_filter else {},
                 },
             )
         except Exception as e:
