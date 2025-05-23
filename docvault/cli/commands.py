@@ -611,7 +611,7 @@ def search_cmd(ctx):
 
 
 @search_cmd.command("lib")
-@click.argument("library_name", required=True)
+@click.argument("library_spec", required=True)
 @click.option("--version", help="Library version (default: latest)")
 @click.option(
     "--format",
@@ -619,76 +619,206 @@ def search_cmd(ctx):
     default="text",
     help="Output format (text or json)",
 )
-def search_lib(library_name, version, format):
-    """Search library documentation (formerly 'lookup')."""
-    import asyncio
+@click.option(
+    "--timeout", type=int, default=30, help="Timeout in seconds for the search"
+)
+def search_lib(library_spec, version, format, timeout):
+    """Search library documentation (formerly 'lookup').
 
+    The library can be specified with an optional version using the @ symbol:
+      dv search lib requests@2.31.0
+      dv search lib django@4.2
+
+    Or you can use the --version flag:
+      dv search lib django --version 4.2
+
+    Or just the library name for the latest version:
+      dv search lib fastapi
+
+    Examples:
+        # Different ways to specify versions
+        dv search lib requests
+        dv search lib django@4.2
+        dv search lib "django" --version 4.2
+
+        # Output formats
+        dv search lib fastapi --format json
+
+        # With timeout
+        dv search lib numpy --timeout 60
+    """
+    import asyncio
+    import json
+    from typing import Any, Dict, List, Tuple
+
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+
+    def parse_library_spec(spec: str) -> Tuple[str, str]:
+        """Parse library specification into (name, version) tuple.
+
+        Supports formats:
+        - library
+        - library@version
+        """
+        if "@" in spec:
+            name, version = spec.split("@", 1)
+            return name.strip(), version.strip()
+        return spec.strip(), "latest"
+
+    from docvault.core.exceptions import LibraryNotFoundError, VersionNotFoundError
     from docvault.core.library_manager import LibraryManager
 
-    async def run_lookup():
-        manager = LibraryManager()
-        docs = await manager.get_library_docs(library_name, version or "latest")
+    # Parse the library specification and handle version overrides
+    library_name, version_from_spec = parse_library_spec(library_spec)
+    version = version or version_from_spec
+
+    # If version is still None or empty, default to 'latest'
+    version = version or "latest"
+
+    async def fetch_documentation() -> List[Dict[str, Any]]:
+        """Fetch documentation with progress indication."""
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+        ) as progress:
+            # Show version in the progress message if it's not 'latest'
+            version_display = f" {version}" if version != "latest" else ""
+            task = progress.add_task(
+                f"[cyan]Searching for {library_name}{'@' + version_display if version_display else ''} documentation...",
+                total=None,
+            )
+
+            try:
+                manager = LibraryManager()
+                docs = await manager.get_library_docs(library_name, version or "latest")
+                progress.update(task, completed=1, description="[green]Done!")
+                return docs
+            except LibraryNotFoundError:
+                progress.stop()
+                error_msg = f"Library '{library_name}' not found"
+                if version != "latest":
+                    error_msg += f" (version: {version})"
+                console.print(f"[red]Error:[/] {error_msg}")
+                return []
+            except VersionNotFoundError as e:
+                progress.stop()
+                error_msg = str(e)
+                if "@" in error_msg and version != "latest":
+                    error_msg = error_msg.replace("version", f"version {version}")
+                console.print(f"[red]Error:[/] {error_msg}")
+                return []
+            except Exception as e:
+                progress.stop()
+                error_msg = str(e)
+                console.print(f"[red]Error fetching documentation:[/] {error_msg}")
+                if format == "json":
+                    print(
+                        json.dumps(
+                            {
+                                "status": "error",
+                                "error": error_msg,
+                                "library": library_name,
+                                "version": version,
+                            },
+                            indent=2,
+                        )
+                    )
+                return []
+
+    def format_json_output(docs: List[Dict[str, Any]]) -> None:
+        """Format and print results in JSON format."""
+        json_results = [
+            {
+                "title": doc.get("title") or "Untitled",
+                "url": doc.get("url", ""),
+                "version": doc.get("resolved_version", "unknown"),
+                "description": doc.get("description", ""),
+            }
+            for doc in docs
+        ]
+
+        output = {
+            "status": "success",
+            "count": len(json_results),
+            "library": library_name,
+            "version": version or "latest",
+            "results": json_results,
+        }
+        print(json.dumps(output, indent=2))
+
+    def format_text_output(docs: List[Dict[str, Any]]) -> None:
+        """Format and print results in a table."""
+        if not docs:
+            console.print(f"[yellow]No documentation found for {library_name}[/]")
+            return
+
+        from urllib.parse import urlparse
+
+        from rich.table import Table
+
+        # Create a more informative title with version if specified
+        title_parts = [f"Documentation for {library_name}"]
+        if version != "latest":
+            title_parts.append(f"(version {version})")
+
+        table = Table(
+            title=" ".join(title_parts).strip(),
+            show_header=True,
+            header_style="bold magenta",
+            expand=True,
+        )
+
+        table.add_column("Title", style="green", no_wrap=True)
+        table.add_column("URL", style="blue")
+        table.add_column("Version", style="cyan", justify="right")
+
+        for doc in docs:
+            title = doc.get("title", "Untitled")
+            url = doc.get("url", "")
+
+            # Truncate long URLs for display
+            if len(url) > 50:
+                parsed = urlparse(url)
+                short_url = f"{parsed.netloc}...{parsed.path[-30:]}"
+            else:
+                short_url = url
+
+            table.add_row(title, short_url, doc.get("resolved_version", "unknown"))
+
+        console.print(table)
+
+        if len(docs) > 0 and "url" in docs[0]:
+            console.print(
+                "\n[dim]Tip: Use 'dv add <url>' to import documentation locally[/]"
+            )
+
+    try:
+        # Run the async function with timeout
+        docs = asyncio.run(asyncio.wait_for(fetch_documentation(), timeout=timeout))
 
         if format == "json":
-            import json
+            format_json_output(docs)
+        else:
+            format_text_output(docs)
 
-            if not docs:
-                print(
-                    json.dumps(
-                        {
-                            "status": "success",
-                            "count": 0,
-                            "library": library_name,
-                            "version": version or "latest",
-                            "results": [],
-                        },
-                        indent=2,
-                    )
-                )
-                return
-
-            json_results = [
-                {
-                    "title": doc.get("title") or "Untitled",
-                    "url": doc.get("url"),
-                    "version": doc.get("resolved_version", "unknown"),
-                    "description": doc.get("description", ""),
-                }
-                for doc in docs
-            ]
-
+    except asyncio.TimeoutError:
+        console.print(
+            f"[red]Error:[/] Search timed out after {timeout} seconds. "
+            "Try increasing the timeout with --timeout"
+        )
+        if format == "json":
             print(
                 json.dumps(
                     {
-                        "status": "success",
-                        "count": len(json_results),
+                        "status": "error",
+                        "error": f"Search timed out after {timeout} seconds",
                         "library": library_name,
                         "version": version or "latest",
-                        "results": json_results,
                     },
                     indent=2,
                 )
             )
-            return
-
-        # Default text output
-        if not docs:
-            console.print(f"No documentation found for {library_name}")
-            return
-
-        table = Table(title=f"Documentation for {library_name}")
-        table.add_column("Title", style="green")
-        table.add_column("URL", style="blue")
-        table.add_column("Version", style="cyan")
-        for doc in docs:
-            table.add_row(
-                doc["title"] or "Untitled",
-                doc["url"],
-                doc.get("resolved_version", "unknown"),
-            )
-        console.print(table)
-
-    asyncio.run(run_lookup())
 
 
 @search_cmd.command("text")
