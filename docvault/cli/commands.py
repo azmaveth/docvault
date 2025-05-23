@@ -801,29 +801,124 @@ def search_text(query, limit, debug, text_only, context, format):
             )
         except Exception as e:
             console.print(f"[red]Error analyzing embedding: {e}")
-    table = Table(title=f"Search Results for '{query}'")
-    table.add_column("Score", style="cyan")
-    table.add_column("Title", style="green")
-    table.add_column("URL", style="blue")
-    table.add_column("Content", style="white")
+
+    from collections import defaultdict
+
+    # Group results by document and section
+    doc_results = defaultdict(
+        lambda: {"title": None, "url": None, "sections": defaultdict(list)}
+    )
+
     for result in results:
-        content_preview = result["content"]
-        if len(content_preview) > 100:
-            match_start = max(0, content_preview.lower().find(query.lower()))
-            if match_start == -1:
-                match_start = 0
-            start = max(0, match_start - 50 * context)
-            end = min(len(content_preview), match_start + len(query) + 50 * context)
-            prefix = "..." if start > 0 else ""
-            suffix = "..." if end < len(content_preview) else ""
-            content_preview = prefix + content_preview[start:end] + suffix
-        table.add_row(
-            f"{result['score']:.2f}",
-            result["title"] or "Untitled",
-            result["url"],
-            content_preview,
+        doc_id = result["document_id"]
+        doc_results[doc_id]["title"] = result.get("title") or "Untitled"
+        doc_results[doc_id]["url"] = result.get("url", "")
+
+        # Group by section path to avoid duplicate sections
+        section_path = result.get("section_path", "0")
+        doc_results[doc_id]["sections"][section_path].append(result)
+
+    # Display results by document and section
+    for doc_id, doc_info in doc_results.items():
+        doc_title = doc_info["title"]
+        doc_url = doc_info["url"]
+
+        # Document header with total matches
+        total_matches = sum(
+            len(section_hits) for section_hits in doc_info["sections"].values()
         )
-    console.print(table)
+        console.print(f"\n[bold green]📄 {doc_title}[/]")
+        console.print(f"[blue]{doc_url}[/]")
+        console.print(
+            f"[dim]Found {total_matches} matches in {len(doc_info['sections'])} sections[/]"
+        )
+
+        # Sort sections by their path for logical ordering
+        sorted_sections = sorted(
+            doc_info["sections"].items(),
+            key=lambda x: tuple(map(int, x[0].split("."))) if x[0].isdigit() else (0,),
+        )
+
+        # Display each section with its matches
+        for section_idx, (section_path, section_hits) in enumerate(sorted_sections, 1):
+            # Get the best hit for section info (usually the first one)
+            section_hit = section_hits[0]
+            section_title = section_hit.get("section_title", "Introduction")
+            section_level = section_hit.get("section_level", 1)
+            indent = "  " * (section_level - 1) if section_level > 1 else ""
+
+            # Section header with match count
+            console.print(f"\n{indent}📂 [bold]{section_title}[/]")
+            console.print(
+                f"{indent}[dim]  {len(section_hits)} matches • Section {section_path}[/]"
+            )
+
+            # Show top 3 matches in this section
+            for hit in sorted(
+                section_hits, key=lambda x: x.get("score", 0), reverse=True
+            )[:3]:
+                content_preview = hit["content"]
+                score = hit.get("score", 0)
+
+                # Truncate and highlight the content
+                if len(content_preview) > 200:
+                    match_start = max(0, content_preview.lower().find(query.lower()))
+                    if match_start == -1:
+                        match_start = 0
+                    start = max(0, match_start - 50)
+                    end = min(len(content_preview), match_start + len(query) + 50)
+
+                    # Get context around the match
+                    prefix = "..." if start > 0 else ""
+                    suffix = "..." if end < len(content_preview) else ""
+                    content = content_preview[start:end]
+
+                    # Highlight all query terms
+                    query_terms = query.lower().split()
+                    content_lower = content.lower()
+                    highlighted = []
+                    last_pos = 0
+
+                    # Find and highlight each term
+                    for term in query_terms:
+                        pos = content_lower.find(term, last_pos)
+                        if pos >= 0:
+                            highlighted.append(content[last_pos:pos])
+                            highlighted.append(
+                                f"[bold yellow]{content[pos:pos+len(term)]}[/]"
+                            )
+                            last_pos = pos + len(term)
+
+                    highlighted.append(content[last_pos:])
+                    content_preview = prefix + "".join(highlighted) + suffix
+
+                # Display the match with score
+                console.print(f"{indent}  • [dim]({score:.2f})[/] {content_preview}")
+
+            # Show navigation hints
+            if section_idx < len(sorted_sections):
+                next_section = sorted_sections[section_idx][1][0].get(
+                    "section_title", "Next section"
+                )
+                console.print(f"{indent}  [dim]↓ Next: {next_section}[/]")
+
+            console.print("")  # Add spacing between sections
+
+        # Document footer with navigation options
+        console.print("[dim]────────────────────────────────────────[/]")
+        console.print(
+            f"[dim]Document: {doc_title} • {len(doc_info['sections'])} sections with matches • [bold]d[/] to view document[/]"
+        )
+
+        # Add keyboard navigation hints
+        if len(doc_results) > 1:
+            console.print(
+                "[dim]Press [bold]n[/] for next document, [bold]q[/] to quit[/]"
+            )
+        else:
+            console.print("[dim]Press [bold]q[/] to quit[/]")
+
+        console.print("")  # Add spacing between documents
 
 
 @click.command(name="index", help="Index or re-index documents for improved search")

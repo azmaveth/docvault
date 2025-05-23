@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import html2text
 from bs4 import BeautifulSoup
@@ -42,61 +42,165 @@ def extract_title(html_content: str) -> Optional[str]:
     return None
 
 
-def segment_markdown(markdown_content: str) -> List[Tuple[str, str]]:
+def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
     """
-    Split markdown into segments for embedding
-    Returns list of (segment_type, content) tuples
+    Split markdown into segments with section hierarchy information.
+
+    Returns:
+        List of segment dictionaries with the following keys:
+        - type: Segment type ('h1', 'h2', ..., 'h6', 'text', 'code')
+        - content: The content of the segment
+        - section_title: Title of the current section (for non-header segments)
+        - section_level: Nesting level of the current section (1-6 for headers, 0 for text/code)
+        - section_path: Path-like string representing the section hierarchy (e.g., '1.2.3')
     """
     import re
+    from typing import Any, Dict, List, Optional
+
+    class Section:
+        def __init__(
+            self,
+            level: int,
+            title: str,
+            position: int,
+            parent: Optional["Section"] = None,
+        ):
+            self.level = level
+            self.title = title
+            self.position = position
+            self.parent = parent
+            self.children: List["Section"] = []
+            self.counter = 1
+
+            if parent:
+                parent.children.append(self)
+                # Find siblings to determine counter
+                siblings = [s for s in parent.children if s.level == level]
+                if len(siblings) > 1:
+                    self.counter = len(siblings)
+
+        def get_path(self) -> str:
+            """Get the section path as a string (e.g., '1.2.3')."""
+            if not self.parent:
+                return str(self.counter)
+            return f"{self.parent.get_path()}.{self.counter}"
 
     # Split by headers
     header_pattern = r"^(#{1,6})\s+(.+)$"
-    segments = []
+    segments: List[Dict[str, Any]] = []
     current_segment = []
     current_type = "text"
+    current_section: Optional[Section] = None
 
-    for line in markdown_content.split("\n"):
+    lines = markdown_content.split("\n")
+
+    for i, line in enumerate(lines):
         header_match = re.match(header_pattern, line)
 
         if header_match:
             # Save previous segment if it exists
             if current_segment:
-                segments.append((current_type, "\n".join(current_segment)))
+                segments.append(
+                    {
+                        "type": current_type,
+                        "content": "\n".join(current_segment),
+                        "section_title": (
+                            current_section.title if current_section else "Introduction"
+                        ),
+                        "section_level": (
+                            current_section.level if current_section else 0
+                        ),
+                        "section_path": (
+                            current_section.get_path() if current_section else ""
+                        ),
+                    }
+                )
+
+            # Create new section
+            level = len(header_match.group(1))
+            title = header_match.group(2).strip()
+
+            # Find the appropriate parent section
+            parent = current_section
+            while parent and parent.level >= level:
+                parent = parent.parent
+
+            current_section = Section(level, title, i, parent)
 
             # Start new segment with header
             current_segment = [line]
-            current_type = f"h{len(header_match.group(1))}"
+            current_type = f"h{level}"
         else:
             current_segment.append(line)
 
     # Add the last segment
     if current_segment:
-        segments.append((current_type, "\n".join(current_segment)))
+        segments.append(
+            {
+                "type": current_type,
+                "content": "\n".join(current_segment),
+                "section_title": (
+                    current_section.title if current_section else "Introduction"
+                ),
+                "section_level": current_section.level if current_section else 0,
+                "section_path": current_section.get_path() if current_section else "",
+            }
+        )
 
-    # Further process to separate code blocks
-    processed_segments = []
+    # Further process to separate code blocks and handle section inheritance
+    processed_segments: List[Dict[str, Any]] = []
     code_block_pattern = r"```.*?\n(.*?)```"
 
-    for segment_type, content in segments:
-        # Find code blocks
-        code_blocks = re.finditer(code_block_pattern, content, re.DOTALL)
-        last_end = 0
+    for segment in segments:
+        segment_type = segment["type"]
+        content = segment["content"]
 
+        # Find code blocks
+        code_blocks = list(re.finditer(code_block_pattern, content, re.DOTALL))
+
+        if not code_blocks:
+            # No code blocks, add the segment as is
+            processed_segments.append(segment)
+            continue
+
+        # Process text around code blocks
+        last_end = 0
         for match in code_blocks:
             # Add text before code block
             if match.start() > last_end:
-                text_before = content[last_end : match.start()]
-                if text_before.strip():
-                    processed_segments.append((segment_type, text_before))
+                text_before = content[last_end : match.start()].strip()
+                if text_before:
+                    processed_segments.append(
+                        {
+                            **segment,
+                            "type": segment_type,
+                            "content": text_before,
+                        }
+                    )
 
-            # Add code block
-            processed_segments.append(("code", match.group(1)))
+            # Add code block with same section info
+            code_content = match.group(1).strip()
+            if code_content:
+                processed_segments.append(
+                    {
+                        **segment,
+                        "type": "code",
+                        "content": code_content,
+                    }
+                )
+
             last_end = match.end()
 
-        # Add remaining text
+        # Add remaining text after last code block
         if last_end < len(content):
-            remaining = content[last_end:]
-            if remaining.strip():
-                processed_segments.append((segment_type, remaining))
+            remaining = content[last_end:].strip()
+            if remaining:
+                processed_segments.append(
+                    {
+                        **segment,
+                        "type": segment_type,
+                        "content": remaining,
+                    }
+                )
 
     return processed_segments or [(current_type, markdown_content)]

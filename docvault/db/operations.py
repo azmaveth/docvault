@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional
 
 from docvault import config
 
+# Set up logger
+logger = logging.getLogger(__name__)
+
 
 # Register adapter for datetime objects to fix deprecation warning in Python 3.12
 def adapt_datetime(dt):
@@ -182,41 +185,97 @@ def add_document_segment(
     embedding: bytes = None,
     segment_type: str = "text",
     position: int = 0,
+    section_title: str = None,
+    section_level: int = 1,
+    section_path: str = None,
+    parent_segment_id: int = None,
 ) -> int:
-    """Add a segment to a document"""
-    conn = get_connection()
-    cursor = conn.cursor()
+    """Add a segment to a document with optional section information
 
-    cursor.execute(
-        """
-    INSERT INTO document_segments 
-    (document_id, content, embedding, segment_type, position)
-    VALUES (?, ?, ?, ?, ?)
-    """,
-        (document_id, content, embedding, segment_type, position),
-    )
+    Args:
+        document_id: ID of the parent document
+        content: Text content of the segment
+        embedding: Optional embedding vector
+        segment_type: Type of segment (e.g., 'text', 'heading1', 'heading2')
+        position: Position within the document
+        section_title: Title of the section
+        section_level: Heading level (1 for h1, 2 for h2, etc.)
+        section_path: Path-like string representing the section hierarchy (e.g., '1.2.3')
+        parent_segment_id: ID of the parent segment (for nested sections)
 
-    segment_id = cursor.lastrowid
+    Returns:
+        int: The ID of the newly created segment
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    # Add to vector index if embedding is provided
-    if embedding is not None:
+        # Generate a default section title if not provided
+        if section_title is None:
+            if segment_type.startswith("h"):
+                # For headings, use the content as the section title
+                section_title = content.strip()
+            else:
+                section_title = "Introduction"
+
+        # Generate a default section path if not provided
+        if section_path is None:
+            section_path = str(position)
+
+        # Ensure section_level is an integer
         try:
-            dims = len(embedding) // 4  # Assuming float32 (4 bytes per dimension)
-            cursor.execute(
-                """
-            INSERT INTO document_segments_vec (id, embedding, dims, distance)
-            VALUES (?, ?, ?, ?)
+            section_level = int(section_level) if section_level is not None else 1
+        except (ValueError, TypeError):
+            section_level = 1
+
+        # Insert the segment
+        cursor.execute(
+            """
+            INSERT INTO document_segments 
+            (document_id, content, embedding, segment_type, position, 
+             section_title, section_level, section_path, parent_segment_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (segment_id, embedding, dims, "cosine"),
-            )
-        except sqlite3.OperationalError:
-            # Vector table might not exist if extension isn't loaded
-            pass
+            (
+                document_id,
+                content,
+                embedding,
+                segment_type,
+                position,
+                section_title,
+                section_level,
+                section_path,
+                parent_segment_id,
+            ),
+        )
 
-    conn.commit()
-    conn.close()
+        segment_id = cursor.lastrowid
 
-    return segment_id
+        # If we have the vector extension, add to the vector table
+        if embedding is not None:
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO document_segments_vec (id, embedding, dims, distance)
+                    VALUES (?, ?, ?, 'cosine')
+                    """,
+                    (segment_id, embedding, len(embedding) // 4),  # 4 bytes per float32
+                )
+            except Exception as vec_error:
+                logger.warning(f"Could not add vector data: {vec_error}")
+
+        conn.commit()
+        return segment_id
+
+    except Exception as e:
+        logger.error(f"Error adding document segment: {e}")
+        if conn:
+            conn.rollback()
+        raise
+    finally:
+        if conn:
+            conn.close()
 
 
 def search_segments(
@@ -232,18 +291,36 @@ def search_segments(
 
     if not use_text_search:
         try:
-            # Search using vector similarity
+            # Search using vector similarity with section information
             cursor.execute(
                 """
-            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
-                vec_cosine_similarity(v.embedding, ?) AS score
-            FROM document_segments_vec v
-            JOIN document_segments s ON v.id = s.id
-            JOIN documents d ON s.document_id = d.id
-            ORDER BY score DESC
-            LIMIT ?
+            WITH ranked_segments AS (
+                SELECT 
+                    s.id, 
+                    s.document_id, 
+                    s.content, 
+                    s.section_title,
+                    s.section_path,
+                    s.section_level,
+                    s.parent_segment_id,
+                    d.title, 
+                    d.url,
+                    vec_cosine_similarity(v.embedding, ?) AS score,
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY vec_cosine_similarity(v.embedding, ?) DESC) as rn
+                FROM document_segments_vec v
+                JOIN document_segments s ON v.id = s.id
+                JOIN documents d ON s.document_id = d.id
+                WHERE s.section_path IS NOT NULL
+                ORDER BY score DESC
+                LIMIT ?
+            )
+            SELECT * FROM ranked_segments WHERE rn = 1
             """,
-                (embedding, limit),
+                (
+                    embedding,
+                    embedding,
+                    limit * 3,
+                ),  # Get more results to account for section grouping
             )
 
             rows = cursor.fetchall()
@@ -278,8 +355,19 @@ def search_segments(
 
             # Construct the query dynamically based on number of terms
             base_query = """
-            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
-                   (CASE 
+            WITH ranked_segments AS (
+                SELECT 
+                    s.id, 
+                    s.document_id, 
+                    s.content, 
+                    s.section_title,
+                    s.section_path,
+                    s.section_level,
+                    s.parent_segment_id,
+                    s.segment_type, 
+                    d.title, 
+                    d.url,
+                    (CASE 
             """
 
             # Score for exact matches
@@ -290,14 +378,24 @@ def search_segments(
             # Add default case
             score_cases.append("ELSE 0.5 END) AS score")
 
-            # Complete the query
+            # Complete the query with section filtering
             query = (
                 base_query
                 + "\n".join(score_cases)
                 + """
-            FROM document_segments s
-            JOIN documents d ON s.document_id = d.id
-            WHERE """
+                    END) AS score,
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY 
+                        (CASE 
+            """
+                + "\n".join(score_cases)
+                + """
+                        END) DESC
+                    ) as rn
+                FROM document_segments s
+                JOIN documents d ON s.document_id = d.id
+                WHERE s.section_path IS NOT NULL
+                AND (
+            """
             )
 
             # Add WHERE conditions for each term with OR
@@ -307,6 +405,11 @@ def search_segments(
 
             query += " OR ".join(where_clauses)
             query += """
+                )
+                GROUP BY s.document_id, s.section_path
+            )
+            SELECT * FROM ranked_segments 
+            WHERE rn = 1
             ORDER BY score DESC
             LIMIT ?
             """
@@ -319,10 +422,26 @@ def search_segments(
             # No text query available, just return some documents
             cursor.execute(
                 """
-            SELECT s.id, s.document_id, s.content, s.segment_type, d.title, d.url,
-                   0.1 AS score
-            FROM document_segments s
-            JOIN documents d ON s.document_id = d.id
+            WITH ranked_segments AS (
+                SELECT 
+                    s.id, 
+                    s.document_id, 
+                    s.content, 
+                    s.section_title,
+                    s.section_path,
+                    s.section_level,
+                    s.parent_segment_id,
+                    s.segment_type, 
+                    d.title, 
+                    d.url,
+                    0.1 AS score,
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY RANDOM()) as rn
+                FROM document_segments s
+                JOIN documents d ON s.document_id = d.id
+                WHERE s.section_path IS NOT NULL
+            )
+            SELECT * FROM ranked_segments 
+            WHERE rn = 1
             ORDER BY RANDOM()
             LIMIT ?
             """,

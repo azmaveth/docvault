@@ -27,9 +27,11 @@ DocVault is designed to help AI assistants and developers access up-to-date docu
 - **Web Scraper**: Fetch and store documentation from URLs
 - **Document Storage**: Store HTML and Markdown versions
 - **Vector Search**: Semantic search using document embeddings
+- **Section Navigation**: Hierarchical document sections with parent-child relationships
 - **MCP Server**: Expose functionality to AI assistants through Model Context Protocol
 - **Library Manager**: Automatically fetch library documentation
 - **CLI Interface**: Command-line tool for document management
+- **Database Migrations**: Automatic schema updates with versioning
 
 ## Installation
 
@@ -536,6 +538,46 @@ For testing and debugging, you can use the [mcp-inspector](https://github.com/mo
 3. In the inspector interface, connect to `http://localhost:8000`
 
 4. You'll be able to explore available tools, resources, and test interactions with your DocVault server.
+
+## Document Sections
+
+DocVault now supports hierarchical document sections, making it easier to navigate and reference specific parts of your documents. This feature is particularly useful for large documentation sets.
+
+### Key Features
+
+- **Section Hierarchy**: Documents are automatically divided into sections with parent-child relationships
+- **Automatic Section Detection**: Headings (h1, h2, etc.) are automatically detected and used to create the section structure
+- **Section Metadata**: Each section includes:
+  - Title
+  - Level (1-6, corresponding to HTML heading levels)
+  - Path (e.g., "1.2.3" for the third subsection of the second section)
+  - Parent section reference
+
+### Using Sections in Queries
+
+When searching documents, you can now include section information in your results:
+
+```python
+# Get all sections for a document
+sections = get_document_sections(document_id)
+
+# Each section includes:
+# - id: Unique identifier
+# - document_id: Parent document ID
+# - section_title: The section title
+# - section_level: The heading level (1-6)
+# - section_path: The hierarchical path (e.g., "1.2.3")
+# - parent_segment_id: ID of the parent section (None for top-level sections)
+```
+
+### Database Schema
+
+The section information is stored in the `document_segments` table with these additional columns:
+
+- `section_title`: The title of the section (usually from the heading text)
+- `section_level`: The heading level (1-6)
+- `section_path`: A path-like string representing the section's position in the hierarchy
+- `parent_segment_id`: Foreign key to the parent segment (for nested sections)
 
 ## Available MCP Tools
 

@@ -99,16 +99,52 @@ class WebScraper:
                 )
                 self.stats["pages_scraped"] += 1
                 segments = processor.segment_markdown(markdown_content)
-                for i, (stype, content) in enumerate(segments):
+                parent_segments = {}  # Track parent segments by level
+
+                for i, segment in enumerate(segments):
+                    content = segment["content"]
                     if len(content.strip()) < 3:
                         continue
+
+                    # Get section information
+                    section_title = segment.get("section_title", "Introduction")
+                    section_level = segment.get("section_level", 0)
+                    section_path = segment.get("section_path", "")
+                    segment_type = segment.get("type", "text")
+
+                    # Update parent segments tracking
+                    if segment_type.startswith("h"):
+                        level = int(segment_type[1:])
+                        parent_segments[level] = {
+                            "title": section_title,
+                            "path": section_path,
+                        }
+
+                    # Get parent segment ID from the hierarchy
+                    parent_segment_id = None
+                    if section_level > 1:
+                        # Find the nearest parent level
+                        for lvl in range(section_level - 1, 0, -1):
+                            if lvl in parent_segments:
+                                # In a real implementation, we'd look up the segment ID
+                                # For now, we'll just track the path
+                                parent_segment_id = None  # Will be set by the database
+                                break
+
+                    # Generate embedding for the content
                     embedding = await embeddings.generate_embeddings(content)
+
+                    # Add the segment with section information
                     operations.add_document_segment(
                         document_id=document_id,
                         content=content,
                         embedding=embedding,
-                        segment_type=stype,
+                        segment_type=segment_type,
                         position=i,
+                        section_title=section_title,
+                        section_level=section_level,
+                        section_path=section_path,
+                        parent_segment_id=parent_segment_id,
                     )
                     self.stats["segments_created"] += 1
                 # Crawl additional wiki pages
@@ -144,16 +180,54 @@ class WebScraper:
                     )
                     self.stats["pages_scraped"] += 1
                     segments = processor.segment_markdown(md_content)
-                    for i, (stype, content) in enumerate(segments):
+                    parent_segments = {}  # Track parent segments by level
+
+                    for i, segment in enumerate(segments):
+                        content = segment["content"]
                         if len(content.strip()) < 3:
                             continue
+
+                        # Get section information
+                        section_title = segment.get("section_title", "Introduction")
+                        section_level = segment.get("section_level", 0)
+                        section_path = segment.get("section_path", "")
+                        segment_type = segment.get("type", "text")
+
+                        # Update parent segments tracking
+                        if segment_type.startswith("h"):
+                            level = int(segment_type[1:])
+                            parent_segments[level] = {
+                                "title": section_title,
+                                "path": section_path,
+                            }
+
+                        # Get parent segment ID from the hierarchy
+                        parent_segment_id = None
+                        if section_level > 1:
+                            # Find the nearest parent level
+                            for lvl in range(section_level - 1, 0, -1):
+                                if lvl in parent_segments:
+                                    # In a real implementation, we'd look up the segment ID
+                                    # For now, we'll just track the path
+                                    parent_segment_id = (
+                                        None  # Will be set by the database
+                                    )
+                                    break
+
+                        # Generate embedding for the content
                         embedding = await embeddings.generate_embeddings(content)
+
+                        # Add the segment with section information
                         operations.add_document_segment(
                             document_id=document_id,
                             content=content,
                             embedding=embedding,
-                            segment_type=stype,
+                            segment_type=segment_type,
                             position=i,
+                            section_title=section_title,
+                            section_level=section_level,
+                            section_path=section_path,
+                            parent_segment_id=parent_segment_id,
                         )
                         self.stats["segments_created"] += 1
                     await self._process_github_repo_structure(

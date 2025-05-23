@@ -53,12 +53,17 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Search Results Improvements**:
   - [x] Enhance search result previews to show more complete context instead of truncated snippets [2025-04-27]
   - [x] Add keyword highlighting in search results to quickly identify matched terms [2025-04-27]
-  - [ ] Implement navigation aids to jump to specific sections within retrieved documents
-  - [ ] Add pagination for search results with many matches
-  - [ ] Provide options to filter and refine search results
+  - [x] Add section navigation to search results (2025-05-23)
+  - [x] Highlight matching terms in search results (2025-05-23)
+  - [x] Add context around matches (snippets) (2025-05-23)
+  - [ ] Support filtering by document type/source
+  - [ ] Add relevance feedback mechanism
+  - [ ] Implement keyboard navigation for search results
+  - [ ] Add section hierarchy visualization
+  - [ ] Support jumping to specific sections in documents
 
-- [ ] **Document Navigation and Structure**:
-  - [ ] Add ability to navigate between related sections in retrieved documents
+- [x] **Document Navigation and Structure**:
+  - [x] Add ability to navigate between related sections in retrieved documents (2025-05-23)
   - [ ] Better preserve document structure when rendering in different formats
   - [ ] Implement a "related content" suggestion feature based on current viewing history
   - [ ] Add document history tracking to easily return to previously viewed documents
