@@ -214,23 +214,130 @@ def _scrape(url, depth, max_links, quiet, strict_path):
     help="Only follow links within same URL hierarchy",
 )
 def import_cmd(url, depth, max_links, quiet, strict_path):
-    """Import documentation from a URL into the vault."""
+    """Import documentation from a URL into the vault.
+
+    Examples:
+        dv add https://docs.python.org/3/library/
+        dv import https://elixir-lang.org/docs --depth=2
+    """
+    import socket
+    import ssl
+    from urllib.parse import urlparse
+
+    import aiohttp
+
+    # Set up logging
     if quiet:
         logging.basicConfig(level=logging.WARNING)
     else:
-        console.print(f"Importing [bold blue]{url}[/] with depth {depth}...")
+        console.print(f"🌐 Importing [bold blue]{url}[/] with depth {depth}...")
         logging.basicConfig(level=logging.INFO)
+
+    # Validate URL format
+    try:
+        parsed_url = urlparse(url)
+        if not all([parsed_url.scheme, parsed_url.netloc]):
+            console.print(
+                "❌ Error: Invalid URL format. Please include http:// or https://",
+                style="bold red",
+            )
+            return
+    except Exception as e:
+        console.print(f"❌ Error: Invalid URL - {str(e)}", style="bold red")
+        return
+
     try:
         logging.getLogger("docvault").setLevel(logging.ERROR)
         from docvault.core.scraper import get_scraper
 
         with console.status("[bold blue]Importing documents...[/]", spinner="dots"):
-            scraper = get_scraper()
-            document = asyncio.run(
-                scraper.scrape_url(
-                    url, depth, max_links=max_links, strict_path=strict_path
+            try:
+                scraper = get_scraper()
+                document = asyncio.run(
+                    scraper.scrape_url(
+                        url, depth, max_links=max_links, strict_path=strict_path
+                    )
                 )
-            )
+            except aiohttp.ClientError as e:
+                if "Cannot connect to host" in str(e):
+                    console.print(
+                        "❌ Error: Could not connect to the server. Please check your internet connection and try again.",
+                        style="bold red",
+                    )
+                    return
+                elif "SSL" in str(e):
+                    console.print(
+                        "❌ Error: SSL certificate verification failed. The website might be using a self-signed certificate.",
+                        style="bold red",
+                    )
+                    console.print(
+                        "  Try using a different URL or check if the website is accessible from your browser.",
+                        style="yellow",
+                    )
+                    return
+                else:
+                    raise
+            except ssl.SSLError as e:
+                console.print(
+                    "❌ Error: SSL certificate verification failed.", style="bold red"
+                )
+                console.print(f"  Details: {str(e)}", style="yellow")
+                console.print(
+                    "  This might happen with self-signed certificates or outdated SSL configurations.",
+                    style="yellow",
+                )
+                return
+            except socket.gaierror:
+                console.print(
+                    "❌ Error: Could not resolve the hostname. Please check the URL and your network connection.",
+                    style="bold red",
+                )
+                return
+            except asyncio.TimeoutError:
+                console.print(
+                    "❌ Error: The request timed out. The server might be taking too long to respond.",
+                    style="bold red",
+                )
+                console.print(
+                    "  You can try again later or check if the website is currently available.",
+                    style="yellow",
+                )
+                return
+            except Exception as e:
+                if "404" in str(e) or "Not Found" in str(e):
+                    console.print(
+                        "❌ Error: The requested page was not found (404). Please check the URL and try again.",
+                        style="bold red",
+                    )
+                    return
+                elif "403" in str(e) or "Forbidden" in str(e):
+                    console.print(
+                        "❌ Error: Access to this resource is forbidden (403). You might need authentication.",
+                        style="bold red",
+                    )
+                    console.print(
+                        "  Some documentation sites require authentication or have rate limiting.",
+                        style="yellow",
+                    )
+                    return
+                elif "401" in str(e) or "Unauthorized" in str(e):
+                    console.print(
+                        "❌ Error: Authentication required. This resource needs credentials.",
+                        style="bold red",
+                    )
+                    return
+                elif "429" in str(e) or "Too Many Requests" in str(e):
+                    console.print(
+                        "❌ Error: Too many requests. The server is rate limiting your connection.",
+                        style="bold red",
+                    )
+                    console.print(
+                        "  Please wait a few minutes and try again.", style="yellow"
+                    )
+                    return
+                else:
+                    raise
+
         if document:
             table = Table(title=f"Import Results for {url}")
             table.add_column("Metric", style="green")
@@ -244,17 +351,36 @@ def import_cmd(url, depth, max_links, quiet, strict_path):
             )
             console.print(table)
             console.print(
-                f"✅ Primary document: [bold green]{document['title']}[/] (ID: {document['id']})"
+                f"✅ Successfully imported: [bold green]{document['title']}[/] (ID: {document['id']})"
             )
-        else:
-            console.print("❌ Failed to import document", style="bold red")
-    except KeyboardInterrupt:
-        console.print("\nImport interrupted by user", style="yellow")
-    except Exception as e:
-        import traceback
 
-        console.print(f"❌ Error: {e}", style="bold red")
-        console.print(traceback.format_exc(), style="yellow")
+            # Provide helpful next steps
+            if not quiet:
+                console.print("\n[bold]Next steps:[/]")
+                console.print(
+                    "  • Search content: [cyan]dv search 'your search term'[/]"
+                )
+                console.print(f"  • View document: [cyan]dv read {document['id']}[/]")
+                console.print("  • List all documents: [cyan]dv list[/]")
+        else:
+            console.print(
+                "❌ Failed to import document. The page might not contain any indexable content.",
+                style="bold red",
+            )
+            console.print(
+                "  Try checking the URL in a web browser to verify it's accessible.",
+                style="yellow",
+            )
+
+    except KeyboardInterrupt:
+        console.print("\n🛑 Import was cancelled by the user", style="yellow")
+    except Exception as e:
+        console.print(f"❌ An unexpected error occurred: {str(e)}", style="bold red")
+        if not quiet:
+            import traceback
+
+            console.print("\n[bold]Technical details:[/]")
+            console.print(traceback.format_exc(), style="dim")
 
 
 @click.command()
