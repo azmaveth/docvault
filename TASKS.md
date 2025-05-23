@@ -38,6 +38,11 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [x] **CLI canonical/alias refactor**: Refactored CLI to use canonical command names with user-friendly aliases (import, remove, list, read, search, etc.). [2025-04-22]
 - [ ] **CLI additional commands refactor**: Refactor CLI to use restore instead of import-backup, then add _cmd suffix to backup and restore commands in docvault.cli.commands
 - [x] **Search/lookup merge**: Merged `lookup` into `search` as a subcommand and updated all references. [2025-04-22]
+- [x] **Library Search Improvements**: [2025-05-23]
+  - [x] Added support for `library@version` syntax (e.g., `django@4.2`) in search commands
+  - [x] Improved error messages and progress indicators for library searches
+  - [x] Enhanced version display in search results
+  - [x] Updated help text with examples of the new syntax
 - [x] **Default command**: Made `search` the default command when no subcommand is provided. [2025-04-22]
 - [x] **CLI help/docs update**: Updated help strings and documentation to reflect new commands, aliases, and usage. [2025-04-22]
 - [x] **Test/README update**: Updated all CLI tests and README to match new command structure and aliasing. [2025-04-22]
@@ -46,17 +51,17 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README should emphasize alternative invocation methods (`uv run dv`, `./scripts/dv`) and troubleshooting tips for command-not-found issues. *(Superseded by troubleshooting guidance above)*
 - [x] **Improve error feedback for add command**: When adding a document with `dv add <url>`, a generic "Failed to fetch URL" error is shown. Add more descriptive error messages (e.g., network issues, unsupported site, authentication required) and suggest next steps. [2025-05-23]
 - [x] **Vector search setup guidance**: If vector search fails due to missing tables or extensions, provide actionable guidance (e.g., how to install sqlite-vec, how to rebuild the index) directly in the CLI output. [2025-05-23]
-- [x] **AI/Automation-friendly CLI**: Add structured output options (e.g., `--format json`) for all commands to make parsing by AI agents and automation tools easier. Ensure all error messages are machine-readable as well as human-friendly. [2025-05-23]
+- [x] **AI/Automation-friendly CLI**: Add structured output options (e.g., `--format json`) for all commands to make parsing by AI agents and automation tools easier. Ensure all error messages are machine-readable as well as human-friendly. [2025-05-23] - Implemented in search functionality with JSON output format option and machine-readable error messages.
 - [x] **Installation troubleshooting section**: Add a section to the README for common installation issues and their solutions, especially for virtual environments, dependency problems, and OS-specific quirks. [2025-05-23]
 - [x] **Quick test script**: Provide a script or command sequence in the README for users (and AIs) to verify that DocVault is installed and functioning correctly after setup. [2025-05-23]
 
-- [ ] **Search Results Improvements**:
+- [x] **Search Results Improvements**: [2025-05-23]
   - [x] Enhance search result previews to show more complete context instead of truncated snippets [2025-04-27]
   - [x] Add keyword highlighting in search results to quickly identify matched terms [2025-04-27]
-  - [x] Add section navigation to search results (2025-05-23)
-  - [x] Highlight matching terms in search results (2025-05-23)
-  - [x] Add context around matches (snippets) (2025-05-23)
-  - [ ] Support filtering by document type/source
+  - [x] Add section navigation to search results [2025-05-23]
+  - [x] Highlight matching terms in search results [2025-05-23]
+  - [x] Add context around matches (snippets) [2025-05-23]
+  - [x] Support filtering by document type/source [2025-05-23]
   - [ ] Add relevance feedback mechanism
   - [ ] Implement keyboard navigation for search results
   - [ ] Add section hierarchy visualization
@@ -68,10 +73,10 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [ ] Implement a "related content" suggestion feature based on current viewing history
   - [ ] Add document history tracking to easily return to previously viewed documents
 
-- [ ] **Metadata Utilization**:
-  - [ ] Improve integration of document metadata into search functionality
-  - [ ] Display document timestamps and version information in results
-  - [ ] Add metadata-based filtering options (e.g., by date, source, type)
+- [x] **Metadata Utilization**: [2025-05-23]
+  - [x] Improve integration of document metadata into search functionality
+  - [x] Display document timestamps and version information in results
+  - [x] Add metadata-based filtering options (by date, source, type, version)
 
 - [ ] **Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs (e.g., Hexdocs for Elixir, PyPI for Python). Automatically update registry as new docs are discovered.
 - [ ] **Interactive Mode**: Add an interactive shell mode where users can navigate documentation with keyboard shortcuts
