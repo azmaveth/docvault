@@ -4,4 +4,5 @@
 resolution = "highest"
 
 # Use compiled bytecode for performance
-compile-bytecode = true
+# Disabled to prevent "Bytecode compiled" messages on every run
+compile-bytecode = false

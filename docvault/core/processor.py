@@ -203,4 +203,16 @@ def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
                     }
                 )
 
-    return processed_segments or [(current_type, markdown_content)]
+    # Return consistent dictionary format
+    if not processed_segments:
+        # Return a single segment with the entire content
+        return [
+            {
+                "type": "text",
+                "content": markdown_content,
+                "section_title": "Introduction",
+                "section_level": 0,
+                "section_path": "",
+            }
+        ]
+    return processed_segments

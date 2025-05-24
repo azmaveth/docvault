@@ -115,35 +115,43 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     """Migration to v1: Add section support to document segments."""
     cursor = conn.cursor()
 
-    # Add new columns to document_segments
-    cursor.execute(
-        """
-    ALTER TABLE document_segments 
-    ADD COLUMN section_title TEXT
-    """
-    )
+    # Check if columns already exist
+    cursor.execute("PRAGMA table_info(document_segments)")
+    columns = {row[1] for row in cursor.fetchall()}
 
-    cursor.execute(
+    # Add new columns to document_segments only if they don't exist
+    if "section_title" not in columns:
+        cursor.execute(
+            """
+        ALTER TABLE document_segments 
+        ADD COLUMN section_title TEXT
         """
-    ALTER TABLE document_segments 
-    ADD COLUMN section_level INTEGER DEFAULT 1
-    """
-    )
+        )
 
-    cursor.execute(
+    if "section_level" not in columns:
+        cursor.execute(
+            """
+        ALTER TABLE document_segments 
+        ADD COLUMN section_level INTEGER DEFAULT 1
         """
-    ALTER TABLE document_segments 
-    ADD COLUMN section_path TEXT
-    """
-    )
+        )
 
-    cursor.execute(
+    if "section_path" not in columns:
+        cursor.execute(
+            """
+        ALTER TABLE document_segments 
+        ADD COLUMN section_path TEXT
         """
-    ALTER TABLE document_segments 
-    ADD COLUMN parent_segment_id INTEGER
-    REFERENCES document_segments(id) ON DELETE SET NULL
-    """
-    )
+        )
+
+    if "parent_segment_id" not in columns:
+        cursor.execute(
+            """
+        ALTER TABLE document_segments 
+        ADD COLUMN parent_segment_id INTEGER
+        REFERENCES document_segments(id) ON DELETE SET NULL
+        """
+        )
 
     # Create indexes for section navigation
     cursor.execute(

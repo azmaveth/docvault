@@ -366,7 +366,21 @@ class WebScraper:
         self.stats["pages_scraped"] += 1
         # Segment and embed content
         segments = processor.segment_markdown(markdown_content)
-        for i, (stype, content) in enumerate(segments):
+        for i, segment in enumerate(segments):
+            # Handle both dictionary and tuple formats for backward compatibility
+            if isinstance(segment, dict):
+                stype = segment.get("type", "text")
+                content = segment.get("content", "")
+                section_title = segment.get("section_title")
+                section_level = segment.get("section_level", 0)
+                section_path = segment.get("section_path")
+            else:
+                # Legacy tuple format (stype, content)
+                stype, content = segment
+                section_title = None
+                section_level = 0
+                section_path = None
+
             if len(content.strip()) < 3:
                 continue
             embedding = await embeddings.generate_embeddings(content)
@@ -376,6 +390,9 @@ class WebScraper:
                 embedding=embedding,
                 segment_type=stype,
                 position=i,
+                section_title=section_title,
+                section_level=section_level,
+                section_path=section_path,
             )
             self.stats["segments_created"] += 1
         self.visited_urls.add(url)

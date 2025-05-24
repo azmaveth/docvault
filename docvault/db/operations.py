@@ -124,7 +124,8 @@ def delete_document(document_id: int) -> bool:
             for segment_id in segment_ids:
                 try:
                     cursor.execute(
-                        "DELETE FROM document_segments_vec WHERE id = ?", (segment_id,)
+                        "DELETE FROM document_segments_vec WHERE rowid = ?",
+                        (segment_id,),
                     )
                 except sqlite3.OperationalError:
                     # Vector table might not exist
@@ -257,10 +258,10 @@ def add_document_segment(
             try:
                 cursor.execute(
                     """
-                    INSERT INTO document_segments_vec (id, embedding, dims, distance)
-                    VALUES (?, ?, ?, 'cosine')
+                    INSERT INTO document_segments_vec (rowid, embedding)
+                    VALUES (?, ?)
                     """,
-                    (segment_id, embedding, len(embedding) // 4),  # 4 bytes per float32
+                    (segment_id, embedding),
                 )
             except Exception as vec_error:
                 logger.warning(f"Could not add vector data: {vec_error}")
@@ -330,10 +331,23 @@ def search_segments(
 
     if not use_text_search:
         try:
+            # Debug: log the query
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Vector search with {len(filter_params)} filter params")
+
             # Search using vector similarity with section information
             cursor.execute(
                 f"""
-            WITH ranked_segments AS (
+            WITH vector_matches AS (
+                SELECT 
+                    rowid,
+                    distance
+                FROM document_segments_vec 
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+            ),
+            ranked_segments AS (
                 SELECT 
                     s.id, 
                     s.document_id, 
@@ -349,31 +363,29 @@ def search_segments(
                     d.is_library_doc,
                     d.library_id,
                     l.name as library_name,
-                    vec_cosine_similarity(v.embedding, ?) AS score,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY vec_cosine_similarity(v.embedding, ?) DESC) as rn
-                FROM document_segments_vec v
-                JOIN document_segments s ON v.id = s.id
+                    (2.0 - v.distance) / 2.0 AS score,  -- Convert distance [0,2] to similarity [0,1]
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY v.distance) as rn
+                FROM vector_matches v
+                JOIN document_segments s ON v.rowid = s.id
                 JOIN documents d ON s.document_id = d.id
                 LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
                 {filter_clause}
-                ORDER BY score DESC
-                LIMIT ?
             )
             SELECT * FROM ranked_segments 
             WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
+            LIMIT ?
             """,
-                (
-                    embedding,
-                    embedding,
-                    limit * 3,  # Get more results to account for section grouping
-                    min_score,
-                )
-                + tuple(filter_params),
+                (embedding, limit * 10)  # Get more results for filtering
+                + tuple(filter_params)
+                + (min_score, limit),
             )
 
             rows = cursor.fetchall()
+
+            # Debug: log results
+            logger.debug(f"Vector search returned {len(rows)} rows")
 
             # If we got results, return them
             if len(rows) > 0:
@@ -438,18 +450,22 @@ def search_segments(
                 score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i*0.5}")
 
             # Add default case
-            score_cases.append("ELSE 0.5 END) AS score")
+            score_cases.append("ELSE 0.5")
+
+            # Build score cases for ORDER BY (without the END)
+            order_score_cases = score_cases.copy()
 
             # Complete the query with section filtering
             query = (
                 base_query
                 + "\n".join(score_cases)
+                + " END) AS score"
                 + """
-                    END) AS score,
+                    ,
                     ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY 
                         (CASE 
                 """
-                + "\n".join(score_cases)
+                + "\n".join(order_score_cases)
                 + f"""
                         END) DESC
                     ) as rn
@@ -483,12 +499,23 @@ def search_segments(
 
             # Prepare all parameters - for each term, we need to add it multiple times for each condition
             params = []
-            # For the score calculation
+            # For the score calculation in SELECT clause
             for term in like_patterns:
-                # For each term, add it for each condition in the CASE statement
+                # For each term, we have 3 WHEN conditions, each checking 2 fields for first two, 1 for the third
                 params.extend(
-                    [f"%{term}%", f"%{term}%"] * 3
-                )  # For each of the 3 conditions
+                    [f"%{term}%", f"%{term}%"]
+                )  # First WHEN: content LIKE ? AND section_title LIKE ?
+                params.extend(
+                    [f"%{term}%", f"%{term}%"]
+                )  # Second WHEN: content LIKE ? AND title LIKE ?
+                params.append(f"%{term}%")  # Third WHEN: content LIKE ?
+
+            # For the score calculation in ORDER BY clause (same as above)
+            order_params = []
+            for term in like_patterns:
+                order_params.extend([f"%{term}%", f"%{term}%"])  # First WHEN
+                order_params.extend([f"%{term}%", f"%{term}%"])  # Second WHEN
+                order_params.append(f"%{term}%")  # Third WHEN
 
             # For the WHERE clause
             where_params = []
@@ -497,8 +524,14 @@ def search_segments(
                     [f"%{term}%"] * 3
                 )  # For each of the 3 fields we search in
 
-            # Combine all parameters: CASE params + WHERE params + min_score + limit
-            params = params * 2 + where_params + [min_score, limit]
+            # Combine all parameters: SELECT CASE params + ORDER BY CASE params + filter params + WHERE params + min_score + limit
+            params = (
+                params
+                + order_params
+                + filter_params
+                + where_params
+                + [min_score, limit]
+            )
 
             cursor.execute(query, params)
         else:

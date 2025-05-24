@@ -188,6 +188,13 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates.
 - [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.
 
+- [x] **Fix Critical Bugs Found in QA**:
+  - [x] Fix scraper segment unpacking error by updating scraper.py to handle dictionary format from processor
+  - [x] Fix SQL syntax error in text search fallback
+  - [x] Fix sqlite-vec extension loading issue for direct `dv` command execution
+  - [x] Fix Rich progress display conflicts in import-deps command
+  - [x] Fix inconsistent return type in processor.py segment_markdown function
+
 - [x] **Fix Vector Search**: Resolve the vector search issue to improve search relevance
   - [x] Properly initialize document_segments_vec table
   - [x] Add index regeneration command
@@ -247,6 +254,24 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 3. **Documentation Website Scraping**: The current scraper has trouble with specialized documentation websites.
 4. **Vector Search Issues**: There's a vector search issue showing "no such table: document_segments_vec" during search operations.
 5. **Installation Complexity**: There are challenges with environment setup and dependency management.
+
+## Bugs Found During QA Testing (2025-05-24)
+
+### Critical Bugs
+
+1. **Scraper Segment Unpacking Error**: The scraper fails with `ValueError: too many values to unpack (expected 2)` when trying to add documents. This appears to be due to a mismatch between the processor returning dictionaries and the scraper expecting tuples after the section support feature was added. (File: docvault/core/scraper.py:369)
+
+2. **SQL Syntax Error in Text Search**: Text search fails with `sqlite3.OperationalError: near "END": syntax error` when falling back from vector search. (File: docvault/db/operations.py:503)
+
+### Medium Priority Bugs
+
+1. **sqlite-vec Extension Loading Issue**: The sqlite-vec extension fails to load even when installed, causing vector search to fail. The extension works when using `uv run` but not when calling `dv` directly. This affects the search and index commands.
+
+2. **Rich Progress Display Conflict**: The import-deps command fails with `rich.errors.LiveError: Only one live display may be active at once` when using verbose mode. (File: docvault/project.py:485)
+
+### Minor Issues
+
+1. **Inconsistent Return Type in processor.py**: The `segment_markdown` function returns a list of dictionaries normally but falls back to returning a list of tuples `[(current_type, markdown_content)]` on line 206, causing type inconsistency.
 
 ## Documentation and Onboarding
 

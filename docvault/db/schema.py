@@ -90,11 +90,8 @@ def initialize_database(force_recreate=False):
     try:
         conn.execute(
             """
-        CREATE VIRTUAL TABLE IF NOT EXISTS document_segments_vec USING vec(
-            id INTEGER PRIMARY KEY,
-            embedding BLOB,
-            dims INTEGER,
-            distance TEXT
+        CREATE VIRTUAL TABLE IF NOT EXISTS document_segments_vec USING vec0(
+            embedding float[768] distance=cosine
         );
         """
         )

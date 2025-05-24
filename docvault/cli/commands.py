@@ -160,6 +160,7 @@ def import_deps_cmd(
                     include_dev=include_dev,
                     force=force,
                     skip_existing=skip_existing,
+                    verbose=verbose,
                 )
             )
             progress.update(task, completed=1)
@@ -1202,18 +1203,24 @@ def search_text(
         logging.getLogger("docvault").addHandler(log_handler)
         console.print("[yellow]Debug mode enabled[/]")
     try:
+        import sqlite_vec
+
         conn = sqlite3.connect(":memory:")
         try:
             conn.enable_load_extension(True)
-            conn.load_extension("sqlite_vec")
+            sqlite_vec.load(conn)
             logging.getLogger(__name__).info("sqlite-vec extension loaded successfully")
-        except sqlite3.OperationalError as e:
+        except Exception as e:
             logging.getLogger(__name__).warning(
                 "sqlite-vec extension cannot be loaded: %s. Falling back to text search.",
                 e,
             )
         finally:
             conn.close()
+    except ImportError:
+        logging.getLogger(__name__).warning(
+            "sqlite-vec Python package not installed. Falling back to text search."
+        )
     except Exception as e:
         if debug:
             logging.getLogger(__name__).exception("Error checking sqlite-vec: %s", e)
@@ -1501,11 +1508,8 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
         # Try to create the vector table if missing
         conn.execute(
             """
-        CREATE VIRTUAL TABLE IF NOT EXISTS document_segments_vec USING vec(
-            id INTEGER PRIMARY KEY,
-            embedding BLOB,
-            dims INTEGER,
-            distance TEXT
+        CREATE VIRTUAL TABLE IF NOT EXISTS document_segments_vec USING vec0(
+            embedding float[768] distance=cosine
         );
         """
         )

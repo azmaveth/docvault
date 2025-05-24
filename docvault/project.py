@@ -11,7 +11,6 @@ from typing import Dict, List, Optional, TypedDict, Union
 
 import toml
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from docvault.core.exceptions import LibraryNotFoundError, VersionNotFoundError
 from docvault.core.library_manager import LibraryManager
@@ -405,6 +404,7 @@ class ProjectManager:
         include_dev: bool = False,
         force: bool = False,
         skip_existing: Optional[bool] = None,
+        verbose: int = 0,
     ) -> Dict[str, List[Dict]]:
         """Import documentation for all dependencies in a project.
 
@@ -482,88 +482,64 @@ class ProjectManager:
         results = {"success": [], "failed": [], "skipped": []}
         library_manager = LibraryManager()
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True,
-        ) as progress:
-            task = progress.add_task(
-                "Importing documentation...", total=len(unique_deps)
-            )
+        for i, dep in enumerate(unique_deps):
+            dep_name = dep["name"]
+            version_spec = dep.get("version", "").strip()
+            version_to_use = version_spec or "latest"
+            source_file = dep.get("source_file", "unknown")
 
-            for dep in unique_deps:
-                dep_name = dep["name"]
-                version_spec = dep.get("version", "").strip()
-                version_to_use = version_spec or "latest"
-                source_file = dep.get("source_file", "unknown")
+            # Print progress if verbose
+            if verbose > 0:
+                print(f"[{i+1}/{len(unique_deps)}] Importing {dep_name}...")
 
-                progress.update(task, description=f"Importing {dep_name}...")
+            try:
+                # Skip empty package names
+                if not dep_name.strip():
+                    continue
 
-                try:
-                    # Skip empty package names
-                    if not dep_name.strip():
+                # Check if we should skip existing documentation
+                if not force and (skip_existing is None or skip_existing):
+                    doc_exists = library_manager.documentation_exists(
+                        dep_name, version_to_use
+                    )
+                    if doc_exists:
+                        results["skipped"].append(
+                            {
+                                "name": dep_name,
+                                "version": version_to_use,
+                                "reason": "Documentation already exists",
+                                "source": source_file,
+                            }
+                        )
                         continue
 
-                    # Check if we should skip existing documentation
-                    if not force and (skip_existing is None or skip_existing):
-                        doc_exists = library_manager.documentation_exists(
-                            dep_name, version_to_use
-                        )
-                        if doc_exists:
-                            results["skipped"].append(
-                                {
-                                    "name": dep_name,
-                                    "version": version_to_use,
-                                    "reason": "Documentation already exists",
-                                    "source": source_file,
-                                }
-                            )
-                            progress.advance(task)
-                            continue
+                # Log version being used
+                if version_spec:
+                    console.print(
+                        f"[cyan]Importing {dep_name} (version: {version_spec})...[/]"
+                    )
+                else:
+                    console.print(f"[cyan]Importing {dep_name} (latest version)...[/]")
 
-                    # Log version being used
-                    if version_spec:
+                # Try to fetch documentation
+                try:
+                    docs = await library_manager.get_library_docs(
+                        dep_name, version_to_use
+                    )
+
+                    if docs:
+                        results["success"].append(
+                            {
+                                "name": dep_name,
+                                "version": version_to_use,
+                                "source": source_file,
+                            }
+                        )
                         console.print(
-                            f"[cyan]Importing {dep_name} (version: {version_spec})...[/]"
+                            f"[green]Successfully imported {dep_name} {version_to_use}[/]"
                         )
                     else:
-                        console.print(
-                            f"[cyan]Importing {dep_name} (latest version)...[/]"
-                        )
-
-                    # Try to fetch documentation
-                    try:
-                        docs = await library_manager.get_library_docs(
-                            dep_name, version_to_use
-                        )
-
-                        if docs:
-                            results["success"].append(
-                                {
-                                    "name": dep_name,
-                                    "version": version_to_use,
-                                    "source": source_file,
-                                }
-                            )
-                            console.print(
-                                f"[green]Successfully imported {dep_name} {version_to_use}[/]"
-                            )
-                        else:
-                            error_msg = "No documentation found or could not be parsed"
-                            results["failed"].append(
-                                {
-                                    "name": dep_name,
-                                    "version": version_to_use,
-                                    "reason": error_msg,
-                                    "source": source_file,
-                                }
-                            )
-                            console.print(
-                                f"[yellow]{error_msg} for {dep_name} {version_to_use}[/]"
-                            )
-
-                    except LibraryNotFoundError:
-                        error_msg = f"Library '{dep_name}' not found"
+                        error_msg = "No documentation found or could not be parsed"
                         results["failed"].append(
                             {
                                 "name": dep_name,
@@ -572,35 +548,33 @@ class ProjectManager:
                                 "source": source_file,
                             }
                         )
-                        console.print(f"[red]{error_msg}[/]")
-
-                    except VersionNotFoundError:
-                        error_msg = (
-                            f"Version '{version_to_use}' not found for {dep_name}"
-                        )
-                        results["failed"].append(
-                            {
-                                "name": dep_name,
-                                "version": version_to_use,
-                                "reason": error_msg,
-                                "source": source_file,
-                            }
-                        )
-                        console.print(f"[red]{error_msg}[/]")
-
-                    except Exception as e:
-                        error_msg = str(e)
-                        results["failed"].append(
-                            {
-                                "name": dep_name,
-                                "version": version_to_use,
-                                "reason": f"Error: {error_msg}",
-                                "source": source_file,
-                            }
-                        )
                         console.print(
-                            f"[red]Error importing {dep_name}: {error_msg}[/]"
+                            f"[yellow]{error_msg} for {dep_name} {version_to_use}[/]"
                         )
+
+                except LibraryNotFoundError:
+                    error_msg = f"Library '{dep_name}' not found"
+                    results["failed"].append(
+                        {
+                            "name": dep_name,
+                            "version": version_to_use,
+                            "reason": error_msg,
+                            "source": source_file,
+                        }
+                    )
+                    console.print(f"[red]{error_msg}[/]")
+
+                except VersionNotFoundError:
+                    error_msg = f"Version '{version_to_use}' not found for {dep_name}"
+                    results["failed"].append(
+                        {
+                            "name": dep_name,
+                            "version": version_to_use,
+                            "reason": error_msg,
+                            "source": source_file,
+                        }
+                    )
+                    console.print(f"[red]{error_msg}[/]")
 
                 except Exception as e:
                     error_msg = str(e)
@@ -608,15 +582,23 @@ class ProjectManager:
                         {
                             "name": dep_name,
                             "version": version_to_use,
-                            "reason": f"Unexpected error: {error_msg}",
+                            "reason": f"Error: {error_msg}",
                             "source": source_file,
                         }
                     )
-                    console.print(
-                        f"[red]Unexpected error with {dep_name}: {error_msg}[/]"
-                    )
+                    console.print(f"[red]Error importing {dep_name}: {error_msg}[/]")
 
-                progress.advance(task)
+            except Exception as e:
+                error_msg = str(e)
+                results["failed"].append(
+                    {
+                        "name": dep_name,
+                        "version": version_to_use,
+                        "reason": f"Unexpected error: {error_msg}",
+                        "source": source_file,
+                    }
+                )
+                console.print(f"[red]Unexpected error with {dep_name}: {error_msg}[/]")
 
         # Print summary
         console.print("\n[bold]Import Summary:[/]")
