@@ -1,8 +1,43 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.1] - 2025-05-24
+
+### Fixed
+
+- **Critical Bugs**:
+  - Fixed scraper segment unpacking error that prevented adding documents
+  - Fixed SQL syntax error in text search with duplicate END clause
+  - Fixed sqlite-vec extension loading by using Python import method
+  - Fixed vector search implementation to use vec0 module with MATCH syntax
+  - Fixed Rich progress display conflicts in import-deps command
+  - Fixed registry commands missing database tables with new migration
+  - Fixed cosine distance score calculation for vector search
+
+- **Minor Issues**:
+  - Removed debug print statement in search command
+  - Fixed help option conflicts in registry commands
+  - Fixed inconsistent return types in processor.py
+  - Fixed database migration error when columns already exist
 
 ### Added
+
+- **Installation Helper**: New `scripts/install-dv.sh` for easier setup
+- **Registry Migration**: Added v2 migration for documentation registry support
+
+### Changed
+
+- **Deprecated Scripts**: Removed outdated `dv` and `scripts/dv` wrappers
+- **Documentation**: Updated all references to use new installation method
+- **Configuration**: Disabled bytecode compilation in uv.toml
+
+### Improved
+
+- **Error Handling**: Better error messages for invalid URLs and missing documents
+- **Concurrent Operations**: Verified support for multiple simultaneous operations
+
+## [Unreleased]
+
+### Features
 
 - **Enhanced Document Rendering**:
   - Added support for [Glow](https://github.com/charmbracelet/glow) for beautiful markdown rendering
@@ -22,7 +57,7 @@
 
 - **Documentation**: Updated help text and examples for all commands
 
-### Changed
+### Updates
 
 - **Dependency Parsing**: Completely rewrote dependency parsers for better version specification support
 

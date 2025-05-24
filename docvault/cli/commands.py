@@ -1186,7 +1186,7 @@ def search_text(
     If no query is provided, returns random documents matching the filters.
     """
 
-    print(f"[DEBUG search_text] query={query!r} sys.argv={sys.argv}")
+    # Debug line removed
     """Search documents in the vault (default subcommand)."""
     import asyncio
     import logging

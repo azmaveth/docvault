@@ -121,7 +121,7 @@ echo "Testing DocVault installation..."
 
 # Check if dv command is available
 if ! command -v dv &> /dev/null; then
-    echo "❌ 'dv' command not found. Make sure to add it to your PATH or use './scripts/dv'"
+    echo "❌ 'dv' command not found. Please run './scripts/install-dv.sh' to set up the command"
     exit 1
 fi
 
@@ -629,7 +629,7 @@ For detailed instructions for AI assistants using DocVault, see [CLAUDE.md](CLAU
 - **GitHub Scraping**: DocVault may have difficulty scraping GitHub repositories. Try using specific documentation URLs instead of repository root URLs.
 - **Documentation Websites**: Some documentation websites with complex structures may not be scraped correctly. Try adjusting the depth parameter (`--depth`).
 - **Embedding Model**: The default embedding model is `nomic-embed-text` via Ollama. Ensure Ollama is running and has this model available.
-- **dv command not found**: If `dv` is not recognized, use `uv run dv` or run `./scripts/dv` from the project directory. Some shells may require you to activate your virtual environment, or add the scripts directory to your PATH. See troubleshooting above.
+- **dv command not found**: If `dv` is not recognized, use `uv run dv` or run `./scripts/install-dv.sh` to set up the command. Some shells may require you to activate your virtual environment. See troubleshooting above.
 - **Failed to fetch URL**: If you see errors like 'Failed to fetch URL' when adding documents, verify the URL is accessible and check your network connection. Some sites may block automated scraping.
 
 ## Requirements

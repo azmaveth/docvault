@@ -13,13 +13,13 @@ from docvault.models.registry import (
 )
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 def registry():
     """Manage documentation registry."""
     pass
 
 
-@registry.group()
+@registry.group(context_settings={"help_option_names": ["-h", "--help"]})
 def source():
     """Manage documentation sources."""
     pass
@@ -84,7 +84,7 @@ def list_sources(show_all):
         click.echo("-" * 80)
 
 
-@registry.group()
+@registry.group(context_settings={"help_option_names": ["-h", "--help"]})
 def lib():
     """Manage library entries."""
     pass

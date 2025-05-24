@@ -48,7 +48,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [x] **Test/README update**: Updated all CLI tests and README to match new command structure and aliasing. [2025-04-22]
 - [x] **Troubleshooting guidance**: Added troubleshooting notes for dv command availability and alternative invocation methods (e.g., `uv run dv`). [2025-04-22]
 - [x] **Fix README instructions for database initialization**: The README instructs users to run `dv init-db --wipe`, but the `--wipe` option does not exist. Update the README to remove or correct this flag. [2025-05-23]
-- [ ] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README should emphasize alternative invocation methods (`uv run dv`, `./scripts/dv`) and troubleshooting tips for command-not-found issues. *(Superseded by troubleshooting guidance above)*
+- [x] **Clarify dv command availability**: The `dv` command may not be available in the PATH after installation, depending on how DocVault is installed. The README now emphasizes alternative invocation methods (`uv run dv`, `./scripts/install-dv.sh`) and troubleshooting tips for command-not-found issues. *(Completed with install script and updated documentation)* [2025-05-24]
 - [x] **Improve error feedback for add command**: When adding a document with `dv add <url>`, a generic "Failed to fetch URL" error is shown. Add more descriptive error messages (e.g., network issues, unsupported site, authentication required) and suggest next steps. [2025-05-23]
 - [x] **Vector search setup guidance**: If vector search fails due to missing tables or extensions, provide actionable guidance (e.g., how to install sqlite-vec, how to rebuild the index) directly in the CLI output. [2025-05-23]
 - [x] **AI/Automation-friendly CLI**: Add structured output options (e.g., `--format json`) for all commands to make parsing by AI agents and automation tools easier. Ensure all error messages are machine-readable as well as human-friendly. [2025-05-23] - Implemented in search functionality with JSON output format option and machine-readable error messages.
@@ -272,6 +272,30 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ### Minor Issues
 
 1. **Inconsistent Return Type in processor.py**: The `segment_markdown` function returns a list of dictionaries normally but falls back to returning a list of tuples `[(current_type, markdown_content)]` on line 206, causing type inconsistency.
+
+### Fixed Issues
+
+- [x] **Registry commands missing database tables**: Fixed by adding registry migration to v2 in migrations.py
+  - Error: "sqlite3.OperationalError: no such column: package_name"
+  - Solution: Added _migrate_to_v2 function to create documentation_sources table and add missing columns to libraries table
+  - Also fixed Click help option conflicts in registry_commands.py
+
+## QA Testing Summary (2025-05-24)
+
+### Edge Cases Tested and Results
+
+1. **Invalid URL handling**: ✅ Properly catches and reports invalid URL formats
+2. **Non-existent URL handling**: ⚠️ Works but error output is too verbose with full stack traces
+3. **Non-existent document operations**: ✅ Graceful error messages for rm/read operations
+4. **Empty database searches**: ✅ Works correctly (fixed debug print issue)
+5. **Concurrent operations**: ✅ Successfully handles multiple simultaneous add operations
+6. **Command parsing edge cases**: ✅ Default search command works well
+
+### Recommendations
+
+1. **Reduce error verbosity**: Network errors should show cleaner messages without full stack traces
+2. **Debug cleanup**: Removed debug print statement in search_text command
+3. **Help option conflicts**: Fixed registry command help conflicts with VERSION argument
 
 ## Documentation and Onboarding
 
