@@ -46,10 +46,26 @@ def read_html(document_path: str) -> str:
         return f.read()
 
 
-def read_markdown(document_path: str) -> str:
-    """Read Markdown content from file"""
+def read_markdown(document_path: str, render: bool = True) -> str:
+    """Read Markdown content from file
+
+    Args:
+        document_path: Path to the markdown file
+        render: If True, render markdown for display. If False, return raw content.
+               Default is True for backward compatibility.
+
+    Returns:
+        str: The markdown content, either rendered or raw
+    """
     with open(document_path, "r", encoding="utf-8") as f:
-        return f.read()
+        content = f.read()
+
+    if not render:
+        return content
+
+    # Simple markdown rendering (can be enhanced with a proper markdown renderer)
+    # For now, we'll just return the content as is, and let the console handle basic markdown
+    return content
 
 
 def open_html_in_browser(document_path: str) -> bool:

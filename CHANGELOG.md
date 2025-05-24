@@ -9,6 +9,7 @@
 - **New CLI Options**:
   - Added `--skip-existing` flag to skip dependencies with existing documentation
   - Added `-v/--verbose` flag for detailed output
+  - Added `--raw` flag to `dv read` command to show raw markdown content
 
 - **Better Error Handling**: More informative error messages and progress tracking
 

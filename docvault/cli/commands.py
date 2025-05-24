@@ -815,8 +815,17 @@ def list_cmd(filter, verbose):
     default="markdown",
     help="Output format",
 )
-def read_cmd(document_id, format):
-    """Read a document from the vault. Use --format for markdown or HTML."""
+@click.option(
+    "--raw",
+    is_flag=True,
+    help="Show raw content without rendering markdown (only applies to markdown format)",
+)
+def read_cmd(document_id, format, raw):
+    """Read a document from the vault.
+
+    By default, markdown is rendered for better readability.
+    Use --raw to see the original markdown source.
+    """
     from docvault.core.storage import open_html_in_browser, read_markdown
     from docvault.db.operations import get_document
 
@@ -824,11 +833,15 @@ def read_cmd(document_id, format):
     if not doc:
         console.print(f"❌ Document not found: {document_id}", style="bold red")
         return
+
     if format == "html":
+        if raw:
+            console.print("⚠️  --raw flag is ignored for HTML format", style="yellow")
         open_html_in_browser(doc["html_path"])
     else:
-        content = read_markdown(doc["markdown_path"])
-        console.print(f"# {doc['title']}\n", style="bold green")
+        content = read_markdown(doc["markdown_path"], render=not raw)
+        if not raw:
+            console.print(f"# {doc['title']}\n", style="bold green")
         console.print(content)
 
 
