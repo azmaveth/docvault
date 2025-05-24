@@ -1,8 +1,15 @@
 # Changelog
 
-## [0.3.1] - 2025-05-24
+## [0.3.2] - 2025-05-24
 
 ### Fixed
+
+- **Critical Dependency**: Added missing `toml` dependency for PyPI installation
+- **Package Configuration**: Fixed setuptools package discovery to include all subpackages
+
+## [0.3.1] - 2025-05-24
+
+### Bug Fixes
 
 - **Critical Bugs**:
   - Fixed scraper segment unpacking error that prevented adding documents
