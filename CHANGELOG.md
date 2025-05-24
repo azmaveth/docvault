@@ -26,7 +26,7 @@
 - **Dependencies**: Added new required packages (rich, pyyaml, tomli)
 - **Version Bump**: Updated to 0.3.0 for new feature release
 
-## [0.2.2] - 2025-05-23
+## [0.2.2] - 2025-04-27
 
 ### Fixed in 0.2.2
 
