@@ -284,7 +284,13 @@ def import_deps_cmd(
     default=True,
     help="Only follow links within same URL hierarchy",
 )
-def _scrape(url, depth, max_links, quiet, strict_path):
+@click.option(
+    "--update",
+    "-u",
+    is_flag=True,
+    help="Update existing documents by re-scraping them",
+)
+def _scrape(url, depth, max_links, quiet, strict_path, update):
     """Scrape and store documentation from URL"""
     import socket
     import ssl
@@ -320,7 +326,11 @@ def _scrape(url, depth, max_links, quiet, strict_path):
                 scraper = get_scraper()
                 document = asyncio.run(
                     scraper.scrape_url(
-                        url, depth, max_links=max_links, strict_path=strict_path
+                        url,
+                        depth,
+                        max_links=max_links,
+                        strict_path=strict_path,
+                        force_update=update,
                     )
                 )
             except aiohttp.ClientError as e:
@@ -455,7 +465,13 @@ def _scrape(url, depth, max_links, quiet, strict_path):
     default=True,
     help="Only follow links within same URL hierarchy",
 )
-def import_cmd(url, depth, max_links, quiet, strict_path):
+@click.option(
+    "--update",
+    "-u",
+    is_flag=True,
+    help="Update existing documents by re-scraping them",
+)
+def import_cmd(url, depth, max_links, quiet, strict_path, update):
     """Import documentation from a URL into the vault.
 
     Examples:
@@ -497,7 +513,11 @@ def import_cmd(url, depth, max_links, quiet, strict_path):
                 scraper = get_scraper()
                 document = asyncio.run(
                     scraper.scrape_url(
-                        url, depth, max_links=max_links, strict_path=strict_path
+                        url,
+                        depth,
+                        max_links=max_links,
+                        strict_path=strict_path,
+                        force_update=update,
                     )
                 )
             except aiohttp.ClientError as e:

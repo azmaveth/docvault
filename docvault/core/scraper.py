@@ -65,6 +65,7 @@ class WebScraper:
         library_id: Optional[int] = None,
         max_links: Optional[int] = None,
         strict_path: bool = True,
+        force_update: bool = False,
     ) -> Dict[str, Any]:
         """
         Scrape a URL and store the content
@@ -157,6 +158,7 @@ class WebScraper:
                         library_id,
                         max_links,
                         strict_path,
+                        False,  # Don't force update on linked pages
                     )
                 return operations.get_document(document_id)
             elif len(parts) >= 2:
@@ -332,13 +334,14 @@ class WebScraper:
                     library_id,
                     max_links,
                     strict_path=False,
+                    force_update=False,
                 )
             self.visited_urls.add(url)
             return operations.get_document(document_id)
 
         # Check if document already exists
         existing_doc = operations.get_document_by_url(url)
-        if existing_doc:
+        if existing_doc and not force_update:
             self.stats["pages_skipped"] += 1
             self.logger.debug(f"Document already exists for URL: {url}")
             self.visited_urls.add(url)
@@ -445,12 +448,13 @@ class WebScraper:
                     library_id,
                     max_links,
                     strict_path=False,
+                    force_update=False,
                 )
             return operations.get_document(document_id)
 
         # Check if document already exists
         existing_doc = operations.get_document_by_url(url)
-        if existing_doc:
+        if existing_doc and not force_update:
             self.stats["pages_skipped"] += 1
             self.logger.debug(f"Document already exists for URL: {url}")
             return existing_doc
@@ -515,6 +519,7 @@ class WebScraper:
                 library_id,
                 max_links,
                 strict_path,
+                force_update=False,
             )
 
         # Return document info
@@ -699,6 +704,7 @@ class WebScraper:
         library_id: Optional[int],
         max_links: Optional[int] = None,
         strict_path: bool = True,
+        force_update: bool = False,
     ) -> None:
         """Extract and scrape links from HTML content"""
         from bs4 import BeautifulSoup
@@ -794,7 +800,13 @@ class WebScraper:
             self.logger.debug(f"Queuing: {url} (depth {depth})")
             task = asyncio.create_task(
                 self.scrape_url(
-                    url, depth, is_library_doc, library_id, max_links, strict_path
+                    url,
+                    depth,
+                    is_library_doc,
+                    library_id,
+                    max_links,
+                    strict_path,
+                    force_update,
                 )
             )
             tasks.append(task)
@@ -823,6 +835,7 @@ class WebScraper:
                             library_id,
                             max_links,
                             strict_path=False,
+                            force_update=force_update,
                         )
             # Follow rel="next" pagination link
             next_tag = soup.find("a", rel="next")
@@ -836,6 +849,7 @@ class WebScraper:
                         library_id,
                         max_links,
                         strict_path=False,
+                        force_update=force_update,
                     )
 
     async def _fetch_github_readme(self, owner: str, repo: str) -> Optional[str]:
