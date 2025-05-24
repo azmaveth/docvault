@@ -1,37 +1,16 @@
-#!/bin/bash
-# DocVault wrapper script that uses UV for dependency management
-# This script can be copied to a location in your PATH for easy access
+#!/usr/bin/env bash
+# DocVault wrapper script
+# This script is deprecated - please use ./scripts/install-dv.sh to set up the 'dv' command
 
-# Find the uv command
-UV_CMD=$(command -v uv)
-if [ -z "$UV_CMD" ]; then
-    echo "Error: UV not found. Please install UV with:"
-    echo "  pip install uv"
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
+
+# Check if .venv/bin/dv exists
+if [ -f "$PROJECT_DIR/.venv/bin/dv" ]; then
+    exec "$PROJECT_DIR/.venv/bin/dv" "$@"
+else
+    echo "Error: DocVault is not installed in the virtual environment."
+    echo "Please run './scripts/install-dv.sh' to set up the 'dv' command properly."
     exit 1
 fi
-
-# Determine the real path to this script to find the DocVault package
-SCRIPT_PATH=$(realpath "$0")
-SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
-
-# Try to find DocVault main.py in possible locations
-DOCVAULT_MAIN=""
-
-# Check if we're in the scripts directory
-if [ -f "$SCRIPT_DIR/../docvault/main.py" ]; then
-    DOCVAULT_MAIN="$SCRIPT_DIR/../docvault/main.py"
-# Check if this script is in PATH and DocVault is installed as a package
-elif [ -d "$(python -c 'import site; print(site.getsitepackages()[0])')/docvault" ]; then
-    DOCVAULT_DIR="$(python -c 'import site; print(site.getsitepackages()[0])')/docvault"
-    if [ -f "$DOCVAULT_DIR/main.py" ]; then
-        DOCVAULT_MAIN="$DOCVAULT_DIR/main.py"
-    fi
-fi
-
-if [ -z "$DOCVAULT_MAIN" ]; then
-    echo "Error: Could not find DocVault installation"
-    exit 1
-fi
-
-# Run DocVault with UV
-exec "$UV_CMD" run "$DOCVAULT_MAIN" "$@"

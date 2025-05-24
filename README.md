@@ -39,47 +39,63 @@ DocVault is designed to help AI assistants and developers access up-to-date docu
 
 DocVault uses [uv](https://github.com/astral-sh/uv) as the preferred installation method for its speed and reliability. If you don't have uv installed, you can get it with:
 
-```bashbash
+```bash
 pip install uv
 # or with pipx for isolated installation
 pipx install uv
-```bash
+```
 
 Then clone and install DocVault:
 
-```bashbash
+```bash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 
 # Create virtual environment
 uv venv .venv
 
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install in development mode (runtime deps + sqlite‑vec)
+# Install DocVault (this installs all dependencies including sqlite-vec)
 uv pip install -e .
 
-# Or simply install the package
-uv pip install .
+# Set up the 'dv' command for easy access
+./scripts/install-dv.sh
 
-# Initialise the database (sets up vector tables)
-dv init-db --force
-```bash
+# Initialize the database
+dv init-db
+```
 
-> **Note:** The `--force` flag will clear all existing data and fully reset the database. Use this if you want to start fresh or if you encounter issues with old or corrupted data.
+> **Note:** The `install-dv.sh` script will help you set up the `dv` command to work directly from your terminal without environment activation or bytecode compilation messages.
 
 ### Using Traditional Pip
 
 If you prefer, you can also use traditional pip:
 
-```bashbash
+```bash
 git clone https://github.com/azmaveth/docvault.git
 cd docvault
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
+
+# Set up the 'dv' command
+./scripts/install-dv.sh
+```
+
+### Setting up the `dv` Command
+
+After installation, run the installation helper to set up easy access to the `dv` command:
+
 ```bash
+./scripts/install-dv.sh
+```
+
+This script offers several options:
+
+1. **Add an alias** to your shell configuration (recommended)
+2. **Create a wrapper script** in `~/bin` or `/usr/local/bin`
+3. **Show manual instructions** for custom setups
+
+The alias method is recommended as it's the simplest and doesn't require additional files in your PATH.
 
 ### Required Packages
 
@@ -91,12 +107,7 @@ DocVault automatically installs all required dependencies, including:
 
 ## Quick Start
 
-Once installed, you can run DocVault directly using the `dv` command:
-
-> **Note:** When installing DocVault with pip or UV, the `dv` script will be automatically installed to your PATH. If using from a git clone without installing, you can either:
-> 1. Run `./scripts/dv` from the project directory
-> 2. Use `uv run dv` which will use the UV dependency resolver
-> 3. Copy `scripts/dv` to a location in your PATH
+After installation and running `./scripts/install-dv.sh`, you can use DocVault with the `dv` command:
 
 ## Verifying Your Installation
 
@@ -162,21 +173,25 @@ Save this script as `test_docvault.sh`, make it executable with `chmod +x test_d
 
 If you get a "command not found" error when running `dv`, try these solutions:
 
-1. **Activate the virtual environment**
+1. **Run the installation helper**
 
    ```bash
-   source .venv/bin/activate  # On Unix/macOS
-   .venv\Scripts\activate    # On Windows
+   ./scripts/install-dv.sh
    ```
 
-2. **Use the full path**
+2. **Source your shell configuration** (if you chose the alias option)
 
    ```bash
-   # From the project root
-   ./scripts/dv --help
+   source ~/.bashrc  # or ~/.zshrc for zsh users
    ```
 
-3. **Install with pipx for global access**
+3. **Use the direct path**
+
+   ```bash
+   /path/to/docvault/.venv/bin/dv --help
+   ```
+
+4. **Install with pipx for global access**
 
    ```bash
    pipx install git+https://github.com/azmaveth/docvault.git
@@ -381,22 +396,6 @@ dv serve --transport sse
 ```
 
 This will start a server at [http://127.0.0.1:8000](http://127.0.0.1:8000) that AI assistants can interact with.
-
-### Running with UV
-
-You can also run DocVault directly with UV without installation:
-
-```bash
-./dv add https://docs.python.org/3/
-# or
-uv run dv add https://docs.python.org/3/
-```
-
-All configuration is automatically managed in `~/.docvault/`.
-To customize settings, run:
-
-```bash
-Then edit the `.env` file in `~/.docvault/`.
 
 ## CLI Commands
 
@@ -642,9 +641,9 @@ For detailed instructions for AI assistants using DocVault, see [CLAUDE.md](CLAU
 
 DocVault can be configured using environment variables or a `.env` file in `~/.docvault/`:
 
-```bashbash
-dv config --init
 ```bash
+dv config --init
+```
 
 This will create a `.env` file with default settings. You can then edit this file to customize DocVault.
 

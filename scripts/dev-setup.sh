@@ -27,15 +27,11 @@ source .venv/bin/activate
 echo "Installing DocVault in development mode..."
 uv pip install -e .
 
-# Make the dv script executable and link it for development
-echo "Setting up dv command..."
-chmod +x "$PROJECT_ROOT/scripts/dv"
-
-# Create a symlink in .venv/bin if it doesn't exist
-if [ ! -f ".venv/bin/dv" ]; then
-    ln -sf "$PROJECT_ROOT/scripts/dv" .venv/bin/dv
-    echo "✅ Linked dv script to .venv/bin/dv"
-fi
+# Set up dv command
+echo ""
+echo "To set up the 'dv' command for easy access, run:"
+echo "  ./scripts/install-dv.sh"
+echo ""
 
 # Check if sqlite-vec extension is installed
 echo "Checking for sqlite-vec extension..."
