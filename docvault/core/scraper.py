@@ -555,11 +555,10 @@ class WebScraper:
 
     async def _fetch_url(self, url: str) -> tuple:
         """Fetch HTML content from URL. Returns (content, error_detail)"""
-        print(f"[BEFORE FETCH] visited_urls={self.visited_urls}")
-        print(f"[FETCH] Attempting to fetch: {url}")
         self.logger.debug(f"[BEFORE FETCH] visited_urls={self.visited_urls}")
+        self.logger.debug(f"[FETCH] Attempting to fetch: {url}")
         if url in self.visited_urls:
-            print(f"[FETCH] {url} already in visited_urls! Returning early.")
+            self.logger.debug(f"URL already visited: {url}")
             return None, "URL already visited"
 
         # Attach GitHub token if available
@@ -602,98 +601,27 @@ class WebScraper:
                         if response.status != 404:
                             self.logger.warning(msg)
                         error_detail = msg
-        except asyncio.TimeoutError as e:
-            msg = f"Timeout fetching URL: {url} ({e})"
-            self.logger.warning(msg)
-            import traceback
-
-            self.logger.warning(traceback.format_exc())
-            error_detail = msg
+        except asyncio.TimeoutError:
+            error_detail = "Request timed out after 30 seconds"
+            self.logger.debug(f"Timeout fetching URL: {url}")
+        except aiohttp.ClientConnectorError as e:
+            if "Cannot connect to host" in str(e):
+                error_detail = "Cannot connect to host"
+            elif "nodename nor servname provided" in str(e):
+                error_detail = "Invalid domain name"
+            else:
+                error_detail = "Connection error"
+            self.logger.debug(f"Connection error for {url}: {e}")
         except aiohttp.ClientError as e:
-            msg = f"Client error fetching URL {url}: {e}"
-            self.logger.error(msg)
-            import traceback
-
-            self.logger.error(traceback.format_exc())
-            error_detail = msg
+            error_detail = "HTTP client error"
+            self.logger.debug(f"Client error fetching {url}: {e}")
         except Exception as e:
-            msg = f"Unexpected error fetching URL {url}: {e}"
-            self.logger.error(msg)
-            import traceback
-
-            self.logger.error(traceback.format_exc())
-            error_detail = msg
+            error_detail = "Unexpected error"
+            self.logger.debug(f"Unexpected error fetching {url}: {e}", exc_info=True)
         if content is not None:
             self.visited_urls.add(url)
-        print(f"[AFTER FETCH] visited_urls={self.visited_urls}")
         self.logger.debug(f"[AFTER FETCH] visited_urls={self.visited_urls}")
         return content, error_detail
-
-        # Attach GitHub token if available
-        headers = {"User-Agent": "DocVault/0.1.0 Documentation Indexer"}
-        token = config.GITHUB_TOKEN if hasattr(config, "GITHUB_TOKEN") else None
-        if token and "github.com" in urlparse(url).netloc:
-            headers["Authorization"] = f"token {token}"
-
-        # Skip fragment URLs (they reference parts of existing pages)
-        if "#" in url:
-            base_url = url.split("#")[0]
-            if base_url in self.visited_urls:
-                return None
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=30) as response:
-                    if response.status == 200:
-                        content_type = response.headers.get("Content-Type", "")
-                        if (
-                            "text/html" not in content_type
-                            and "application/xhtml+xml" not in content_type
-                            and "application/xml" not in content_type
-                            and "application/json" not in content_type
-                            and "text/plain" not in content_type
-                        ):
-                            msg = f"Skipping non-text content: {url} (Content-Type: {content_type})"
-                            if not self.quiet:
-                                self.logger.warning(msg)
-                            else:
-                                self.logger.debug(msg)
-                            return None, msg
-                        try:
-                            return await response.text(), None
-                        except UnicodeDecodeError as e:
-                            msg = f"Unicode decode error for {url}: {e}"
-                            if not self.quiet:
-                                self.logger.warning(msg)
-                            else:
-                                self.logger.debug(msg)
-                            return None, msg
-                    else:
-                        msg = f"Failed to fetch URL: {url} (Status: {response.status})"
-                        if response.status != 404:
-                            self.logger.warning(msg)
-                        return None, msg
-        except asyncio.TimeoutError as e:
-            msg = f"Timeout fetching URL: {url} ({e})"
-            self.logger.warning(msg)
-            import traceback
-
-            self.logger.warning(traceback.format_exc())
-            return None, msg
-        except aiohttp.ClientError as e:
-            msg = f"Client error fetching URL {url}: {e}"
-            self.logger.error(msg)
-            import traceback
-
-            self.logger.error(traceback.format_exc())
-            return None, msg
-        except Exception as e:
-            msg = f"Unexpected error fetching URL {url}: {e}"
-            self.logger.error(msg)
-            import traceback
-
-            self.logger.error(traceback.format_exc())
-            return None, msg
 
     async def _scrape_links(
         self,

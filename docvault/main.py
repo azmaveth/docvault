@@ -108,7 +108,10 @@ def create_main(ctx, version):
         ctx.exit()
     # Call initializer (patched in tests via docvault.core.initialization)
     from docvault.core.initialization import ensure_app_initialized as _ensure_init
+    from docvault.utils.logging import setup_logging
 
+    # Set up logging
+    setup_logging()
     _ensure_init()
     if ctx.invoked_subcommand is None:
         if not ctx.args:

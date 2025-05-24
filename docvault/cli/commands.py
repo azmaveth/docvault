@@ -6,13 +6,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import aiohttp
 import click
-from rich.console import Console
 from rich.table import Table
 
 from docvault.core.storage import read_markdown
 from docvault.db import operations
 from docvault.project import ProjectManager
+from docvault.utils.console import console
+from docvault.utils.logging import get_logger
 from docvault.version import __version__
 
 # Export all commands
@@ -36,7 +38,41 @@ __all__ = [
     "serve_cmd",
 ]
 
-console = Console()
+logger = get_logger(__name__)
+
+
+def handle_network_error(e: Exception) -> None:
+    """Handle network errors with user-friendly messages."""
+    error_str = str(e)
+
+    if isinstance(e, aiohttp.ClientConnectorError):
+        if "Cannot connect to host" in error_str:
+            console.error(
+                "Could not connect to the server. Please check your internet connection."
+            )
+        elif "nodename nor servname provided" in error_str:
+            console.error("Invalid domain name. Please check the URL.")
+        else:
+            console.error("Connection failed. Please check the URL and your network.")
+    elif isinstance(e, aiohttp.ClientError):
+        if "SSL" in error_str:
+            console.error("SSL certificate verification failed.")
+            console.warning("The website might be using a self-signed certificate.")
+        else:
+            console.error(f"Network error: {error_str}")
+    elif isinstance(e, asyncio.TimeoutError):
+        console.error("Request timed out. The server might be slow or unresponsive.")
+    elif isinstance(e, ValueError) and "Failed to fetch URL" in error_str:
+        # Extract the clean error message from our scraper
+        if "Reason: " in error_str:
+            reason = error_str.split("Reason: ", 1)[1]
+            console.error(f"Failed to fetch URL: {reason}")
+        else:
+            console.error(error_str)
+    else:
+        console.error(f"An error occurred: {error_str}")
+
+    logger.debug(f"Full error details: {e}", exc_info=True)
 
 
 @click.command("version", help="Show DocVault version")
@@ -117,10 +153,7 @@ def import_deps_cmd(
     from pathlib import Path
     from typing import Any, Dict, List
 
-    from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn
-
-    console = Console()
 
     # Set default for skip_existing if not explicitly set
     if skip_existing is None:
@@ -333,81 +366,38 @@ def _scrape(url, depth, max_links, quiet, strict_path, update):
                         force_update=update,
                     )
                 )
-            except aiohttp.ClientError as e:
-                if "Cannot connect to host" in str(e):
-                    console.print(
-                        "❌ Error: Could not connect to the server. Please check your internet connection and try again.",
-                        style="bold red",
-                    )
-                    return
-                elif "SSL" in str(e):
-                    console.print(
-                        "❌ Error: SSL certificate verification failed. The website might be using a self-signed certificate.",
-                        style="bold red",
-                    )
-                    console.print(
-                        "  Try using a different URL or check if the website is accessible from your browser.",
-                        style="yellow",
-                    )
-                    return
-                else:
-                    raise
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+                handle_network_error(e)
+                return
             except ssl.SSLError as e:
-                console.print(
-                    "❌ Error: SSL certificate verification failed.", style="bold red"
-                )
-                console.print(f"  Details: {str(e)}", style="yellow")
-                console.print(
-                    "  This might happen with self-signed certificates or outdated SSL configurations.",
-                    style="yellow",
+                console.error("SSL certificate verification failed.")
+                console.warning(f"Details: {str(e)}")
+                console.warning(
+                    "This might happen with self-signed certificates or outdated SSL configurations."
                 )
                 return
             except socket.gaierror:
-                console.print(
-                    "❌ Error: Could not resolve the hostname. Please check the URL and your network connection.",
-                    style="bold red",
-                )
-                return
-            except asyncio.TimeoutError:
-                console.print(
-                    "❌ Error: The request timed out. The server might be taking too long to respond.",
-                    style="bold red",
-                )
-                console.print(
-                    "  You can try again later or check if the website is currently available.",
-                    style="yellow",
+                console.error(
+                    "Could not resolve the hostname. Please check the URL and your network connection."
                 )
                 return
             except Exception as e:
-                if "404" in str(e) or "Not Found" in str(e):
-                    console.print(
-                        "❌ Error: The requested page was not found (404). Please check the URL and try again.",
-                        style="bold red",
+                error_str = str(e)
+                if "404" in error_str or "Not Found" in error_str:
+                    console.error(
+                        "The requested page was not found (404). Please check the URL."
                     )
-                    return
-                elif "403" in str(e) or "Forbidden" in str(e):
-                    console.print(
-                        "❌ Error: Access to this resource is forbidden (403). You might need authentication.",
-                        style="bold red",
+                elif "403" in error_str or "Forbidden" in error_str:
+                    console.error(
+                        "Access forbidden (403). You might need authentication."
                     )
-                    return
-                elif "401" in str(e) or "Unauthorized" in str(e):
-                    console.print(
-                        "❌ Error: Authentication required. This resource needs credentials.",
-                        style="bold red",
-                    )
-                    return
-                elif "429" in str(e) or "Too Many Requests" in str(e):
-                    console.print(
-                        "❌ Error: Too many requests. The server is rate limiting your connection.",
-                        style="bold red",
-                    )
-                    console.print(
-                        "  Please wait a few minutes and try again.", style="yellow"
-                    )
-                    return
+                elif "401" in error_str or "Unauthorized" in error_str:
+                    console.error("Authentication required (401).")
+                elif "429" in error_str or "Too Many Requests" in error_str:
+                    console.error("Rate limited (429). Please wait and try again.")
                 else:
-                    raise
+                    handle_network_error(e)
+                return
 
         if document:
             table = Table(title=f"Scraping Results for {url}")
@@ -520,85 +510,41 @@ def import_cmd(url, depth, max_links, quiet, strict_path, update):
                         force_update=update,
                     )
                 )
-            except aiohttp.ClientError as e:
-                if "Cannot connect to host" in str(e):
-                    console.print(
-                        "❌ Error: Could not connect to the server. Please check your internet connection and try again.",
-                        style="bold red",
-                    )
-                    return
-                elif "SSL" in str(e):
-                    console.print(
-                        "❌ Error: SSL certificate verification failed. The website might be using a self-signed certificate.",
-                        style="bold red",
-                    )
-                    console.print(
-                        "  Try using a different URL or check if the website is accessible from your browser.",
-                        style="yellow",
-                    )
-                    return
-                else:
-                    raise
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+                handle_network_error(e)
+                return
             except ssl.SSLError as e:
-                console.print(
-                    "❌ Error: SSL certificate verification failed.", style="bold red"
-                )
-                console.print(f"  Details: {str(e)}", style="yellow")
-                console.print(
-                    "  This might happen with self-signed certificates or outdated SSL configurations.",
-                    style="yellow",
+                console.error("SSL certificate verification failed.")
+                console.warning(f"Details: {str(e)}")
+                console.warning(
+                    "This might happen with self-signed certificates or outdated SSL configurations."
                 )
                 return
             except socket.gaierror:
-                console.print(
-                    "❌ Error: Could not resolve the hostname. Please check the URL and your network connection.",
-                    style="bold red",
-                )
-                return
-            except asyncio.TimeoutError:
-                console.print(
-                    "❌ Error: The request timed out. The server might be taking too long to respond.",
-                    style="bold red",
-                )
-                console.print(
-                    "  You can try again later or check if the website is currently available.",
-                    style="yellow",
+                console.error(
+                    "Could not resolve the hostname. Please check the URL and your network connection."
                 )
                 return
             except Exception as e:
-                if "404" in str(e) or "Not Found" in str(e):
-                    console.print(
-                        "❌ Error: The requested page was not found (404). Please check the URL and try again.",
-                        style="bold red",
+                error_str = str(e)
+                if "404" in error_str or "Not Found" in error_str:
+                    console.error(
+                        "The requested page was not found (404). Please check the URL."
                     )
-                    return
-                elif "403" in str(e) or "Forbidden" in str(e):
-                    console.print(
-                        "❌ Error: Access to this resource is forbidden (403). You might need authentication.",
-                        style="bold red",
+                elif "403" in error_str or "Forbidden" in error_str:
+                    console.error(
+                        "Access forbidden (403). You might need authentication."
                     )
-                    console.print(
-                        "  Some documentation sites require authentication or have rate limiting.",
-                        style="yellow",
+                    console.warning(
+                        "Some documentation sites require authentication or have rate limiting."
                     )
-                    return
-                elif "401" in str(e) or "Unauthorized" in str(e):
-                    console.print(
-                        "❌ Error: Authentication required. This resource needs credentials.",
-                        style="bold red",
-                    )
-                    return
-                elif "429" in str(e) or "Too Many Requests" in str(e):
-                    console.print(
-                        "❌ Error: Too many requests. The server is rate limiting your connection.",
-                        style="bold red",
-                    )
-                    console.print(
-                        "  Please wait a few minutes and try again.", style="yellow"
-                    )
-                    return
+                elif "401" in error_str or "Unauthorized" in error_str:
+                    console.error("Authentication required (401).")
+                elif "429" in error_str or "Too Many Requests" in error_str:
+                    console.error("Rate limited (429). Please wait and try again.")
                 else:
-                    raise
+                    handle_network_error(e)
+                return
 
         if document:
             table = Table(title=f"Import Results for {url}")

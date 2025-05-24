@@ -182,8 +182,8 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 - [x] **Document Update-on-Add & Timestamps**: When `dv add <url>` is run on a URL that already exists, update all existing data for that document (re-scrape and overwrite). Ensure the database has a timestamp for each document addition/update and display the date when viewing stored documents. [2025-05-24] - Added `--update` flag to force re-scraping existing documents
 
-- [ ] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging.
-- [ ] **SQLi prevention**: Implement SQL injection prevention measures in database queries. Use SQLAlchemy library to parameterize queries.
+- [x] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging. [2025-05-24] - Created logging utilities and console wrapper that logs messages
+- [x] **SQLi prevention**: Implement SQL injection prevention measures in database queries. ~~Use SQLAlchemy library to parameterize queries.~~ [2025-05-24] - Verified all database queries already use parameterized statements with ? placeholders
 - [ ] **Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH or provide a reliable fallback method for all supported OSes and shells.
 - [ ] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates.
 - [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.
@@ -293,9 +293,9 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ### Recommendations
 
-1. **Reduce error verbosity**: Network errors should show cleaner messages without full stack traces
-2. **Debug cleanup**: Removed debug print statement in search_text command
-3. **Help option conflicts**: Fixed registry command help conflicts with VERSION argument
+1. **Reduce error verbosity**: ✅ Network errors now show cleaner messages without full stack traces [2025-05-24]
+2. **Debug cleanup**: ✅ Removed debug print statement in search_text command [2025-05-24]
+3. **Help option conflicts**: ✅ Fixed registry command help conflicts with VERSION argument [2025-05-24]
 
 ## Documentation and Onboarding
 
