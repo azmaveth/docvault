@@ -12,10 +12,29 @@ from rich.table import Table
 
 from docvault.core.storage import read_markdown
 from docvault.db import operations
+from docvault.project import ProjectManager
 from docvault.version import __version__
 
 # Export all commands
-# __all__ removed: no actual exports defined in this file yet.
+__all__ = [
+    "version_cmd",
+    "_scrape",
+    "import_cmd",
+    "_delete",
+    "remove_cmd",
+    "list_cmd",
+    "read_cmd",
+    "search_cmd",
+    "search_lib",
+    "search_text",
+    "index_cmd",
+    "config_cmd",
+    "init_cmd",
+    "backup",
+    "import_backup",
+    "import_deps_cmd",
+    "serve_cmd",
+]
 
 console = Console()
 
@@ -24,6 +43,103 @@ console = Console()
 def version_cmd():
     """Show DocVault version"""
     click.echo(f"DocVault version {__version__}")
+
+
+@click.command("import-deps")
+@click.argument("path", type=click.Path(exists=True), default=".")
+@click.option(
+    "--project-type",
+    type=click.Choice(["auto", "python", "nodejs", "rust", "go", "ruby", "php"]),
+    default="auto",
+    help="Project type (default: auto-detect)",
+)
+@click.option(
+    "--include-dev/--no-include-dev",
+    default=False,
+    help="Include development dependencies (if supported by project type)",
+)
+@click.option("--force", is_flag=True, help="Force re-import of existing documentation")
+@click.option(
+    "--format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format (default: text)",
+)
+def import_deps_cmd(path, project_type, include_dev, force, format):
+    """Import documentation for all dependencies in a project.
+
+    Automatically detects and parses dependency files in the project directory
+    and imports documentation for each dependency.
+
+    Examples:
+        # Import dependencies from current directory
+        dv import-deps
+
+        # Import dependencies from a specific directory
+        dv import-deps /path/to/project
+
+        # Force re-import of all dependencies
+        dv import-deps --force
+
+        # Output results as JSON
+        dv import-deps --format json
+    """
+    import json
+
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+
+    try:
+        if project_type == "auto":
+            project_type = None
+
+        results = ProjectManager.import_documentation(
+            path=path, project_type=project_type, include_dev=include_dev, force=force
+        )
+
+        if format == "json":
+            print(json.dumps(results, indent=2))
+            return
+
+        # Print summary
+        console.print(
+            f"\n[bold green]✓ Successfully imported {len(results['success'])} packages[/]"
+        )
+        if results["skipped"]:
+            console.print(
+                f"[yellow]↻ Skipped {len(results['skipped'])} packages (already imported)[/]"
+            )
+        if results["failed"]:
+            console.print(
+                f"[red]✗ Failed to import {len(results['failed'])} packages[/]"
+            )
+
+        # Show failed imports if any
+        if results["failed"]:
+            console.print("\n[bold]Failed imports:[/]")
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Package", style="dim")
+            table.add_column("Version")
+            table.add_column("Reason")
+
+            for fail in results["failed"]:
+                table.add_row(
+                    fail["name"],
+                    fail.get("version", ""),
+                    fail.get("reason", "Unknown error"),
+                )
+
+            console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/]")
+        if format == "json":
+            print(json.dumps({"error": str(e), "status": "error"}, indent=2))
+        return 1
+
+    return 0
 
 
 @click.command()

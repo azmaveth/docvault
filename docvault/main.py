@@ -11,6 +11,7 @@ from docvault.cli.commands import (
     config_cmd,
     import_backup,
     import_cmd,
+    import_deps_cmd,
     index_cmd,
     init_cmd,
     list_cmd,
@@ -20,6 +21,7 @@ from docvault.cli.commands import (
     serve_cmd,
     version_cmd,
 )
+from docvault.cli.registry_commands import registry as registry_group
 
 # Import initialization function
 # from docvault.core.initialization import ensure_app_initialized
@@ -167,10 +169,20 @@ def register_commands(main):
     main.add_command(index_cmd, name="index")
     main.add_command(serve_cmd, name="serve")
 
+    # Add registry commands
+    main.add_command(registry_group, name="registry")
+
+    # Add import-deps command with aliases
+    main.add_command(import_deps_cmd, name="import-deps")
+    main.add_command(import_deps_cmd, name="deps")
+
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
 
 cli = create_main
+
+# Register all commands
+register_commands(cli)
 
 if __name__ == "__main__":
     cli()

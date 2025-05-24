@@ -400,6 +400,39 @@ Then edit the `.env` file in `~/.docvault/`.
 
 ## CLI Commands
 
+### Import Dependencies from Project Files
+
+DocVault can automatically detect and import documentation for all dependencies in your project. This works with various project types including Python, Node.js, Rust, Go, Ruby, and PHP.
+
+```bash
+# Import dependencies from the current directory
+dv import-deps
+
+# Import dependencies from a specific directory
+dv import-deps /path/to/project
+
+# Force re-import of all dependencies (even if they exist)
+dv import-deps --force
+
+# Include development dependencies (if supported by project type)
+dv import-deps --include-dev
+
+# Specify project type (auto-detected by default)
+dv import-deps --project-type python
+
+# Output results in JSON format
+dv import-deps --format json
+```
+
+#### Supported Project Types
+
+- **Python**: `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile`, `setup.cfg`
+- **Node.js**: `package.json`, `yarn.lock`, `package-lock.json`
+- **Rust**: `Cargo.toml`
+- **Go**: `go.mod`
+- **Ruby**: `Gemfile`, `Gemfile.lock`
+- **PHP**: `composer.json`, `composer.lock`
+
 ## Pre-commit Hooks
 
 To ensure code and documentation quality, DocVault uses [pre-commit](https://pre-commit.com/) hooks for Python formatting, linting, markdown linting, YAML linting, and secret detection.

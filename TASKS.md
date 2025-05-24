@@ -83,7 +83,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Documentation Comparison**: Add features to compare different versions of the same library to identify changes
 - [ ] **Better Discovery**: Implement a recommendation system that suggests related libraries or frameworks
 - [ ] **Integration with Development Environments**: Create plugins for popular IDEs to access documentation directly from the editor
-- [ ] **Import from Project Files**: Add ability to scan project files (package.json, mix.exs, requirements.txt, etc.) to fetch documentation for all dependencies automatically
+- [x] **Import from Project Files**: Add ability to scan project files (package.json, mix.exs, requirements.txt, etc.) to fetch documentation for all dependencies automatically [2025-05-23]
 - [ ] **User-Friendly Installation**: Simplify the installation process and dependencies
 
 ## Suggestions to Improve the Utility of docvault for Coding
