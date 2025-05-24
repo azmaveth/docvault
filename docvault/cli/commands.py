@@ -58,18 +58,37 @@ def version_cmd():
     default=False,
     help="Include development dependencies (if supported by project type)",
 )
-@click.option("--force", is_flag=True, help="Force re-import of existing documentation")
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force re-import of existing documentation, even if version matches",
+)
+@click.option(
+    "--skip-existing",
+    is_flag=True,
+    help="Skip dependencies that already have documentation (default: true if --force is not set)",
+)
 @click.option(
     "--format",
     type=click.Choice(["text", "json"]),
     default="text",
     help="Output format (default: text)",
 )
-def import_deps_cmd(path, project_type, include_dev, force, format):
+@click.option(
+    "--verbose",
+    "-v",
+    count=True,
+    help="Increase verbosity (can be used multiple times)",
+)
+def import_deps_cmd(
+    path, project_type, include_dev, force, skip_existing, format, verbose
+):
     """Import documentation for all dependencies in a project.
 
     Automatically detects and parses dependency files in the project directory
-    and imports documentation for each dependency.
+    and imports documentation for each dependency. When a version is specified
+    in the dependency file, that exact version will be used. Otherwise, the
+    latest available version will be used.
 
     Examples:
         # Import dependencies from current directory
@@ -81,65 +100,171 @@ def import_deps_cmd(path, project_type, include_dev, force, format):
         # Force re-import of all dependencies
         dv import-deps --force
 
+        # Skip dependencies that already have documentation
+        dv import-deps --skip-existing
+
+        # Include development dependencies
+        dv import-deps --include-dev
+
         # Output results as JSON
         dv import-deps --format json
+
+        # Show more detailed output
+        dv import-deps -v
+        dv import-deps -vv  # Even more verbose
     """
     import json
+    from pathlib import Path
+    from typing import Any, Dict, List
 
     from rich.console import Console
-    from rich.table import Table
+    from rich.progress import Progress, SpinnerColumn, TextColumn
 
     console = Console()
+
+    # Set default for skip_existing if not explicitly set
+    if skip_existing is None:
+        skip_existing = not force
 
     try:
         if project_type == "auto":
             project_type = None
+            if verbose > 0:
+                console.print("[dim]Auto-detecting project type...[/]")
 
-        results = ProjectManager.import_documentation(
-            path=path, project_type=project_type, include_dev=include_dev, force=force
-        )
+        if verbose > 1:
+            console.print(f"[dim]Project path: {Path(path).resolve()}")
+            if project_type:
+                console.print(f"[dim]Project type: {project_type}")
+            console.print(f"[dim]Include dev: {include_dev}")
+            console.print(f"[dim]Force: {force}")
+            console.print(f"[dim]Skip existing: {skip_existing}")
+
+        if verbose > 0:
+            console.print("\n[bold]Scanning for dependencies...[/]")
+
+        # Run the async import_documentation function
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+            disable=verbose == 0,
+        ) as progress:
+            task = progress.add_task("Importing dependencies...", total=1)
+
+            # Run the async import_documentation function
+            results = asyncio.run(
+                ProjectManager.import_documentation(
+                    path=path,
+                    project_type=project_type,
+                    include_dev=include_dev,
+                    force=force,
+                    skip_existing=skip_existing,
+                )
+            )
+            progress.update(task, completed=1)
 
         if format == "json":
             print(json.dumps(results, indent=2))
-            return
+            return 0
 
         # Print summary
-        console.print(
-            f"\n[bold green]✓ Successfully imported {len(results['success'])} packages[/]"
-        )
+        console.print("\n[bold]Import Summary:[/]")
+
+        # Successful imports
+        if results["success"]:
+            console.print(
+                f"[green]✓ Successfully imported {len(results['success'])} packages:[/]"
+            )
+            if verbose > 0:
+                for success in sorted(
+                    results["success"], key=lambda x: x["name"].lower()
+                ):
+                    version = (
+                        f" ({success.get('version', 'latest')})"
+                        if success.get("version")
+                        else ""
+                    )
+                    source = (
+                        f" from {success.get('source', 'unknown')}"
+                        if success.get("source")
+                        else ""
+                    )
+                    console.print(f"  - {success['name']}{version}{source}")
+
+        # Skipped imports
         if results["skipped"]:
             console.print(
-                f"[yellow]↻ Skipped {len(results['skipped'])} packages (already imported)[/]"
+                f"[yellow]↻ Skipped {len(results['skipped'])} packages (already imported):[/]"
             )
+            if verbose > 0:
+                for skip in sorted(results["skipped"], key=lambda x: x["name"].lower()):
+                    version = (
+                        f" ({skip.get('version', 'latest')})"
+                        if skip.get("version")
+                        else ""
+                    )
+                    source = (
+                        f" from {skip.get('source', 'unknown')}"
+                        if skip.get("source")
+                        else ""
+                    )
+                    console.print(f"  - {skip['name']}{version}{source}")
+
+        # Failed imports
         if results["failed"]:
             console.print(
-                f"[red]✗ Failed to import {len(results['failed'])} packages[/]"
+                f"[red]✗ Failed to import {len(results['failed'])} packages:[/]"
             )
 
-        # Show failed imports if any
-        if results["failed"]:
-            console.print("\n[bold]Failed imports:[/]")
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Package", style="dim")
-            table.add_column("Version")
-            table.add_column("Reason")
-
+            # Group failures by reason for better reporting
+            failures_by_reason: Dict[str, List[Dict[str, Any]]] = {}
             for fail in results["failed"]:
-                table.add_row(
-                    fail["name"],
-                    fail.get("version", ""),
-                    fail.get("reason", "Unknown error"),
-                )
+                reason = fail.get("reason", "Unknown error")
+                if reason not in failures_by_reason:
+                    failures_by_reason[reason] = []
+                failures_by_reason[reason].append(fail)
 
-            console.print(table)
+            # Print each failure reason with associated packages
+            for reason, fails in failures_by_reason.items():
+                pkg_list = ", ".join(
+                    sorted(
+                        [f"{f['name']} ({f.get('version', 'latest')})" for f in fails]
+                    )
+                )
+                console.print(f"  [dim]{reason}:[/] {pkg_list}")
+
+        # Print a final status message
+        if results["success"] or not results["failed"]:
+            console.print("\n[bold green]✅ Done![/]")
+            return 0
+        else:
+            console.print("\n[bold yellow]⚠ Some dependencies could not be imported[/]")
+            return 1
 
     except Exception as e:
-        console.print(f"[red]Error: {e}[/]")
-        if format == "json":
-            print(json.dumps({"error": str(e), "status": "error"}, indent=2))
-        return 1
+        error_msg = str(e)
+        console.print(f"[red]❌ Error: {error_msg}[/]")
 
-    return 0
+        if verbose > 0:
+            import traceback
+
+            console.print("\n[dim]Stack trace:")
+            console.print(traceback.format_exc())
+
+        if format == "json":
+            print(
+                json.dumps(
+                    {
+                        "error": error_msg,
+                        "status": "error",
+                        "type": e.__class__.__name__,
+                    },
+                    indent=2,
+                )
+            )
+
+        return 1
 
 
 @click.command()
@@ -632,30 +757,53 @@ def remove_cmd(id_ranges, force):
 
 @click.command(name="list", help="List all documents in the vault (alias: ls)")
 @click.option("--filter", help="Filter documents by title or URL")
-def list_cmd(filter):
-    """List all documents in the vault. Use --filter to search titles/URLs."""
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed output including content hashes",
+)
+def list_cmd(filter, verbose):
+    """List all documents in the vault. Use --filter to search titles/URLs.
+
+    By default, content hashes are hidden. Use --verbose to show them.
+    """
     from docvault.db.operations import list_documents
 
     docs = list_documents(filter_text=filter)
     if not docs:
         console.print("No documents found")
         return
+
     table = Table(title="Documents in Vault")
+
+    # Always show these columns
     table.add_column("ID", style="dim")
     table.add_column("Title", style="green")
     table.add_column("URL", style="blue")
     table.add_column("Version", style="magenta")
-    table.add_column("Content Hash", style="yellow")
+
+    # Only show content hash in verbose mode
+    if verbose:
+        table.add_column("Content Hash", style="yellow")
+
     table.add_column("Scraped At", style="cyan")
+
     for doc in docs:
-        table.add_row(
+        row = [
             str(doc["id"]),
             doc["title"] or "Untitled",
             doc["url"],
             doc.get("version", "unknown"),
-            doc.get("content_hash", "") or "",
-            doc["scraped_at"],
-        )
+        ]
+
+        # Only add content hash if in verbose mode
+        if verbose:
+            row.append(doc.get("content_hash", "") or "")
+
+        row.append(doc["scraped_at"])
+        table.add_row(*row)
+
     console.print(table)
 
 
@@ -738,7 +886,13 @@ def search_cmd(ctx):
 @click.option(
     "--timeout", type=int, default=30, help="Timeout in seconds for the search"
 )
-def search_lib(library_spec, version, format, timeout):
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed output including content hashes",
+)
+def search_lib(library_spec, version, format, timeout, verbose):
     """Search library documentation (formerly 'lookup').
 
     The library can be specified with an optional version using the @ symbol:
@@ -844,15 +998,18 @@ def search_lib(library_spec, version, format, timeout):
 
     def format_json_output(docs: List[Dict[str, Any]]) -> None:
         """Format and print results in JSON format."""
-        json_results = [
-            {
+        json_results = []
+        for doc in docs:
+            result = {
                 "title": doc.get("title") or "Untitled",
                 "url": doc.get("url", ""),
                 "version": doc.get("resolved_version", "unknown"),
                 "description": doc.get("description", ""),
             }
-            for doc in docs
-        ]
+            # Only include content_hash in verbose mode
+            if verbose and "content_hash" in doc:
+                result["content_hash"] = doc["content_hash"]
+            json_results.append(result)
 
         output = {
             "status": "success",
@@ -956,6 +1113,12 @@ def search_lib(library_spec, version, format, timeout):
 @click.option("--library", is_flag=True, help="Only show library documentation")
 @click.option("--title-contains", help="Filter by document title containing text")
 @click.option("--updated-after", help="Filter by last updated after date (YYYY-MM-DD)")
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed output including content hashes",
+)
 def search_text(
     query,
     limit,
@@ -968,6 +1131,7 @@ def search_text(
     library,
     title_contains,
     updated_after,
+    verbose,
 ):
     """Search documents in the vault with metadata filtering.
 
@@ -1071,7 +1235,9 @@ def search_text(
                     "score": float(f"{result['score']:.2f}"),
                     "title": result["title"] or "Untitled",
                     "url": result["url"],
-                    "content": result["content"],
+                    "content_hash": (
+                        result.get("content_hash") if verbose else "[hidden]"
+                    ),
                     "content_preview": result["content"][:200]
                     + ("..." if len(result["content"]) > 200 else ""),
                     "document_id": result.get("document_id"),

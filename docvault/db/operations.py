@@ -545,6 +545,45 @@ def search_segments(
     return [dict(row) for row in rows]
 
 
+def document_exists(doc_id: str) -> bool:
+    """
+    Check if a document exists in the database by its ID.
+
+    Args:
+        doc_id: The ID of the document to check (format: "library_name:version")
+
+    Returns:
+        bool: True if the document exists, False otherwise
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Check if this is a library document (format: "library_name:version")
+        if ":" in doc_id:
+            lib_name, version = doc_id.split(":", 1)
+            cursor.execute(
+                """
+                SELECT 1 FROM documents d
+                JOIN libraries l ON d.library_id = l.id
+                WHERE l.name = ? AND d.version = ?
+                LIMIT 1
+                """,
+                (lib_name, version),
+            )
+        else:
+            # Check by document ID directly
+            cursor.execute("SELECT 1 FROM documents WHERE id = ? LIMIT 1", (doc_id,))
+
+        exists = cursor.fetchone() is not None
+        conn.close()
+        return exists
+
+    except Exception as e:
+        logger.error(f"Error checking if document exists: {e}")
+        return False
+
+
 def list_documents(
     limit: int = 20, offset: int = 0, filter_text: Optional[str] = None
 ) -> List[Dict[str, Any]]:

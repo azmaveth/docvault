@@ -1,8 +1,30 @@
 # Changelog
 
-## [0.3.0] - 2025-05-23
+## [Unreleased]
 
 ### Added
+
+- **Enhanced Version Handling**: Improved `import-deps` command to respect version specifications in dependency files
+
+- **New CLI Options**:
+  - Added `--skip-existing` flag to skip dependencies with existing documentation
+  - Added `-v/--verbose` flag for detailed output
+
+- **Better Error Handling**: More informative error messages and progress tracking
+
+- **Documentation**: Updated help text and examples for all commands
+
+### Changed
+
+- **Dependency Parsing**: Completely rewrote dependency parsers for better version specification support
+
+- **Performance**: Optimized import process to skip existing documentation by default
+
+- **User Experience**: Improved console output with better formatting and progress indicators
+
+## [0.3.0] - 2025-05-23
+
+### Features Added
 
 - **Project Dependency Import**: New `import-deps` command to automatically detect and import documentation for project dependencies
   - Supports Python (requirements.txt, pyproject.toml, setup.py, etc.)
@@ -20,7 +42,7 @@
 
 - **New Exceptions Module**: Added custom exceptions for better error handling
 
-### Changed
+### Changes in 0.3.0
 
 - **Documentation**: Updated README with new command usage and examples
 - **Dependencies**: Added new required packages (rich, pyyaml, tomli)

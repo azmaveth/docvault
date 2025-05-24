@@ -78,16 +78,22 @@ class LibraryManager:
         if version == "latest":
             # Try to get the latest known version from our database first
             latest_lib = operations.get_latest_library_version(library_name)
-            if latest_lib and latest_lib["is_available"]:
+            if latest_lib and latest_lib.get("is_available"):
                 self.logger.info(
                     f"Using latest known version {latest_lib['version']} for {library_name}"
                 )
-                return operations.get_library_documents(latest_lib["id"])
+                documents = operations.get_library_documents(latest_lib["id"])
+                if documents and isinstance(documents, list):
+                    return documents
+                return None
 
         # Check if we already have this library+version
         library = operations.get_library(library_name, version)
-        if library and library["is_available"]:
-            return operations.get_library_documents(library["id"])
+        if library and library.get("is_available"):
+            documents = operations.get_library_documents(library["id"])
+            if documents and isinstance(documents, list):
+                return documents
+            return None
 
         # If not, resolve the documentation URL
         doc_url = await self.resolve_doc_url(library_name, version)
@@ -441,6 +447,31 @@ class LibraryManager:
 
         # Fall back to general indicators
         return any(indicator.lower() in url_lower for indicator in official_indicators)
+
+    def documentation_exists(self, library_name: str, version: str = "latest") -> bool:
+        """
+        Check if documentation for a library already exists in the database.
+
+        Args:
+            library_name: Name of the library
+            version: Version of the library (default: "latest")
+
+        Returns:
+            bool: True if documentation exists, False otherwise
+        """
+        try:
+            # Import here to avoid circular imports
+            from docvault.db.operations import document_exists
+
+            # Check if a document with this library name exists in the database
+            doc_id = f"{library_name.lower()}:{version}"
+            return document_exists(doc_id)
+
+        except Exception as e:
+            self.logger.error(
+                f"Error checking if documentation exists for {library_name}: {e}"
+            )
+            return False
 
 
 # Create singleton instance
