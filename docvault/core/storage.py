@@ -1,5 +1,9 @@
 import hashlib
 import os
+import shutil
+import subprocess
+
+import html2text
 
 from docvault import config
 
@@ -40,10 +44,45 @@ def save_markdown(content: str, url: str) -> str:
     return str(markdown_path)
 
 
+def _render_with_glow(content: str) -> str:
+    """Render markdown using Glow if available"""
+    if not shutil.which("glow"):
+        return content  # Fall back to basic rendering
+
+    try:
+        process = subprocess.Popen(
+            ["glow", "-"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate(input=content)
+        if process.returncode == 0 and stdout:
+            return stdout
+        return content
+    except Exception:
+        return content
+
+
+def _render_html(html_content: str) -> str:
+    """Render HTML to plain text using html2text"""
+    try:
+        h = html2text.HTML2Text()
+        h.ignore_links = False
+        h.ignore_images = True
+        h.ignore_tables = False
+        h.body_width = 0  # Don't wrap text
+        return h.handle(html_content)
+    except Exception:
+        return html_content
+
+
 def read_html(document_path: str) -> str:
-    """Read HTML content from file"""
+    """Read HTML content from file and render it as markdown"""
     with open(document_path, "r", encoding="utf-8") as f:
-        return f.read()
+        content = f.read()
+    return _render_html(content)
 
 
 def read_markdown(document_path: str, render: bool = True) -> str:
@@ -63,9 +102,8 @@ def read_markdown(document_path: str, render: bool = True) -> str:
     if not render:
         return content
 
-    # Simple markdown rendering (can be enhanced with a proper markdown renderer)
-    # For now, we'll just return the content as is, and let the console handle basic markdown
-    return content
+    # Try to render markdown with Glow
+    return _render_with_glow(content)
 
 
 def open_html_in_browser(document_path: str) -> bool:

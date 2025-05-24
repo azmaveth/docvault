@@ -818,31 +818,60 @@ def list_cmd(filter, verbose):
 @click.option(
     "--raw",
     is_flag=True,
-    help="Show raw content without rendering markdown (only applies to markdown format)",
+    help="Show raw content without rendering (works with both markdown and HTML)",
 )
-def read_cmd(document_id, format, raw):
+@click.option(
+    "--browser",
+    "use_browser",
+    is_flag=True,
+    help="Open HTML in browser instead of rendering in terminal",
+)
+def read_cmd(document_id, format, raw, use_browser):
     """Read a document from the vault.
 
-    By default, markdown is rendered for better readability.
-    Use --raw to see the original markdown source.
+    By default, markdown is rendered for better readability using Glow (if installed).
+    HTML is rendered using html2text by default, or can be opened in a browser.
+    Use --raw to see the original source.
     """
-    from docvault.core.storage import open_html_in_browser, read_markdown
+    from docvault.core.storage import open_html_in_browser, read_html, read_markdown
     from docvault.db.operations import get_document
 
     doc = get_document(document_id)
     if not doc:
         console.print(f"❌ Document not found: {document_id}", style="bold red")
-        return
+        return 1
 
-    if format == "html":
-        if raw:
-            console.print("⚠️  --raw flag is ignored for HTML format", style="yellow")
-        open_html_in_browser(doc["html_path"])
-    else:
-        content = read_markdown(doc["markdown_path"], render=not raw)
-        if not raw:
+    try:
+        if format == "html":
+            if use_browser:
+                open_html_in_browser(doc["html_path"])
+                return 0
+
+            if raw:
+                with open(doc["html_path"], "r", encoding="utf-8") as f:
+                    content = f.read()
+            else:
+                content = read_html(doc["html_path"])
+
             console.print(f"# {doc['title']}\n", style="bold green")
-        console.print(content)
+            console.print(content)
+        else:
+            content = read_markdown(doc["markdown_path"], render=not raw)
+            if not raw:
+                console.print(f"# {doc['title']}\n", style="bold green")
+            console.print(content)
+        return 0
+    except Exception as e:
+        console.print(f"❌ Error reading document: {e}", style="bold red")
+        if not raw:  # If not in raw mode, try showing raw content as fallback
+            try:
+                with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    console.print("\n[dim]Falling back to raw content:[/]\n")
+                    console.print(f.read())
+            except (IOError, OSError) as io_err:
+                console.print(f"❌ Error reading raw content: {io_err}", style="red")
+                return 1
+        return 1
 
 
 class DefaultGroup(click.Group):

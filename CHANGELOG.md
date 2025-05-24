@@ -4,12 +4,19 @@
 
 ### Added
 
+- **Enhanced Document Rendering**:
+  - Added support for [Glow](https://github.com/charmbracelet/glow) for beautiful markdown rendering
+  - Added html2text for rendering HTML documents in the terminal
+  - New `--browser` flag for `dv read` to open HTML in default browser
+  - Improved `--raw` flag to work with both markdown and HTML formats
+  - Better error handling with fallback to raw content
+
 - **Enhanced Version Handling**: Improved `import-deps` command to respect version specifications in dependency files
 
 - **New CLI Options**:
   - Added `--skip-existing` flag to skip dependencies with existing documentation
   - Added `-v/--verbose` flag for detailed output
-  - Added `--raw` flag to `dv read` command to show raw markdown content
+  - Added `--raw` flag to `dv read` command to show raw content
 
 - **Better Error Handling**: More informative error messages and progress tracking
 
