@@ -36,7 +36,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ## Human User Experience Improvements
 
 - [x] **CLI canonical/alias refactor**: Refactored CLI to use canonical command names with user-friendly aliases (import, remove, list, read, search, etc.). [2025-04-22]
-- [ ] **CLI additional commands refactor**: Refactor CLI to use restore instead of import-backup, then add _cmd suffix to backup and restore commands in docvault.cli.commands
+- [x] **CLI additional commands refactor**: Refactor CLI to use restore instead of import-backup, then add _cmd suffix to backup and restore commands in docvault.cli.commands [2025-05-24]
 - [x] **Search/lookup merge**: Merged `lookup` into `search` as a subcommand and updated all references. [2025-04-22]
 - [x] **Library Search Improvements**: [2025-05-23]
   - [x] Added support for `library@version` syntax (e.g., `django@4.2`) in search commands

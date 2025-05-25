@@ -7,9 +7,8 @@ import click
 
 # Import CLI commands directly
 from docvault.cli.commands import (
-    backup,
+    backup_cmd,
     config_cmd,
-    import_backup,
     import_cmd,
     import_deps_cmd,
     index_cmd,
@@ -17,6 +16,7 @@ from docvault.cli.commands import (
     list_cmd,
     read_cmd,
     remove_cmd,
+    restore_cmd,
     search_cmd,
     serve_cmd,
     version_cmd,
@@ -125,19 +125,7 @@ def create_main(ctx, version):
         ctx.exit()
 
 
-# Register commands after definition
-create_main.add_command(init_cmd)
-create_main.add_command(import_cmd)
-create_main.add_command(list_cmd)
-create_main.add_command(read_cmd)
-create_main.add_command(remove_cmd)
-create_main.add_command(search_cmd)
-create_main.add_command(index_cmd)
-create_main.add_command(config_cmd)
-create_main.add_command(serve_cmd)
-create_main.add_command(backup)
-create_main.add_command(import_backup)
-create_main.add_command(version_cmd)
+# Commands are registered in register_commands() below
 
 
 def register_commands(main):
@@ -167,8 +155,11 @@ def register_commands(main):
 
     main.add_command(config_cmd, name="config")
 
-    main.add_command(backup, name="backup")
-    main.add_command(import_backup, name="import-backup")
+    main.add_command(backup_cmd, name="backup")
+    main.add_command(restore_cmd, name="restore")
+    main.add_command(
+        restore_cmd, name="import-backup"
+    )  # Keep for backward compatibility
     main.add_command(index_cmd, name="index")
     main.add_command(serve_cmd, name="serve")
 
@@ -178,6 +169,9 @@ def register_commands(main):
     # Add import-deps command with aliases
     main.add_command(import_deps_cmd, name="import-deps")
     main.add_command(import_deps_cmd, name="deps")
+
+    # Add version command
+    main.add_command(version_cmd, name="version")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

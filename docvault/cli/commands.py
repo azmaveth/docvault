@@ -32,8 +32,8 @@ __all__ = [
     "index_cmd",
     "config_cmd",
     "init_cmd",
-    "backup",
-    "import_backup",
+    "backup_cmd",
+    "restore_cmd",
     "import_deps_cmd",
     "serve_cmd",
 ]
@@ -1667,7 +1667,7 @@ init_cmd = make_init_cmd("init", "Initialize the database (aliases: init-db)")
 
 @click.command()
 @click.argument("destination", type=click.Path(), required=False)
-def backup(destination):
+def backup_cmd(destination):
     """Backup the vault to a zip file"""
     from docvault import config
 
@@ -1695,8 +1695,8 @@ def backup(destination):
 @click.command()
 @click.argument("backup_file", type=click.Path(exists=True))
 @click.option("--force", is_flag=True, help="Overwrite existing data")
-def import_backup(backup_file, force):
-    """Import a backup file"""
+def restore_cmd(backup_file, force):
+    """Restore the vault from a backup file (alias: import-backup)"""
     from docvault import config
 
     if not force and any(
