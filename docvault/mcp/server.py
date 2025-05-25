@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import mcp.server.stdio
 
@@ -27,23 +27,67 @@ def create_server() -> FastMCP:
 
     # Add document scraping tool
     @server.tool()
-    async def scrape_document(url: str, depth: int = 1) -> types.CallToolResult:
-        """Scrape a document from a URL and store it in the document vault"""
+    async def scrape_document(
+        url: str,
+        depth: Union[int, str] = 1,
+        sections: Optional[list] = None,
+        filter_selector: Optional[str] = None,
+        depth_strategy: Optional[str] = None,
+    ) -> types.CallToolResult:
+        """Scrape a document from a URL and store it in the document vault.
+
+        Args:
+            url: The URL to scrape
+            depth: How many levels deep to scrape - number (1=single page) or
+                   strategy (auto/conservative/aggressive) (default: 1)
+            sections: Filter by section headings (e.g., ['Installation', 'API Reference'])
+            filter_selector: CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')
+            depth_strategy: Override the depth control strategy (auto/conservative/aggressive/manual)
+        """
         try:
+            # Parse depth parameter - handle both int and string
+            if isinstance(depth, str):
+                if depth.lower() in ["auto", "conservative", "aggressive"]:
+                    depth_param = depth.lower()
+                else:
+                    try:
+                        depth_param = int(depth)
+                    except ValueError:
+                        depth_param = "auto"
+            else:
+                depth_param = depth
+
             scraper = get_scraper()
-            result = await scraper.scrape_url(url, depth=depth)
+            result = await scraper.scrape_url(
+                url,
+                depth=depth_param,
+                sections=sections,
+                filter_selector=filter_selector,
+                depth_strategy=depth_strategy,
+            )
+
+            # Build success message with section info
+            success_msg = (
+                f"Successfully scraped document: {result['title']} (ID: {result['id']})"
+            )
+            if sections:
+                success_msg += f" - Filtered by sections: {', '.join(sections)}"
+            if filter_selector:
+                success_msg += f" - Filtered by CSS selector: {filter_selector}"
 
             return types.CallToolResult(
                 content=[
                     types.TextContent(
                         type="text",
-                        text=f"Successfully scraped document: {result['title']} (ID: {result['id']})",
+                        text=success_msg,
                     )
                 ],
                 metadata={
                     "document_id": result["id"],
                     "title": result["title"],
                     "url": url,
+                    "sections": sections,
+                    "filter_selector": filter_selector,
                     "success": True,
                 },
             )

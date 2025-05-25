@@ -336,15 +336,27 @@ def configure_auto_check(enable, disable, frequency, document_id):
             )
 
         if updates:
-            values.append(document_id)
-            cursor.execute(
-                f"""
-                UPDATE documents 
-                SET {', '.join(updates)}
-                WHERE id = ?
-            """,
-                values,
-            )
+            # Build the query safely - we control the column names
+            if enable is not None:
+                cursor.execute(
+                    """
+                    UPDATE documents 
+                    SET version_check_enabled = ?
+                    WHERE id = ?
+                    """,
+                    (1 if enable else 0, document_id),
+                )
+
+            if frequency is not None:
+                cursor.execute(
+                    """
+                    UPDATE documents 
+                    SET check_frequency_days = ?
+                    WHERE id = ?
+                    """,
+                    (frequency, document_id),
+                )
+
             conn.commit()
 
     finally:

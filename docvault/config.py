@@ -65,3 +65,32 @@ STORAGE_PATH.mkdir(parents=True, exist_ok=True)
 HTML_PATH.mkdir(parents=True, exist_ok=True)
 MARKDOWN_PATH.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Security Configuration
+# URL validation settings
+URL_ALLOWED_DOMAINS = os.getenv("URL_ALLOWED_DOMAINS", "").strip()
+URL_ALLOWED_DOMAINS = (
+    [d.strip() for d in URL_ALLOWED_DOMAINS.split(",") if d.strip()]
+    if URL_ALLOWED_DOMAINS
+    else None
+)
+
+URL_BLOCKED_DOMAINS = os.getenv("URL_BLOCKED_DOMAINS", "").strip()
+URL_BLOCKED_DOMAINS = (
+    [d.strip() for d in URL_BLOCKED_DOMAINS.split(",") if d.strip()]
+    if URL_BLOCKED_DOMAINS
+    else None
+)
+
+# Request settings
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))  # seconds
+MAX_RESPONSE_SIZE = int(
+    os.getenv("MAX_RESPONSE_SIZE", str(10 * 1024 * 1024))
+)  # 10MB default
+MAX_SCRAPING_DEPTH = int(os.getenv("MAX_SCRAPING_DEPTH", "5"))
+MAX_PAGES_PER_DOMAIN = int(os.getenv("MAX_PAGES_PER_DOMAIN", "100"))
+
+# Proxy settings
+HTTP_PROXY = os.getenv("HTTP_PROXY", "")
+HTTPS_PROXY = os.getenv("HTTPS_PROXY", "")
+NO_PROXY = os.getenv("NO_PROXY", "")

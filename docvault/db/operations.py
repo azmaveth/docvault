@@ -4,6 +4,8 @@ import sqlite3
 from typing import Any, Dict, List, Optional
 
 from docvault import config
+from docvault.db.query_builder import build_document_filter
+from docvault.db.sql_logging import enable_query_logging
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -32,6 +34,11 @@ def get_connection():
         pass
     except Exception:
         pass
+
+    # Enable query logging for security auditing
+    if getattr(config, "SQL_LOGGING", False):
+        enable_query_logging(conn)
+
     return conn
 
 
@@ -327,34 +334,8 @@ def search_segments(
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Prepare document filters
-    filter_conditions = []
-    filter_params = []
-
-    if doc_filter:
-        for key, value in doc_filter.items():
-            if value is not None:
-                if key == "version":
-                    filter_conditions.append("d.version = ?")
-                    filter_params.append(str(value))
-                elif key == "is_library_doc":
-                    filter_conditions.append("d.is_library_doc = ?")
-                    filter_params.append(1 if value else 0)
-                elif key == "title_contains":
-                    filter_conditions.append("LOWER(d.title) LIKE LOWER(?)")
-                    filter_params.append(f"%{value}%")
-                elif key == "updated_after":
-                    filter_conditions.append("d.updated_at >= ?")
-                    filter_params.append(value)
-                elif key == "document_ids":
-                    if isinstance(value, list) and value:
-                        placeholders = ",".join(["?" for _ in value])
-                        filter_conditions.append(f"d.id IN ({placeholders})")
-                        filter_params.extend(value)
-
-    filter_clause = (
-        f"AND {' AND '.join(filter_conditions)}" if filter_conditions else ""
-    )
+    # Prepare document filters using secure query builder
+    filter_conditions, filter_params = build_document_filter(doc_filter)
 
     # Check if we should skip vector search
     use_text_search = embedding is None
@@ -366,9 +347,8 @@ def search_segments(
             logger = logging.getLogger(__name__)
             logger.debug(f"Vector search with {len(filter_params)} filter params")
 
-            # Search using vector similarity with section information
-            cursor.execute(
-                f"""
+            # Build vector search query - use static base query with additional conditions
+            base_query = """
             WITH vector_matches AS (
                 SELECT 
                     rowid,
@@ -401,13 +381,25 @@ def search_segments(
                 JOIN documents d ON s.document_id = d.id
                 LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
-                {filter_clause}
+            """
+
+            # Add filter conditions
+            if filter_conditions:
+                # Since filter_conditions come from our controlled build_document_filter function,
+                # and all user input is parameterized, this is safe
+                base_query += " AND " + " AND ".join(filter_conditions)
+
+            base_query += """
             )
             SELECT * FROM ranked_segments 
             WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
             LIMIT ?
-            """,
+            """
+
+            # Execute with properly ordered parameters
+            cursor.execute(
+                base_query,
                 (embedding, limit * 10)  # Get more results for filtering
                 + tuple(filter_params)
                 + (min_score, limit),
@@ -497,17 +489,21 @@ def search_segments(
                         (CASE 
                 """
                 + "\n".join(order_score_cases)
-                + f"""
+                + """
                         END) DESC
                     ) as rn
                 FROM document_segments s
                 JOIN documents d ON s.document_id = d.id
                 LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
-                {filter_clause}
-                AND (
                 """
             )
+
+            # Add filter conditions
+            if filter_conditions:
+                query += " AND " + " AND ".join(filter_conditions)
+
+            query += " AND ("
 
             # Add WHERE conditions for each term with OR
             where_clauses = []
@@ -567,8 +563,8 @@ def search_segments(
             cursor.execute(query, params)
         else:
             # No text query available, return random documents with metadata
-            cursor.execute(
-                f"""
+            # Build query for no text search
+            query = """
             WITH ranked_segments AS (
                 SELECT 
                     s.id, 
@@ -592,13 +588,22 @@ def search_segments(
                 JOIN documents d ON s.document_id = d.id
                 LEFT JOIN libraries l ON d.library_id = l.id
                 WHERE s.section_path IS NOT NULL
-                {filter_clause}
+            """
+
+            # Add filter conditions
+            if filter_conditions:
+                query += " AND " + " AND ".join(filter_conditions)
+
+            query += """
             )
             SELECT * FROM ranked_segments 
             WHERE rn = 1 AND score >= ?
             ORDER BY RANDOM()
             LIMIT ?
-            """,
+            """
+
+            cursor.execute(
+                query,
                 (min_score, limit) + tuple(filter_params),
             )
 

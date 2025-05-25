@@ -3,7 +3,7 @@ import base64
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import aiohttp
@@ -12,7 +12,9 @@ import docvault.core.embeddings as embeddings
 import docvault.core.processor as processor
 import docvault.core.storage as storage
 from docvault import config
+from docvault.core.depth_analyzer import DepthAnalyzer, DepthStrategy
 from docvault.db import operations
+from docvault.utils.path_security import PathSecurityError, validate_url_path
 
 # Get WebScraper instance
 _scraper = None
@@ -29,7 +31,7 @@ def get_scraper():
 class WebScraper:
     """Web scraper for fetching documentation"""
 
-    def __init__(self):
+    def __init__(self, depth_strategy: Union[str, DepthStrategy] = DepthStrategy.AUTO):
         import os
 
         from docvault import config
@@ -40,6 +42,20 @@ class WebScraper:
         os.makedirs(log_dir, exist_ok=True)
         self.visited_urls = set()
         self.logger = logging.getLogger("docvault.scraper")
+
+        # Initialize depth analyzer
+        if isinstance(depth_strategy, str):
+            try:
+                self.depth_strategy = DepthStrategy(depth_strategy)
+            except ValueError:
+                self.logger.warning(
+                    f"Invalid depth strategy '{depth_strategy}', using AUTO"
+                )
+                self.depth_strategy = DepthStrategy.AUTO
+        else:
+            self.depth_strategy = depth_strategy
+
+        self.depth_analyzer = DepthAnalyzer(self.depth_strategy)
         # Set up logging to file and console if not already set
         if not self.logger.hasHandlers():
             formatter = logging.Formatter(
@@ -57,22 +73,167 @@ class WebScraper:
         # Stats tracking
         self.stats = {"pages_scraped": 0, "pages_skipped": 0, "segments_created": 0}
 
+    def _filter_content_sections(
+        self,
+        html_content: str,
+        sections: Optional[list] = None,
+        filter_selector: Optional[str] = None,
+    ) -> str:
+        """Filter HTML content based on section headings or CSS selectors"""
+        if not sections and not filter_selector:
+            return html_content
+
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # If CSS selector is provided, use it first
+        if filter_selector:
+            try:
+                selected_elements = soup.select(filter_selector)
+                if selected_elements:
+                    # Create new soup with only selected elements
+                    filtered_soup = BeautifulSoup(
+                        "<html><body></body></html>", "html.parser"
+                    )
+                    body = filtered_soup.body
+                    for element in selected_elements:
+                        body.append(element.extract())
+                    return str(filtered_soup)
+            except Exception as e:
+                self.logger.warning(f"Invalid CSS selector '{filter_selector}': {e}")
+
+        # If sections are specified, filter by heading content
+        if sections:
+            sections_lower = [s.lower() for s in sections]
+            filtered_soup = BeautifulSoup("<html><body></body></html>", "html.parser")
+            body = filtered_soup.body
+
+            # Find all headings (h1-h6)
+            headings = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
+
+            for heading in headings:
+                heading_text = heading.get_text().strip().lower()
+                # Check if any of the requested sections match this heading
+                if any(section in heading_text for section in sections_lower):
+                    # Include this heading and collect content until the next heading of same or higher level
+                    current_level = int(
+                        heading.name[1]
+                    )  # Extract number from h1, h2, etc.
+
+                    # Clone the heading and add it
+                    body.append(soup.new_tag(heading.name))
+                    body.contents[-1].string = heading.get_text()
+
+                    # Add subsequent elements until we hit another heading of same or higher level
+                    current = heading.next_sibling
+                    while current:
+                        # Skip text nodes that are just whitespace
+                        if isinstance(current, str) and current.strip() == "":
+                            current = current.next_sibling
+                            continue
+
+                        if (
+                            hasattr(current, "name")
+                            and current.name
+                            and current.name in ["h1", "h2", "h3", "h4", "h5", "h6"]
+                        ):
+                            next_level = int(current.name[1])
+                            if next_level <= current_level:
+                                break  # Stop at same or higher level heading
+
+                        # Clone and add the element
+                        if hasattr(current, "name") and current.name:
+                            cloned = soup.new_tag(current.name)
+                            if current.string:
+                                cloned.string = current.string
+                            elif hasattr(current, "get_text"):
+                                cloned.string = current.get_text()
+                            body.append(cloned)
+                        elif isinstance(current, str):  # Text node
+                            text_content = current.strip()
+                            if text_content:
+                                body.append(soup.new_string(text_content))
+
+                        current = current.next_sibling
+
+            if body.contents:
+                return str(filtered_soup)
+
+        # If no matches found, return original content
+        return html_content
+
     async def scrape_url(
         self,
         url: str,
-        depth: int = 1,
+        depth: Union[int, str] = "auto",
         is_library_doc: bool = False,
         library_id: Optional[int] = None,
         max_links: Optional[int] = None,
         strict_path: bool = True,
         force_update: bool = False,
+        sections: Optional[list] = None,
+        filter_selector: Optional[str] = None,
+        depth_strategy: Optional[Union[str, DepthStrategy]] = None,
     ) -> Dict[str, Any]:
         """
         Scrape a URL and store the content
+
+        Args:
+            url: URL to scrape
+            depth: Recursion depth - can be:
+                - int: Fixed depth (1, 2, 3, etc.)
+                - "auto": Smart depth detection based on content
+            depth_strategy: Override the scraper's default strategy
+
         Returns document metadata
         """
+        # Validate URL for security
+        try:
+            url = validate_url_path(url)
+        except PathSecurityError as e:
+            self.logger.error(f"Security error with URL {url}: {e}")
+            raise ValueError(f"Invalid or unsafe URL: {e}")
+
         # Reset visited URLs at the start of each top-level scrape
         self.visited_urls = set()
+        self.pages_per_domain = {}
+
+        # Handle depth parameter
+        if isinstance(depth, str) and depth.lower() == "auto":
+            # Use smart depth detection
+            effective_depth = min(
+                3, config.MAX_SCRAPING_DEPTH
+            )  # Start with reasonable default
+            use_smart_depth = True
+        else:
+            # Use fixed depth with maximum limit
+            effective_depth = int(depth) if isinstance(depth, str) else depth
+            effective_depth = min(effective_depth, config.MAX_SCRAPING_DEPTH)
+            use_smart_depth = False
+
+        # Warn if depth was limited
+        if effective_depth != depth and depth != "auto":
+            self.logger.warning(
+                f"Depth limited from {depth} to {effective_depth} (max allowed: {config.MAX_SCRAPING_DEPTH})"
+            )
+
+        # Update depth analyzer if strategy is provided
+        if depth_strategy:
+            if isinstance(depth_strategy, str):
+                try:
+                    strategy = DepthStrategy(depth_strategy)
+                except ValueError:
+                    self.logger.warning(
+                        f"Invalid depth strategy '{depth_strategy}', using current"
+                    )
+                    strategy = self.depth_strategy
+            else:
+                strategy = depth_strategy
+
+            if strategy != self.depth_strategy:
+                self.depth_analyzer = DepthAnalyzer(strategy)
+
         # GitHub repo special handling: fetch README via API
         parsed = urlparse(url)
         if parsed.netloc in ("github.com", "www.github.com"):
@@ -103,15 +264,23 @@ class WebScraper:
                 parent_segments = {}  # Track parent segments by level
 
                 for i, segment in enumerate(segments):
-                    content = segment["content"]
+                    # Handle both dictionary and tuple formats for backward compatibility
+                    if isinstance(segment, dict):
+                        stype = segment.get("type", "text")
+                        content = segment.get("content", "")
+                        section_title = segment.get("section_title", "Introduction")
+                        section_level = segment.get("section_level", 0)
+                        section_path = segment.get("section_path", "")
+                    else:
+                        # Legacy tuple format (stype, content)
+                        stype, content = segment
+                        section_title = "Introduction"
+                        section_level = 0
+                        section_path = ""
+
+                    segment_type = stype
                     if len(content.strip()) < 3:
                         continue
-
-                    # Get section information
-                    section_title = segment.get("section_title", "Introduction")
-                    section_level = segment.get("section_level", 0)
-                    section_path = segment.get("section_path", "")
-                    segment_type = segment.get("type", "text")
 
                     # Update parent segments tracking
                     if segment_type.startswith("h"):
@@ -149,16 +318,21 @@ class WebScraper:
                     )
                     self.stats["segments_created"] += 1
                 # Crawl additional wiki pages
-                if depth > 1:
+                if (use_smart_depth and effective_depth > 0) or (
+                    not use_smart_depth and depth > 1
+                ):
                     await self._scrape_links(
                         url,
                         html_content,
-                        depth - 1,
+                        effective_depth - 1 if not use_smart_depth else effective_depth,
                         is_library_doc,
                         library_id,
                         max_links,
                         strict_path,
                         False,  # Don't force update on linked pages
+                        sections=sections,
+                        filter_selector=filter_selector,
+                        use_smart_depth=use_smart_depth,
                     )
                 return operations.get_document(document_id)
             elif len(parts) >= 2:
@@ -185,15 +359,23 @@ class WebScraper:
                     parent_segments = {}  # Track parent segments by level
 
                     for i, segment in enumerate(segments):
-                        content = segment["content"]
+                        # Handle both dictionary and tuple formats for backward compatibility
+                        if isinstance(segment, dict):
+                            stype = segment.get("type", "text")
+                            content = segment.get("content", "")
+                            section_title = segment.get("section_title", "Introduction")
+                            section_level = segment.get("section_level", 0)
+                            section_path = segment.get("section_path", "")
+                        else:
+                            # Legacy tuple format (stype, content)
+                            stype, content = segment
+                            section_title = "Introduction"
+                            section_level = 0
+                            section_path = ""
+
+                        segment_type = stype
                         if len(content.strip()) < 3:
                             continue
-
-                        # Get section information
-                        section_title = segment.get("section_title", "Introduction")
-                        section_level = segment.get("section_level", 0)
-                        section_path = segment.get("section_path", "")
-                        segment_type = segment.get("type", "text")
 
                         # Update parent segments tracking
                         if segment_type.startswith("h"):
@@ -241,6 +423,15 @@ class WebScraper:
         html_content, fetch_error = await self._safe_fetch_url(url)
         if not html_content:
             raise ValueError(f"Failed to fetch URL: {url}. Reason: {fetch_error}")
+
+        # Apply section filtering if requested
+        if sections or filter_selector:
+            self.logger.info(
+                f"Applying section filtering: sections={sections}, selector={filter_selector}"
+            )
+            html_content = self._filter_content_sections(
+                html_content, sections, filter_selector
+            )
 
         # OpenAPI/Swagger spec detection and handling
         try:
@@ -312,7 +503,21 @@ class WebScraper:
             )
             self.stats["pages_scraped"] += 1
             segments = processor.segment_markdown(markdown_content)
-            for i, (segment_type, content) in enumerate(segments):
+            for i, segment in enumerate(segments):
+                # Handle both dictionary and tuple formats for backward compatibility
+                if isinstance(segment, dict):
+                    segment_type = segment.get("type", "text")
+                    content = segment.get("content", "")
+                    section_title = segment.get("section_title")
+                    section_level = segment.get("section_level", 0)
+                    section_path = segment.get("section_path")
+                else:
+                    # Legacy tuple format (stype, content)
+                    segment_type, content = segment
+                    section_title = None
+                    section_level = 0
+                    section_path = None
+
                 if len(content.strip()) < 3:
                     continue
                 embedding = await embeddings.generate_embeddings(content)
@@ -322,19 +527,27 @@ class WebScraper:
                     embedding=embedding,
                     segment_type=segment_type,
                     position=i,
+                    section_title=section_title,
+                    section_level=section_level,
+                    section_path=section_path,
                 )
                 self.stats["segments_created"] += 1
             # Crawl additional pages with relaxed strict_path
-            if depth > 1:
+            if (use_smart_depth and effective_depth > 0) or (
+                not use_smart_depth and effective_depth > 1
+            ):
                 await self._scrape_links(
                     url,
                     html_content,
-                    depth - 1,
+                    effective_depth - 1 if not use_smart_depth else effective_depth,
                     is_library_doc,
                     library_id,
                     max_links,
                     strict_path=False,
                     force_update=False,
+                    sections=sections,
+                    filter_selector=filter_selector,
+                    use_smart_depth=use_smart_depth,
                 )
             self.visited_urls.add(url)
             return operations.get_document(document_id)
@@ -416,9 +629,7 @@ class WebScraper:
                     cross_references.store_references(refs)
             except Exception as e:
                 # Don't fail scraping if cross-reference extraction fails
-                import logging
-
-                logging.getLogger(__name__).warning(
+                self.logger.warning(
                     f"Failed to extract cross-references for segment {segment_id}: {e}"
                 )
 
@@ -428,139 +639,15 @@ class WebScraper:
 
             resolved = cross_references.resolve_references(document_id)
             if resolved > 0:
-                logging.getLogger(__name__).info(
+                self.logger.info(
                     f"Resolved {resolved} cross-references for document {document_id}"
                 )
         except Exception as e:
-            logging.getLogger(__name__).warning(
+            self.logger.warning(
                 f"Failed to resolve cross-references for document {document_id}: {e}"
             )
 
         self.visited_urls.add(url)
-        return operations.get_document(document_id)
-
-        gen_tag = soup.find("meta", attrs={"name": "generator"})
-        docs_site = (
-            "readthedocs.io" in parsed_url.netloc
-            or "/docs/" in parsed_url.path
-            or (
-                gen_tag
-                and any(x in gen_tag.get("content", "") for x in ["MkDocs", "Sphinx"])
-            )
-        )
-        if docs_site:
-            title = processor.extract_title(html_content) or url
-            markdown_content = processor.html_to_markdown(html_content)
-            html_path = storage.save_html(html_content, url)
-            # For MkDocs/Sphinx sites, save original HTML as markdown per test expectations
-            markdown_path = storage.save_markdown(html_content, url)
-            document_id = operations.add_document(
-                url=url,
-                title=title,
-                html_path=html_path,
-                markdown_path=markdown_path,
-                library_id=library_id,
-                is_library_doc=is_library_doc,
-            )
-            self.stats["pages_scraped"] += 1
-            segments = processor.segment_markdown(markdown_content)
-            for i, (segment_type, content) in enumerate(segments):
-                if len(content.strip()) < 3:
-                    continue
-                embedding = await embeddings.generate_embeddings(content)
-                operations.add_document_segment(
-                    document_id=document_id,
-                    content=content,
-                    embedding=embedding,
-                    segment_type=segment_type,
-                    position=i,
-                )
-                self.stats["segments_created"] += 1
-            # Crawl additional pages with relaxed strict_path
-            if depth > 1:
-                await self._scrape_links(
-                    url,
-                    html_content,
-                    depth - 1,
-                    is_library_doc,
-                    library_id,
-                    max_links,
-                    strict_path=False,
-                    force_update=False,
-                )
-            return operations.get_document(document_id)
-
-        # Check if document already exists
-        existing_doc = operations.get_document_by_url(url)
-        if existing_doc and not force_update:
-            self.stats["pages_skipped"] += 1
-            self.logger.debug(f"Document already exists for URL: {url}")
-            return existing_doc
-
-        # Fetch HTML content
-        html_content = await self._safe_fetch_url(url)
-        if not html_content:
-            raise ValueError(f"Failed to fetch URL: {url}")
-
-        # Extract title
-        title = processor.extract_title(html_content) or url
-
-        # Convert to markdown
-        markdown_content = processor.html_to_markdown(html_content)
-
-        # Save both formats
-        html_path = storage.save_html(html_content, url)
-        markdown_path = storage.save_markdown(markdown_content, url)
-
-        # Add to database
-        document_id = operations.add_document(
-            url=url,
-            title=title,
-            html_path=html_path,
-            markdown_path=markdown_path,
-            library_id=library_id,
-            is_library_doc=is_library_doc,
-        )
-
-        # Update stats
-        self.stats["pages_scraped"] += 1
-
-        # Segment and embed content
-        segments = processor.segment_markdown(markdown_content)
-        for i, (segment_type, content) in enumerate(segments):
-            # Skip very short segments
-            if len(content.strip()) < 3:
-                continue
-
-            # Generate embeddings
-            embedding = await embeddings.generate_embeddings(content)
-
-            # Store segment with embedding
-            operations.add_document_segment(
-                document_id=document_id,
-                content=content,
-                embedding=embedding,
-                segment_type=segment_type,
-                position=i,
-            )
-
-            # Update stats
-            self.stats["segments_created"] += 1
-
-        # Recursive scraping if depth > 1
-        if depth > 1:
-            await self._scrape_links(
-                url,
-                html_content,
-                depth - 1,
-                is_library_doc,
-                library_id,
-                max_links,
-                strict_path,
-                force_update=False,
-            )
-
-        # Return document info
         return operations.get_document(document_id)
 
     async def _safe_fetch_url(self, url: str):
@@ -593,22 +680,62 @@ class WebScraper:
 
     async def _fetch_url(self, url: str) -> tuple:
         """Fetch HTML content from URL. Returns (content, error_detail)"""
+        # Validate URL for security with domain allowlist/blocklist
+        try:
+            url = validate_url_path(
+                url,
+                allowed_domains=config.URL_ALLOWED_DOMAINS,
+                blocked_domains=config.URL_BLOCKED_DOMAINS,
+            )
+        except PathSecurityError as e:
+            self.logger.error(f"Security error with URL {url}: {e}")
+            return None, f"Invalid or unsafe URL: {e}"
+
         self.logger.debug(f"[BEFORE FETCH] visited_urls={self.visited_urls}")
         self.logger.debug(f"[FETCH] Attempting to fetch: {url}")
         if url in self.visited_urls:
             self.logger.debug(f"URL already visited: {url}")
             return None, "URL already visited"
 
+        # Check pages per domain limit
+        parsed = urlparse(url)
+        domain = parsed.netloc
+        if hasattr(self, "pages_per_domain"):
+            if domain not in self.pages_per_domain:
+                self.pages_per_domain[domain] = 0
+
+            if self.pages_per_domain[domain] >= config.MAX_PAGES_PER_DOMAIN:
+                self.logger.warning(
+                    f"Domain {domain} has reached max pages limit ({config.MAX_PAGES_PER_DOMAIN})"
+                )
+                return (
+                    None,
+                    f"Domain page limit reached ({config.MAX_PAGES_PER_DOMAIN} pages)",
+                )
+
         # Attach GitHub token if available
-        headers = {"User-Agent": "DocVault/0.1.0 Documentation Indexer"}
+        headers = {"User-Agent": "DocVault/0.5.0 Documentation Indexer"}
         token = config.GITHUB_TOKEN if hasattr(config, "GITHUB_TOKEN") else None
         if token and "github.com" in urlparse(url).netloc:
             headers["Authorization"] = f"token {token}"
 
+        # Configure proxy if available
+        proxy = None
+        if config.HTTPS_PROXY and url.startswith("https://"):
+            proxy = config.HTTPS_PROXY
+        elif config.HTTP_PROXY and url.startswith("http://"):
+            proxy = config.HTTP_PROXY
+
+        # Configure timeout
+        timeout = aiohttp.ClientTimeout(total=config.REQUEST_TIMEOUT)
+
         content, error_detail = None, None
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=30) as response:
+            connector = aiohttp.TCPConnector(ssl=True)  # Enforce SSL/TLS
+            async with aiohttp.ClientSession(connector=connector) as session:
+                async with session.get(
+                    url, headers=headers, timeout=timeout, proxy=proxy
+                ) as response:
                     if response.status == 200:
                         content_type = response.headers.get("Content-Type", "")
                         if (
@@ -625,22 +752,51 @@ class WebScraper:
                                 self.logger.debug(msg)
                             error_detail = msg
                         else:
-                            try:
-                                content = await response.text()
-                            except UnicodeDecodeError as e:
-                                msg = f"Unicode decode error for {url}: {e}"
-                                if not self.quiet:
-                                    self.logger.warning(msg)
-                                else:
-                                    self.logger.debug(msg)
+                            # Check content length
+                            content_length = response.headers.get("Content-Length")
+                            if (
+                                content_length
+                                and int(content_length) > config.MAX_RESPONSE_SIZE
+                            ):
+                                msg = f"Response too large: {int(content_length)} bytes (max: {config.MAX_RESPONSE_SIZE})"
+                                self.logger.warning(msg)
                                 error_detail = msg
+                            else:
+                                try:
+                                    # Read with size limit
+                                    content_bytes = b""
+                                    async for chunk in response.content.iter_chunked(
+                                        8192
+                                    ):
+                                        content_bytes += chunk
+                                        if (
+                                            len(content_bytes)
+                                            > config.MAX_RESPONSE_SIZE
+                                        ):
+                                            msg = f"Response exceeded size limit of {config.MAX_RESPONSE_SIZE} bytes"
+                                            self.logger.warning(msg)
+                                            error_detail = msg
+                                            content_bytes = None
+                                            break
+
+                                    if content_bytes:
+                                        content = content_bytes.decode(
+                                            "utf-8", errors="replace"
+                                        )
+                                except UnicodeDecodeError as e:
+                                    msg = f"Unicode decode error for {url}: {e}"
+                                    if not self.quiet:
+                                        self.logger.warning(msg)
+                                    else:
+                                        self.logger.debug(msg)
+                                    error_detail = msg
                     else:
                         msg = f"Failed to fetch URL: {url} (Status: {response.status})"
                         if response.status != 404:
                             self.logger.warning(msg)
                         error_detail = msg
         except asyncio.TimeoutError:
-            error_detail = "Request timed out after 30 seconds"
+            error_detail = f"Request timed out after {config.REQUEST_TIMEOUT} seconds"
             self.logger.debug(f"Timeout fetching URL: {url}")
         except aiohttp.ClientConnectorError as e:
             if "Cannot connect to host" in str(e):
@@ -658,6 +814,12 @@ class WebScraper:
             self.logger.debug(f"Unexpected error fetching {url}: {e}", exc_info=True)
         if content is not None:
             self.visited_urls.add(url)
+            # Increment pages per domain counter
+            if hasattr(self, "pages_per_domain") and domain in self.pages_per_domain:
+                self.pages_per_domain[domain] += 1
+                self.logger.debug(
+                    f"Domain {domain} has scraped {self.pages_per_domain[domain]} pages"
+                )
         self.logger.debug(f"[AFTER FETCH] visited_urls={self.visited_urls}")
         return content, error_detail
 
@@ -671,6 +833,9 @@ class WebScraper:
         max_links: Optional[int] = None,
         strict_path: bool = True,
         force_update: bool = False,
+        sections: Optional[list] = None,
+        filter_selector: Optional[str] = None,
+        use_smart_depth: bool = False,
     ) -> None:
         """Extract and scrape links from HTML content"""
         from bs4 import BeautifulSoup
@@ -679,17 +844,30 @@ class WebScraper:
         parsed_base = urlparse(base_url)
         base_domain = parsed_base.netloc
 
-        # Get base path to restrict scraping to same hierarchy
-        # Keep at least the first part of the path to restrict to the project
-        # For example, from /jido/readme.html, we'll only follow links starting with /jido/
-        # (base_path_parts logic can be added here if needed)
+        # First, check if we should continue crawling based on content
+        if use_smart_depth and depth > 0:
+            content_scores = self.depth_analyzer.analyze_content(html_content)
+            should_continue, suggested_depth = (
+                self.depth_analyzer.should_continue_crawling(content_scores, depth)
+            )
+            if not should_continue:
+                self.logger.info(
+                    f"Stopping crawl at {base_url} - content score too low: {content_scores['overall']:.2f}"
+                )
+                return
+            # Adjust depth if suggested
+            if suggested_depth < depth:
+                self.logger.info(
+                    f"Reducing depth from {depth} to {suggested_depth} based on content analysis"
+                )
+                depth = suggested_depth
 
         # Parse HTML to extract links
         soup = BeautifulSoup(html_content, "html.parser")
         links = soup.find_all("a", href=True)
 
-        # Filter and normalize links
-        urls_to_scrape = []
+        # Extract all potential URLs first
+        all_urls = []
         for link in links:
             href = link["href"]
 
@@ -700,23 +878,6 @@ class WebScraper:
                 or href.startswith("javascript:")
                 or href.startswith("mailto:")
             ):
-                continue
-
-            # Skip common binary file extensions that cause issues
-            skip_extensions = [
-                ".pdf",
-                ".zip",
-                ".epub",
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".gif",
-                ".mp3",
-                ".mp4",
-                ".exe",
-                ".dmg",
-            ]
-            if any(href.lower().endswith(ext) for ext in skip_extensions):
                 continue
 
             # Resolve relative URLs
@@ -730,49 +891,75 @@ class WebScraper:
             ):
                 continue
 
-            # Only scrape links from the same domain
-            if parsed_url.netloc != base_domain:
-                continue
-
-            # Only follow links within the same URL hierarchy if strict_path is enabled
-            # (base_path_prefix logic removed for lint compliance)
-
             # Skip already visited URLs
             if full_url in self.visited_urls:
                 self.stats["pages_skipped"] += 1
                 continue
 
-            # Add to scrape list
-            urls_to_scrape.append(full_url)
+            all_urls.append(full_url)
 
-        self.logger.info(
-            f"Found {len(urls_to_scrape)} links to scrape at depth {depth}"
-        )
+        # Use depth analyzer to intelligently filter and prioritize links
+        if use_smart_depth:
+            # Determine max links based on content quality
+            content_scores = self.depth_analyzer.analyze_content(html_content)
+            if max_links is None:
+                # Adjust max_links based on content quality
+                if content_scores["overall"] > 0.7:
+                    max_links = 50  # High quality docs can have more links
+                elif content_scores["overall"] > 0.4:
+                    max_links = 30
+                else:
+                    max_links = 15  # Low quality, be selective
 
-        # Limit number of URLs to scrape at deeper levels to prevent explosion
-        if max_links is not None:
-            max_urls = max_links
+            # Use depth analyzer to prioritize links
+            urls_to_scrape = self.depth_analyzer.prioritize_links(
+                all_urls, base_url, depth, max_links
+            )
+
+            self.logger.info(
+                f"Smart depth: selected {len(urls_to_scrape)} of {len(all_urls)} links at depth {depth}"
+            )
         else:
-            max_urls = max(30, 100 // depth)
+            # Traditional filtering for manual depth mode
+            urls_to_scrape = []
+            for full_url in all_urls:
+                parsed_url = urlparse(full_url)
 
-        if len(urls_to_scrape) > max_urls:
-            self.logger.info(f"Limiting to {max_urls} URLs at depth {depth}")
-            urls_to_scrape = urls_to_scrape[:max_urls]
+                # Only scrape links from the same domain
+                if parsed_url.netloc != base_domain:
+                    continue
+
+                urls_to_scrape.append(full_url)
+
+            # Apply traditional max_links limit
+            if max_links is not None:
+                max_urls = max_links
+            else:
+                max_urls = max(30, 100 // depth)
+
+            if len(urls_to_scrape) > max_urls:
+                self.logger.info(f"Limiting to {max_urls} URLs at depth {depth}")
+                urls_to_scrape = urls_to_scrape[:max_urls]
 
         # Scrape links concurrently (limited concurrency)
         tasks = []
         for url in urls_to_scrape:
             # Log the URL being scraped
             self.logger.debug(f"Queuing: {url} (depth {depth})")
+            # For smart depth, let each URL be analyzed independently
+            next_depth = depth - 1 if not use_smart_depth else "auto"
+
             task = asyncio.create_task(
                 self.scrape_url(
                     url,
-                    depth,
+                    next_depth,
                     is_library_doc,
                     library_id,
                     max_links,
                     strict_path,
                     force_update,
+                    sections=sections,
+                    filter_selector=filter_selector,
                 )
             )
             tasks.append(task)
@@ -789,34 +976,40 @@ class WebScraper:
 
         # Handle documentation site navigation menus and pagination
         if depth > 1:
-            # Navigation links in <nav> elements
-            for nav in soup.find_all("nav"):
-                for a in nav.find_all("a", href=True):
-                    nav_url = urljoin(base_url, a["href"])
-                    if nav_url not in self.visited_urls:
+            # For smart depth, let navigation be handled by regular link analysis
+            if not use_smart_depth:
+                # Navigation links in <nav> elements
+                for nav in soup.find_all("nav"):
+                    for a in nav.find_all("a", href=True):
+                        nav_url = urljoin(base_url, a["href"])
+                        if nav_url not in self.visited_urls:
+                            await self.scrape_url(
+                                nav_url,
+                                depth - 1,
+                                is_library_doc,
+                                library_id,
+                                max_links,
+                                strict_path=False,
+                                force_update=force_update,
+                                sections=sections,
+                                filter_selector=filter_selector,
+                            )
+                # Follow rel="next" pagination link
+                next_tag = soup.find("a", rel="next")
+                if next_tag and isinstance(next_tag.get("href"), str):
+                    next_url = urljoin(base_url, next_tag["href"])
+                    if next_url not in self.visited_urls:
                         await self.scrape_url(
-                            nav_url,
+                            next_url,
                             depth - 1,
                             is_library_doc,
                             library_id,
                             max_links,
                             strict_path=False,
                             force_update=force_update,
+                            sections=sections,
+                            filter_selector=filter_selector,
                         )
-            # Follow rel="next" pagination link
-            next_tag = soup.find("a", rel="next")
-            if next_tag and isinstance(next_tag.get("href"), str):
-                next_url = urljoin(base_url, next_tag["href"])
-                if next_url not in self.visited_urls:
-                    await self.scrape_url(
-                        next_url,
-                        depth - 1,
-                        is_library_doc,
-                        library_id,
-                        max_links,
-                        strict_path=False,
-                        force_update=force_update,
-                    )
 
     async def _fetch_github_readme(self, owner: str, repo: str) -> Optional[str]:
         """Fetch README.md content from GitHub API (base64-encoded)."""
@@ -953,8 +1146,18 @@ async def scrape_url(
     library_id: Optional[int] = None,
     max_links: Optional[int] = None,
     strict_path: bool = True,
+    sections: Optional[list] = None,
+    filter_selector: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Scrape a URL and store the content"""
     return await scraper.scrape_url(
-        url, depth, is_library_doc, library_id, max_links, strict_path
+        url,
+        depth,
+        is_library_doc,
+        library_id,
+        max_links,
+        strict_path,
+        False,
+        sections,
+        filter_selector,
     )

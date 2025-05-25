@@ -17,6 +17,14 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [x] **Documentation Summarization**: Add option to generate concise summaries of documentation focusing on method signatures, parameters, and examples [2025-05-24]
 - [ ] ~~**Versioning Awareness**: Enhance version tracking to better handle library version compatibility~~ (Already supports library@version syntax and version filtering)
 - [x] **Batch Operations**: Add support for batch queries to efficiently retrieve documentation for multiple libraries in a single operation [2025-05-24]
+- [ ] **llms.txt Support**: Add support for llms.txt files to improve AI accessibility
+  - [ ] Automatically detect and parse llms.txt files when scraping documentation
+  - [ ] Generate llms.txt format output for stored documents
+  - [ ] Add CLI command to export documentation in llms.txt format
+  - [ ] Support llms.txt metadata (tags, description, etc.)
+  - [ ] Implement llms.txt validation according to spec
+  - [ ] Add option to prefer llms.txt content when available
+  - Reference: https://github.com/AnswerDotAI/llms-txt
 
 ## Scraping Improvements (Added Based on Testing)
 
@@ -93,7 +101,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
    - [x] Enable searching within specific tags or categories to quickly find relevant documentation. [2025-05-24]
 
 2. **Incremental and Sectioned Storage**
-   - [ ] Support scraping and storing only specific sections or pages of documentation rather than entire documents.
+   - [x] Support scraping and storing only specific sections or pages of documentation rather than entire documents. [2025-05-25]
      - **Examples of Scraping and Storing Specific Sections:**
        - *What to keep:*
          - Function definitions, signatures, and descriptions
@@ -145,14 +153,14 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
          - Store each section separately, labeled with its heading, for quick access.
 
 3. **Summarization and Highlights**
-   - [ ] Provide automatic summaries or key points from stored documents for quick reference.
+   - [x] Provide automatic summaries or key points from stored documents for quick reference. [2025-05-25]
      - **Prompt for Summarizing While Preserving Code Snippets:**
        - Sample prompt:
          > "Summarize the following documentation content, highlighting key points and features. Ensure all code snippets and examples are included verbatim and are easily accessible. Present the summary in a clear, concise format."
      - Additional tips:
        - Tag code snippets with their relevant functions or classes.
        - Keep a boolean option to include/exclude code snippets depending on needs.
-   - [ ] Highlight relevant code snippets or function explanations based on queries.
+   - [x] Highlight relevant code snippets or function explanations based on queries. [2025-05-25]
 
 4. **Deep Linking and Cross-References**
    - [x] Enable creating links between related document sections, so I can easily navigate through interconnected concepts. [2025-05-24]
@@ -337,3 +345,77 @@ Most CLI UX improvements have been completed. Remaining nice-to-have features:
 - [ ] Add `dv status` command to show database health, document count, storage usage
 - [ ] Support config profiles with `dv config --profile <name>`
 - [ ] Add shell completion scripts for bash/zsh/fish
+
+## Security Improvements (2025-05-25)
+
+### Completed Security Tasks
+
+1. **SQL Injection Prevention** ✅
+   - [x] Created QueryBuilder class for safe query construction
+   - [x] Fixed SQL injection vulnerabilities in operations.py
+   - [x] Fixed SQL injection vulnerabilities in version_commands.py
+   - [x] Added SQL query logging capability
+   - [x] Created SQL security audit script
+   - [x] Fixed all instances of filter_clause injection
+
+2. **Path Traversal Prevention** ✅
+   - [x] Created comprehensive path_security.py module with validation functions
+   - [x] Fixed path traversal vulnerabilities in storage.py (save_html, save_markdown)
+   - [x] Fixed vulnerabilities in backup/restore commands in commands.py
+   - [x] Added URL validation to scraper.py to prevent SSRF attacks
+   - [x] Validated file operations in apply_migrations.py
+   - [x] Added comprehensive tests for path security module
+
+3. **URL Validation and SSRF Prevention** ✅
+   - [x] Enhanced URL validation with comprehensive SSRF protection
+   - [x] Added cloud metadata service blocking (AWS, GCP, Azure)
+   - [x] Implemented domain allowlist/blocklist functionality
+   - [x] Added blocked ports for internal services
+   - [x] Implemented request timeouts and size limits
+   - [x] Added proxy configuration support
+   - [x] Enforced scraping depth and pages-per-domain limits
+   - [x] Created comprehensive tests for all URL security features
+
+### Pending Security Tasks
+
+1. **Authentication and Authorization**
+   - [ ] Implement MCP server authentication (temporarily deferred)
+   - [ ] Add role-based access control for sensitive operations
+   - [ ] Implement API key management for external services
+
+2. **Input Validation and Sanitization**
+   - [ ] Implement comprehensive input validation for all user inputs
+   - [ ] Add HTML/JavaScript sanitization for stored content
+   - [ ] Validate and sanitize metadata before storage
+
+3. **Secure Communication**
+   - [ ] Implement TLS/SSL for MCP server communications
+   - [ ] Add certificate validation for scraped URLs
+   - [ ] Implement secure key storage for API credentials
+
+4. **Data Protection**
+   - [ ] Add encryption for sensitive configuration data
+   - [ ] Implement secure deletion of temporary files
+   - [ ] Add data retention policies and automatic cleanup
+
+5. **Monitoring and Auditing**
+   - [ ] Implement comprehensive security logging
+   - [ ] Add intrusion detection for suspicious patterns
+   - [ ] Create security audit reports
+
+6. **Additional Security Hardening**
+   - [ ] Implement rate limiting for API endpoints
+   - [ ] Add resource usage limits to prevent DoS
+   - [ ] Implement secure defaults for all configurations
+   - [ ] Regular security dependency updates
+
+## AI Accessibility Features
+
+- [ ] **llms.txt Support**: Add support for llms.txt files to make documentation more accessible to AI assistants
+  - [ ] Add `llms.txt` scraping capability to detect and parse llms.txt files from documentation sites
+  - [ ] Create `dv llms` command to list discovered llms.txt endpoints
+  - [ ] Add `--llms-only` flag to `add` command to specifically target llms.txt files
+  - [ ] Store llms.txt metadata separately for quick AI access
+  - [ ] Add llms.txt content to search results when available
+  - [ ] Support llms.txt format in export functionality
+  - [ ] Document llms.txt integration in CLAUDE.md for AI assistants

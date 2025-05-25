@@ -1,8 +1,11 @@
 import asyncio
 import logging
+import os
 import shutil
 import sqlite3
 import sys
+import tempfile
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -15,6 +18,11 @@ from docvault.db import operations
 from docvault.project import ProjectManager
 from docvault.utils.console import console
 from docvault.utils.logging import get_logger
+from docvault.utils.path_security import (
+    get_safe_path,
+    is_safe_archive_member,
+    validate_path,
+)
 from docvault.version import __version__
 
 # Export all commands
@@ -305,7 +313,11 @@ def import_deps_cmd(
 
 @click.command()
 @click.argument("url")
-@click.option("--depth", default=1, help="Scraping depth (1=single page)")
+@click.option(
+    "--depth",
+    default="1",
+    help="Scraping depth: number (1=single page) or strategy (auto/conservative/aggressive)",
+)
 @click.option(
     "--max-links",
     default=None,
@@ -325,7 +337,18 @@ def import_deps_cmd(
     is_flag=True,
     help="Update existing documents by re-scraping them",
 )
-def _scrape(url, depth, max_links, quiet, strict_path, update):
+@click.option(
+    "--sections",
+    multiple=True,
+    help="Filter by section headings (e.g., 'Installation', 'API Reference'). Can be used multiple times.",
+)
+@click.option(
+    "--filter-selector",
+    help="CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')",
+)
+def _scrape(
+    url, depth, max_links, quiet, strict_path, update, sections, filter_selector
+):
     """Scrape and store documentation from URL"""
     import socket
     import ssl
@@ -358,14 +381,29 @@ def _scrape(url, depth, max_links, quiet, strict_path, update):
 
         with console.status("[bold blue]Scraping documents...[/]", spinner="dots"):
             try:
+                # Parse depth parameter - try as int first, then as string strategy
+                try:
+                    depth_param = int(depth)
+                    depth_strategy = None
+                except ValueError:
+                    depth_param = (
+                        depth.lower()
+                        if depth.lower() in ["auto", "conservative", "aggressive"]
+                        else "auto"
+                    )
+                    depth_strategy = None
+
                 scraper = get_scraper()
                 document = asyncio.run(
                     scraper.scrape_url(
                         url,
-                        depth,
+                        depth=depth_param,
                         max_links=max_links,
                         strict_path=strict_path,
                         force_update=update,
+                        sections=list(sections) if sections else None,
+                        filter_selector=filter_selector,
+                        depth_strategy=depth_strategy,
                     )
                 )
             except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
@@ -443,7 +481,11 @@ def _scrape(url, depth, max_links, quiet, strict_path, update):
     name="import", help="Import documentation from a URL (aliases: add, scrape, fetch)"
 )
 @click.argument("url")
-@click.option("--depth", default=1, help="Scraping depth (1=single page)")
+@click.option(
+    "--depth",
+    default="1",
+    help="Scraping depth: number (1=single page) or strategy (auto/conservative/aggressive)",
+)
 @click.option(
     "--max-links",
     default=None,
@@ -469,7 +511,18 @@ def _scrape(url, depth, max_links, quiet, strict_path, update):
     default="text",
     help="Output format (default: text)",
 )
-def import_cmd(url, depth, max_links, quiet, strict_path, update, format):
+@click.option(
+    "--sections",
+    multiple=True,
+    help="Filter by section headings (e.g., 'Installation', 'API Reference'). Can be used multiple times.",
+)
+@click.option(
+    "--filter-selector",
+    help="CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')",
+)
+def import_cmd(
+    url, depth, max_links, quiet, strict_path, update, format, sections, filter_selector
+):
     """Import documentation from a URL into the vault.
 
     Examples:
@@ -510,14 +563,29 @@ def import_cmd(url, depth, max_links, quiet, strict_path, update, format):
 
         with console.status("[bold blue]Importing documents...[/]", spinner="dots"):
             try:
+                # Parse depth parameter - try as int first, then as string strategy
+                try:
+                    depth_param = int(depth)
+                    depth_strategy = None
+                except ValueError:
+                    depth_param = (
+                        depth.lower()
+                        if depth.lower() in ["auto", "conservative", "aggressive"]
+                        else "auto"
+                    )
+                    depth_strategy = None
+
                 scraper = get_scraper()
                 document = asyncio.run(
                     scraper.scrape_url(
                         url,
-                        depth,
+                        depth=depth_param,
                         max_links=max_links,
                         strict_path=strict_path,
                         force_update=update,
+                        sections=list(sections) if sections else None,
+                        filter_selector=filter_selector,
+                        depth_strategy=depth_strategy,
                     )
                 )
             except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
@@ -2819,16 +2887,33 @@ def backup_cmd(destination):
         destination = f"docvault_backup_{timestamp}.zip"
 
     try:
-        # Create a zip file containing the database and storage
+        # Validate destination path
+        dest_path = Path(destination).resolve()
+        # Ensure we're not backing up to a system directory
+        validate_path(dest_path.parent, allow_absolute=True)
+
+        # Create a secure zip file containing the database and storage
         with console.status("[bold blue]Creating backup...[/]"):
-            shutil.make_archive(
-                destination.removesuffix(".zip"),  # Remove .zip as make_archive adds it
-                "zip",
-                root_dir=config.DEFAULT_BASE_DIR,
-                base_dir=".",
+            # Use zipfile for more control over what gets included
+            backup_path = (
+                dest_path if dest_path.suffix == ".zip" else Path(f"{dest_path}.zip")
             )
 
-        console.print(f"✅ Backup created at: [bold green]{destination}[/]")
+            with zipfile.ZipFile(backup_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                # Add database file
+                if Path(config.DB_PATH).exists():
+                    zipf.write(config.DB_PATH, Path(config.DB_PATH).name)
+
+                # Add storage directory
+                storage_path = Path(config.STORAGE_PATH)
+                if storage_path.exists():
+                    for file_path in storage_path.rglob("*"):
+                        if file_path.is_file():
+                            # Get relative path from storage root
+                            arcname = file_path.relative_to(config.DEFAULT_BASE_DIR)
+                            zipf.write(file_path, arcname)
+
+        console.print(f"✅ Backup created at: [bold green]{backup_path}[/]")
     except Exception as e:
         console.print(f"❌ Error creating backup: {e}", style="bold red")
         raise click.Abort()
@@ -2840,6 +2925,7 @@ def backup_cmd(destination):
 def restore_cmd(backup_file, force):
     """Restore the vault from a backup file (alias: import-backup)"""
     from docvault import config
+    from docvault.utils.path_security import PathSecurityError
 
     if not force and any(
         [Path(config.DB_PATH).exists(), any(Path(config.STORAGE_PATH).iterdir())]
@@ -2849,28 +2935,63 @@ def restore_cmd(backup_file, force):
             return
 
     try:
-        # Extract backup to temporary directory
-        import tempfile
+        # Validate backup file path
+        backup_path = validate_path(Path(backup_file), allow_absolute=True)
 
+        # Extract backup to temporary directory with security checks
         with tempfile.TemporaryDirectory() as temp_dir:
             with console.status("[bold blue]Importing backup...[/]"):
-                # Extract backup
-                shutil.unpack_archive(backup_file, temp_dir, "zip")
+                # Safely extract backup with path validation
+                with zipfile.ZipFile(backup_path, "r") as zipf:
+                    # First, check all archive members for safety
+                    for member in zipf.namelist():
+                        if not is_safe_archive_member(member):
+                            raise PathSecurityError(
+                                f"Unsafe archive member detected: {member}"
+                            )
 
-                # Copy database
+                    # Extract to temp directory
+                    zipf.extractall(temp_dir)
+
+                # Copy database with validation
                 db_backup = Path(temp_dir) / Path(config.DB_PATH).name
                 if db_backup.exists():
+                    # Validate the backup file is within temp directory
+                    validate_path(
+                        db_backup, allowed_base_paths=[temp_dir], allow_absolute=True
+                    )
+
                     Path(config.DB_PATH).parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(db_backup, config.DB_PATH)
 
-                # Copy storage directory
+                # Copy storage directory with validation
                 storage_backup = Path(temp_dir) / "storage"
                 if storage_backup.exists():
+                    # Validate storage backup is within temp directory
+                    validate_path(
+                        storage_backup,
+                        allowed_base_paths=[temp_dir],
+                        allow_absolute=True,
+                    )
+
                     if Path(config.STORAGE_PATH).exists():
                         shutil.rmtree(config.STORAGE_PATH)
-                    shutil.copytree(storage_backup, config.STORAGE_PATH)
+
+                    # Copy with security checks
+                    Path(config.STORAGE_PATH).mkdir(parents=True, exist_ok=True)
+                    for root, dirs, files in os.walk(storage_backup):
+                        for file in files:
+                            src = Path(root) / file
+                            rel_path = src.relative_to(storage_backup)
+                            dst = get_safe_path(
+                                config.STORAGE_PATH, str(rel_path), create_dirs=True
+                            )
+                            shutil.copy2(src, dst)
 
         console.print("✅ Backup imported successfully")
+    except PathSecurityError as e:
+        console.print(f"❌ Security error: {e}", style="bold red")
+        raise click.Abort()
     except Exception as e:
         console.print(f"❌ Error importing backup: {e}", style="bold red")
         raise click.Abort()

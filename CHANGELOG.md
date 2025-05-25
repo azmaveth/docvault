@@ -1,5 +1,69 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.5.1] - 2025-05-25
+
+### Added
+
+- **Smart Depth Detection**: Implemented intelligent scraping depth control
+  - Added DepthAnalyzer class with AUTO, CONSERVATIVE, AGGRESSIVE, and MANUAL strategies
+  - URL pattern recognition to identify documentation vs non-documentation pages
+  - Content-based depth decisions to stop crawling low-quality pages
+  - Version consistency checking to stay within same documentation version
+  - External link filtering (always blocked regardless of strategy)
+  - Added `--depth auto` option to CLI commands for smart detection
+  - Added `--depth-strategy` option to override default strategy
+  - Enhanced MCP server to support depth strategies
+  - Added comprehensive test suite for depth analysis
+
+### Security
+
+- **SQL Injection Prevention**: Fixed all SQL injection vulnerabilities
+  - Created QueryBuilder class for safe query construction
+  - Replaced all string interpolation with parameterized queries
+  - Added SQL query logging for security auditing
+  - Fixed vulnerabilities in search_documents, get_library_versions, and version commands
+
+- **Path Traversal Prevention**: Comprehensive protection against path traversal attacks
+  - Created path_security.py module with validation functions
+  - Added null byte detection and directory traversal pattern blocking
+  - Implemented symlink escape prevention and filename sanitization
+  - Fixed vulnerabilities in storage.py, commands.py (backup/restore), and migrations
+  - Added archive member validation for zip file operations
+
+- **URL Validation and SSRF Prevention**: Complete SSRF protection implementation
+  - Enhanced URL validation with cloud metadata service blocking (AWS, GCP, Azure)
+  - Added private/reserved IP range blocking and port restrictions
+  - Implemented domain allowlist/blocklist functionality
+  - Added configurable request timeouts (default 30s) and size limits (default 10MB)
+  - Enforced scraping depth limits (default 5) and pages-per-domain limits (default 100)
+  - Added proxy configuration support for external requests
+  - Created comprehensive test suite with 25 security tests
+
+- **Security Configuration**: Added environment variable controls
+  - URL_ALLOWED_DOMAINS and URL_BLOCKED_DOMAINS for domain control
+  - REQUEST_TIMEOUT, MAX_RESPONSE_SIZE for DoS prevention
+  - MAX_SCRAPING_DEPTH, MAX_PAGES_PER_DOMAIN for resource control
+  - HTTP_PROXY, HTTPS_PROXY, NO_PROXY for proxy configuration
+
 ## [0.5.0] - 2025-05-24
 
 ### Added

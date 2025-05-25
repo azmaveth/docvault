@@ -6,6 +6,7 @@ import subprocess
 import html2text
 
 from docvault import config
+from docvault.utils.path_security import get_safe_path, validate_filename
 
 
 def generate_filename(url: str) -> str:
@@ -25,7 +26,10 @@ def generate_filename(url: str) -> str:
 def save_html(content: str, url: str) -> str:
     """Save HTML content to file"""
     filename_base = generate_filename(url)
-    html_path = config.HTML_PATH / f"{filename_base}.html"
+    # Validate filename to prevent path traversal
+    safe_filename = validate_filename(f"{filename_base}.html")
+    # Get safe path within HTML storage directory
+    html_path = get_safe_path(config.HTML_PATH, safe_filename, create_dirs=True)
 
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -36,7 +40,10 @@ def save_html(content: str, url: str) -> str:
 def save_markdown(content: str, url: str) -> str:
     """Save Markdown content to file"""
     filename_base = generate_filename(url)
-    markdown_path = config.MARKDOWN_PATH / f"{filename_base}.md"
+    # Validate filename to prevent path traversal
+    safe_filename = validate_filename(f"{filename_base}.md")
+    # Get safe path within Markdown storage directory
+    markdown_path = get_safe_path(config.MARKDOWN_PATH, safe_filename, create_dirs=True)
 
     with open(markdown_path, "w", encoding="utf-8") as f:
         f.write(content)

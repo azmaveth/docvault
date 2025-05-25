@@ -1,5 +1,36 @@
 # DocVault Instructions for AI Assistants
 
+## Version and Quality Notice
+
+**Current Version**: 0.5.0 (Alpha Quality Software)
+
+**Important**: DocVault is currently in alpha stage. While functional, you may encounter bugs or unexpected behavior. Please report any issues you find.
+
+## Versioning Directives
+
+### Semantic Versioning
+
+DocVault follows [Semantic Versioning](https://semver.org/):
+- MAJOR version for incompatible API changes
+- MINOR version for backwards-compatible functionality additions
+- PATCH version for backwards-compatible bug fixes
+
+### CHANGELOG.md Tracking
+
+**Critical**: All changes MUST be documented in CHANGELOG.md:
+- New features go under "Added"
+- Breaking changes go under "Changed" with BREAKING prefix
+- Bug fixes go under "Fixed"
+- Deprecated features go under "Deprecated"
+- Removed features go under "Removed"
+- Security fixes go under "Security"
+
+When making changes:
+1. Update the version in `docvault/version.py`
+2. Add entry to CHANGELOG.md under "Unreleased" section
+3. Follow conventional commit format for commit messages
+4. On release, move "Unreleased" items to new version section with date
+
 ## Overview
 
 DocVault is a tool for searching, fetching, and managing documentation for libraries, frameworks, and tools. It's designed to help AI assistants access up-to-date documentation that might be beyond their training cutoff date. This document provides guidance on how to use DocVault effectively.
@@ -172,3 +203,48 @@ When helping a user with a programming task:
 6. If documentation is not available, suggest adding it with `scrape_document`
 
 By following these guidelines, you'll be able to provide more accurate and up-to-date assistance to users through DocVault.
+
+## Security Features
+
+DocVault implements comprehensive security measures to protect against common vulnerabilities:
+
+### URL Validation and SSRF Prevention
+
+When using `scrape_document` or adding URLs via CLI:
+- Only HTTP/HTTPS URLs are allowed
+- Private IP ranges are blocked (10.x, 172.16-31.x, 192.168.x)
+- Localhost and loopback addresses are blocked
+- Cloud metadata services are blocked (AWS, GCP, Azure)
+- Common internal service ports are blocked (SSH, RDP, etc.)
+- URL length is limited to 2048 characters
+
+### Domain Control
+
+Users can configure allowed/blocked domains via environment variables:
+- `URL_ALLOWED_DOMAINS` - Whitelist specific domains
+- `URL_BLOCKED_DOMAINS` - Blacklist specific domains
+
+### Resource Limits
+
+DocVault enforces the following limits (configurable):
+- Request timeout: 30 seconds (REQUEST_TIMEOUT)
+- Max response size: 10MB (MAX_RESPONSE_SIZE)
+- Max scraping depth: 5 levels (MAX_SCRAPING_DEPTH)
+- Max pages per domain: 100 (MAX_PAGES_PER_DOMAIN)
+
+### Other Security Features
+
+- SQL injection prevention via parameterized queries
+- Path traversal prevention for file operations
+- Archive security validation for backup/restore
+- Secure defaults for all operations
+
+## Contributing and Version Updates
+
+When contributing to DocVault:
+
+1. **Version Bumps**: Update `docvault/version.py` according to semantic versioning rules
+2. **Changelog Updates**: Always update CHANGELOG.md with your changes
+3. **Alpha Quality Notice**: Remember this is alpha software - be conservative with changes
+4. **Testing**: Run the full test suite before submitting changes
+5. **Documentation**: Update this file and README.md as needed for new features

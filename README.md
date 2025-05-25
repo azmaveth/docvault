@@ -1,5 +1,7 @@
 # DocVault
 
+**⚠️ ALPHA SOFTWARE**: This project is currently in alpha stage (v0.5.0). While functional, it may contain bugs and undergo breaking changes. Use in production at your own risk.
+
 A document management system with vector search and MCP integration for AI assistants.
 
 ---
@@ -830,6 +832,28 @@ DocVault uses GitHub Actions for CI/CD. Tests are automatically run on:
 - Pull requests
 - Multiple OS (Ubuntu, macOS, Windows)
 - Multiple Python versions (3.11, 3.12)
+
+## Version Management
+
+### Current Version
+
+DocVault is at version 0.5.0 (Alpha). See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+### Versioning Policy
+
+We follow [Semantic Versioning](https://semver.org/):
+- MAJOR.MINOR.PATCH (e.g., 0.5.0)
+- Breaking changes bump MAJOR (after 1.0.0)
+- New features bump MINOR
+- Bug fixes bump PATCH
+
+### Contributing
+
+When contributing:
+1. Update version in `docvault/version.py`
+2. Document changes in CHANGELOG.md
+3. Follow conventional commit format
+4. Run full test suite before submitting
 
 ## License
 

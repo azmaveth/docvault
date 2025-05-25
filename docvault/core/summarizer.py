@@ -1,13 +1,40 @@
 """
 Document summarization module for extracting key information from documentation.
+
+This module provides intelligent summarization of documentation while preserving
+code snippets, function signatures, and key technical details.
 """
 
 import re
-from typing import Dict, List
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from docvault.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class CodeSnippet:
+    """Represents a code snippet found in documentation"""
+
+    language: Optional[str]
+    code: str
+    context: str  # Text around the code snippet
+    line_number: int
+
+
+@dataclass
+class Summary:
+    """Represents a document summary"""
+
+    key_points: List[str]
+    code_snippets: List[CodeSnippet]
+    functions: List[Dict[str, str]]  # Function name -> signature
+    classes: List[Dict[str, str]]  # Class name -> description
+    important_sections: Dict[str, str]  # Section title -> brief content
+    total_length: int
+    summary_length: int
 
 
 class DocumentSummarizer:
@@ -384,3 +411,90 @@ class DocumentSummarizer:
                 output.append("  " + ", ".join(summary["key_concepts"][:10]))
 
             return "\n".join(output)
+
+    def highlight_query_terms(self, content: str, query_terms: List[str]) -> str:
+        """
+        Highlight query terms in the content.
+
+        Args:
+            content: The content to highlight
+            query_terms: List of terms to highlight
+
+        Returns:
+            Content with terms wrapped in highlight markers
+        """
+        highlighted = content
+
+        for term in query_terms:
+            # Case-insensitive highlighting
+            pattern = re.compile(r"\b" + re.escape(term) + r"\b", re.IGNORECASE)
+            # Use a lambda to preserve the original case
+            highlighted = pattern.sub(lambda m: f"**{m.group()}**", highlighted)
+
+        return highlighted
+
+    def extract_relevant_snippets(
+        self, content: str, query: str, window_size: int = 200
+    ) -> List[str]:
+        """
+        Extract snippets around query matches.
+
+        Args:
+            content: The content to search
+            query: The search query
+            window_size: Number of characters to include around match
+
+        Returns:
+            List of relevant snippets
+        """
+        snippets = []
+        query_terms = query.lower().split()
+        content_lower = content.lower()
+
+        # Find all occurrences of any query term
+        matches = []
+        for term in query_terms:
+            start = 0
+            while True:
+                pos = content_lower.find(term, start)
+                if pos == -1:
+                    break
+                matches.append((pos, len(term)))
+                start = pos + 1
+
+        # Sort matches by position
+        matches.sort()
+
+        # Merge overlapping windows
+        merged_windows = []
+        for pos, length in matches:
+            window_start = max(0, pos - window_size // 2)
+            window_end = min(len(content), pos + length + window_size // 2)
+
+            if merged_windows and window_start <= merged_windows[-1][1]:
+                # Merge with previous window
+                merged_windows[-1] = (merged_windows[-1][0], window_end)
+            else:
+                merged_windows.append((window_start, window_end))
+
+        # Extract snippets
+        for start, end in merged_windows:
+            snippet = content[start:end]
+
+            # Clean up snippet
+            if start > 0:
+                # Find word boundary
+                while start > 0 and content[start - 1] not in " \n\t":
+                    start -= 1
+                snippet = "..." + content[start:end]
+            if end < len(content):
+                # Find word boundary
+                while end < len(content) and content[end] not in " \n\t":
+                    end += 1
+                snippet = snippet + "..."
+
+            # Highlight query terms in snippet
+            snippet = self.highlight_query_terms(snippet.strip(), query_terms)
+            snippets.append(snippet)
+
+        return snippets

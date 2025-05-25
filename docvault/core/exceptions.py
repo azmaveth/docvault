@@ -47,3 +47,9 @@ class ConfigurationError(DocVaultError):
     """Raised for configuration-related errors."""
 
     pass
+
+
+class PathSecurityError(DocVaultError):
+    """Raised for path security violations (traversal, injection, etc)."""
+
+    pass

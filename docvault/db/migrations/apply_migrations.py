@@ -4,13 +4,21 @@ import os
 import sqlite3
 from pathlib import Path
 
+from docvault.utils.path_security import validate_filename
+
 
 def get_migration_files(migration_dir):
     """Get migration files in order."""
     migration_files = []
     for f in os.listdir(migration_dir):
         if f.endswith(".sql") and f.startswith("000"):
-            migration_files.append(f)
+            # Validate filename to prevent path traversal
+            try:
+                safe_filename = validate_filename(f)
+                migration_files.append(safe_filename)
+            except Exception:
+                # Skip invalid filenames
+                continue
     return sorted(migration_files)
 
 
