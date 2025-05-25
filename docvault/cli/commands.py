@@ -461,12 +461,20 @@ def _scrape(url, depth, max_links, quiet, strict_path, update):
     is_flag=True,
     help="Update existing documents by re-scraping them",
 )
-def import_cmd(url, depth, max_links, quiet, strict_path, update):
+@click.option(
+    "--format",
+    type=click.Choice(["text", "json", "xml"], case_sensitive=False),
+    default="text",
+    help="Output format (default: text)",
+)
+def import_cmd(url, depth, max_links, quiet, strict_path, update, format):
     """Import documentation from a URL into the vault.
 
     Examples:
         dv add https://docs.python.org/3/library/
         dv import https://elixir-lang.org/docs --depth=2
+        dv add https://docs.djangoproject.com --format json
+        dv import https://api.example.com/docs --format xml
     """
     import socket
     import ssl
@@ -547,38 +555,129 @@ def import_cmd(url, depth, max_links, quiet, strict_path, update):
                 return
 
         if document:
-            table = Table(title=f"Import Results for {url}")
-            table.add_column("Metric", style="green")
-            table.add_column("Count", style="cyan", justify="right")
-            table.add_row("Pages Scraped", str(scraper.stats["pages_scraped"]))
-            table.add_row("Pages Skipped", str(scraper.stats["pages_skipped"]))
-            table.add_row("Segments Created", str(scraper.stats["segments_created"]))
-            table.add_row(
-                "Total Pages",
-                str(scraper.stats["pages_scraped"] + scraper.stats["pages_skipped"]),
-            )
-            console.print(table)
-            console.print(
-                f"✅ Successfully imported: [bold green]{document['title']}[/] (ID: {document['id']})"
-            )
+            if format == "json":
+                # JSON output
+                import json
 
-            # Provide helpful next steps
-            if not quiet:
-                console.print("\n[bold]Next steps:[/]")
-                console.print(
-                    "  • Search content: [cyan]dv search 'your search term'[/]"
+                output = {
+                    "status": "success",
+                    "document": {
+                        "id": document["id"],
+                        "title": document["title"],
+                        "url": document["url"],
+                    },
+                    "stats": {
+                        "pages_scraped": scraper.stats["pages_scraped"],
+                        "pages_skipped": scraper.stats["pages_skipped"],
+                        "segments_created": scraper.stats["segments_created"],
+                        "total_pages": scraper.stats["pages_scraped"]
+                        + scraper.stats["pages_skipped"],
+                    },
+                }
+                print(json.dumps(output, indent=2))
+
+            elif format == "xml":
+                # XML output
+                from xml.dom import minidom
+                from xml.etree.ElementTree import Element, SubElement, tostring
+
+                root = Element("import_result")
+                root.set("status", "success")
+
+                doc_elem = SubElement(root, "document")
+                doc_elem.set("id", str(document["id"]))
+
+                title_elem = SubElement(doc_elem, "title")
+                title_elem.text = document["title"]
+
+                url_elem = SubElement(doc_elem, "url")
+                url_elem.text = document["url"]
+
+                stats_elem = SubElement(root, "stats")
+
+                pages_scraped_elem = SubElement(stats_elem, "pages_scraped")
+                pages_scraped_elem.text = str(scraper.stats["pages_scraped"])
+
+                pages_skipped_elem = SubElement(stats_elem, "pages_skipped")
+                pages_skipped_elem.text = str(scraper.stats["pages_skipped"])
+
+                segments_elem = SubElement(stats_elem, "segments_created")
+                segments_elem.text = str(scraper.stats["segments_created"])
+
+                total_elem = SubElement(stats_elem, "total_pages")
+                total_elem.text = str(
+                    scraper.stats["pages_scraped"] + scraper.stats["pages_skipped"]
                 )
-                console.print(f"  • View document: [cyan]dv read {document['id']}[/]")
-                console.print("  • List all documents: [cyan]dv list[/]")
+
+                # Pretty print XML
+                rough_string = tostring(root, encoding="unicode")
+                reparsed = minidom.parseString(rough_string)
+                print(reparsed.toprettyxml(indent="  "))
+
+            else:
+                # Default text output
+                table = Table(title=f"Import Results for {url}")
+                table.add_column("Metric", style="green")
+                table.add_column("Count", style="cyan", justify="right")
+                table.add_row("Pages Scraped", str(scraper.stats["pages_scraped"]))
+                table.add_row("Pages Skipped", str(scraper.stats["pages_skipped"]))
+                table.add_row(
+                    "Segments Created", str(scraper.stats["segments_created"])
+                )
+                table.add_row(
+                    "Total Pages",
+                    str(
+                        scraper.stats["pages_scraped"] + scraper.stats["pages_skipped"]
+                    ),
+                )
+                console.print(table)
+                console.print(
+                    f"✅ Successfully imported: [bold green]{document['title']}[/] (ID: {document['id']})"
+                )
+
+                # Provide helpful next steps
+                if not quiet:
+                    console.print("\n[bold]Next steps:[/]")
+                    console.print(
+                        "  • Search content: [cyan]dv search 'your search term'[/]"
+                    )
+                    console.print(
+                        f"  • View document: [cyan]dv read {document['id']}[/]"
+                    )
+                    console.print("  • List all documents: [cyan]dv list[/]")
         else:
-            console.print(
-                "❌ Failed to import document. The page might not contain any indexable content.",
-                style="bold red",
-            )
-            console.print(
-                "  Try checking the URL in a web browser to verify it's accessible.",
-                style="yellow",
-            )
+            if format == "json":
+                import json
+
+                print(
+                    json.dumps(
+                        {
+                            "status": "error",
+                            "error": "Failed to import document. The page might not contain any indexable content.",
+                        },
+                        indent=2,
+                    )
+                )
+            elif format == "xml":
+                from xml.dom import minidom
+                from xml.etree.ElementTree import Element, tostring
+
+                root = Element("import_result")
+                root.set("status", "error")
+                root.text = "Failed to import document. The page might not contain any indexable content."
+
+                rough_string = tostring(root, encoding="unicode")
+                reparsed = minidom.parseString(rough_string)
+                print(reparsed.toprettyxml(indent="  "))
+            else:
+                console.print(
+                    "❌ Failed to import document. The page might not contain any indexable content.",
+                    style="bold red",
+                )
+                console.print(
+                    "  Try checking the URL in a web browser to verify it's accessible.",
+                    style="yellow",
+                )
 
     except KeyboardInterrupt:
         console.print("\n🛑 Import was cancelled by the user", style="yellow")
@@ -730,55 +829,145 @@ def remove_cmd(id_ranges, force):
     is_flag=True,
     help="Show detailed output including content hashes",
 )
-def list_cmd(filter, verbose):
+@click.option(
+    "--format",
+    type=click.Choice(["text", "json", "xml", "markdown"], case_sensitive=False),
+    default="text",
+    help="Output format (default: text)",
+)
+def list_cmd(filter, verbose, format):
     """List all documents in the vault. Use --filter to search titles/URLs.
 
     By default, content hashes are hidden. Use --verbose to show them.
+
+    Examples:
+        dv list
+        dv list --filter python
+        dv list --format json
+        dv list --format xml --verbose
     """
+    import json
+
     from docvault.db.operations import list_documents
 
     docs = list_documents(filter_text=filter)
-    if not docs:
-        console.print("No documents found")
-        return
 
-    table = Table(title="Documents in Vault")
+    if format == "json":
+        # JSON output
+        json_docs = []
+        for doc in docs:
+            json_doc = {
+                "id": doc["id"],
+                "title": doc["title"] or "Untitled",
+                "url": doc["url"],
+                "version": doc.get("version", "unknown"),
+                "scraped_at": doc["scraped_at"],
+            }
+            if verbose:
+                json_doc["content_hash"] = doc.get("content_hash", "") or None
+            json_docs.append(json_doc)
 
-    # Always show these columns
-    table.add_column("ID", style="dim")
-    table.add_column("Title", style="green")
-    table.add_column("URL", style="blue")
-    table.add_column("Version", style="magenta")
+        output = {"status": "success", "count": len(json_docs), "documents": json_docs}
+        print(json.dumps(output, indent=2))
 
-    # Only show content hash in verbose mode
-    if verbose:
-        table.add_column("Content Hash", style="yellow")
+    elif format == "xml":
+        # XML output
+        from xml.dom import minidom
+        from xml.etree.ElementTree import Element, SubElement, tostring
 
-    table.add_column("Scraped At", style="cyan")
+        root = Element("documents")
+        root.set("count", str(len(docs)))
 
-    for doc in docs:
-        row = [
-            str(doc["id"]),
-            doc["title"] or "Untitled",
-            doc["url"],
-            doc.get("version", "unknown"),
-        ]
+        for doc in docs:
+            doc_elem = SubElement(root, "document")
+            doc_elem.set("id", str(doc["id"]))
 
-        # Only add content hash if in verbose mode
+            title_elem = SubElement(doc_elem, "title")
+            title_elem.text = doc["title"] or "Untitled"
+
+            url_elem = SubElement(doc_elem, "url")
+            url_elem.text = doc["url"]
+
+            version_elem = SubElement(doc_elem, "version")
+            version_elem.text = doc.get("version", "unknown")
+
+            scraped_elem = SubElement(doc_elem, "scraped_at")
+            scraped_elem.text = doc["scraped_at"]
+
+            if verbose and doc.get("content_hash"):
+                hash_elem = SubElement(doc_elem, "content_hash")
+                hash_elem.text = doc.get("content_hash", "")
+
+        # Pretty print XML
+        rough_string = tostring(root, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)
+        print(reparsed.toprettyxml(indent="  "))
+
+    elif format == "markdown":
+        # Markdown output
+        if not docs:
+            print("No documents found")
+            return
+
+        print("# Documents in Vault\n")
+        print(f"**Total documents:** {len(docs)}\n")
+
+        if filter:
+            print(f"**Filter:** {filter}\n")
+
+        for doc in docs:
+            print(f"## {doc['title'] or 'Untitled'}")
+            print(f"- **ID:** {doc['id']}")
+            print(f"- **URL:** {doc['url']}")
+            print(f"- **Version:** {doc.get('version', 'unknown')}")
+            print(f"- **Scraped At:** {doc['scraped_at']}")
+            if verbose and doc.get("content_hash"):
+                print(f"- **Content Hash:** {doc.get('content_hash', '')}")
+            print()  # Empty line between documents
+
+    else:
+        # Default text output (table)
+        if not docs:
+            console.print("No documents found")
+            return
+
+        table = Table(title="Documents in Vault")
+
+        # Always show these columns
+        table.add_column("ID", style="dim")
+        table.add_column("Title", style="green")
+        table.add_column("URL", style="blue")
+        table.add_column("Version", style="magenta")
+
+        # Only show content hash in verbose mode
         if verbose:
-            row.append(doc.get("content_hash", "") or "")
+            table.add_column("Content Hash", style="yellow")
 
-        row.append(doc["scraped_at"])
-        table.add_row(*row)
+        table.add_column("Scraped At", style="cyan")
 
-    console.print(table)
+        for doc in docs:
+            row = [
+                str(doc["id"]),
+                doc["title"] or "Untitled",
+                doc["url"],
+                doc.get("version", "unknown"),
+            ]
+
+            # Only add content hash if in verbose mode
+            if verbose:
+                row.append(doc.get("content_hash", "") or "")
+
+            row.append(doc["scraped_at"])
+            table.add_row(*row)
+
+        console.print(table)
 
 
 @click.command(name="read", help="Read a document from the vault (alias: cat)")
 @click.argument("document_id", type=int)
 @click.option(
     "--format",
-    type=click.Choice(["markdown", "html"]),
+    type=click.Choice(["markdown", "html", "json", "xml"], case_sensitive=False),
     default="markdown",
     help="Output format",
 )
@@ -799,17 +988,88 @@ def read_cmd(document_id, format, raw, use_browser):
     By default, markdown is rendered for better readability using Glow (if installed).
     HTML is rendered using html2text by default, or can be opened in a browser.
     Use --raw to see the original source.
+
+    Examples:
+        dv read 1
+        dv read 1 --format json
+        dv read 1 --format xml
+        dv read 1 --format html --browser
     """
+    import json
+
     from docvault.core.storage import open_html_in_browser, read_html, read_markdown
     from docvault.db.operations import get_document
 
     doc = get_document(document_id)
     if not doc:
-        console.print(f"❌ Document not found: {document_id}", style="bold red")
+        if format == "json":
+            print(
+                json.dumps(
+                    {"status": "error", "error": f"Document not found: {document_id}"},
+                    indent=2,
+                )
+            )
+        else:
+            console.print(f"❌ Document not found: {document_id}", style="bold red")
         return 1
 
     try:
-        if format == "html":
+        if format == "json":
+            # JSON output
+            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                content = f.read()
+
+            output = {
+                "status": "success",
+                "document": {
+                    "id": doc["id"],
+                    "title": doc["title"] or "Untitled",
+                    "url": doc["url"],
+                    "version": doc.get("version", "unknown"),
+                    "scraped_at": doc["scraped_at"],
+                    "content_hash": doc.get("content_hash", "") or None,
+                    "content": content if raw else content,
+                    "format": "markdown",
+                },
+            }
+            print(json.dumps(output, indent=2))
+
+        elif format == "xml":
+            # XML output
+            from xml.dom import minidom
+            from xml.etree.ElementTree import Element, SubElement, tostring
+
+            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                content = f.read()
+
+            root = Element("document")
+            root.set("id", str(doc["id"]))
+
+            title_elem = SubElement(root, "title")
+            title_elem.text = doc["title"] or "Untitled"
+
+            url_elem = SubElement(root, "url")
+            url_elem.text = doc["url"]
+
+            version_elem = SubElement(root, "version")
+            version_elem.text = doc.get("version", "unknown")
+
+            scraped_elem = SubElement(root, "scraped_at")
+            scraped_elem.text = doc["scraped_at"]
+
+            if doc.get("content_hash"):
+                hash_elem = SubElement(root, "content_hash")
+                hash_elem.text = doc.get("content_hash", "")
+
+            content_elem = SubElement(root, "content")
+            content_elem.text = content
+
+            # Pretty print XML
+            rough_string = tostring(root, encoding="unicode")
+            reparsed = minidom.parseString(rough_string)
+            print(reparsed.toprettyxml(indent="  "))
+
+        elif format == "html":
             if use_browser:
                 open_html_in_browser(doc["html_path"])
                 return 0
@@ -823,21 +1083,29 @@ def read_cmd(document_id, format, raw, use_browser):
             console.print(f"# {doc['title']}\n", style="bold green")
             console.print(content)
         else:
+            # Markdown (default)
             content = read_markdown(doc["markdown_path"], render=not raw)
             if not raw:
                 console.print(f"# {doc['title']}\n", style="bold green")
             console.print(content)
         return 0
     except Exception as e:
-        console.print(f"❌ Error reading document: {e}", style="bold red")
-        if not raw:  # If not in raw mode, try showing raw content as fallback
-            try:
-                with open(doc["markdown_path"], "r", encoding="utf-8") as f:
-                    console.print("\n[dim]Falling back to raw content:[/]\n")
-                    console.print(f.read())
-            except (IOError, OSError) as io_err:
-                console.print(f"❌ Error reading raw content: {io_err}", style="red")
-                return 1
+        if format == "json":
+            print(json.dumps({"status": "error", "error": str(e)}, indent=2))
+        else:
+            console.print(f"❌ Error reading document: {e}", style="bold red")
+            if (
+                not raw and format == "markdown"
+            ):  # If not in raw mode, try showing raw content as fallback
+                try:
+                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                        console.print("\n[dim]Falling back to raw content:[/]\n")
+                        console.print(f.read())
+                except (IOError, OSError) as io_err:
+                    console.print(
+                        f"❌ Error reading raw content: {io_err}", style="red"
+                    )
+                    return 1
         return 1
 
 
