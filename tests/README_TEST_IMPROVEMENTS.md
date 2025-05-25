@@ -21,7 +21,7 @@ We've transformed the test suite from a heavily-mocked approach to a more mainta
 
 3. **Better Test Organization**
    - Separated concerns into focused test modules
-   - Clear naming conventions (e.g., `test_cli_import_v2.py`)
+   - Clear naming conventions (e.g., `test_cli_import.py`)
    - Consistent test structure across all modules
 
 4. **Integration-Focused Testing**
@@ -112,10 +112,10 @@ make test-cli
 make test-coverage
 
 # Run specific test file
-uv run pytest tests/test_cli_import_v2.py -v
+uv run pytest tests/test_cli_import.py -v
 
 # Run with debugging output
-uv run pytest tests/test_cli_import_v2.py -v -s
+uv run pytest tests/test_cli_import.py -v -s
 ```
 
 ## Future Improvements
