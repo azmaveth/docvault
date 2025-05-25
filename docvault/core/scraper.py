@@ -387,7 +387,7 @@ class WebScraper:
             if len(content.strip()) < 3:
                 continue
             embedding = await embeddings.generate_embeddings(content)
-            operations.add_document_segment(
+            segment_id = operations.add_document_segment(
                 document_id=document_id,
                 content=content,
                 embedding=embedding,
@@ -398,6 +398,44 @@ class WebScraper:
                 section_path=section_path,
             )
             self.stats["segments_created"] += 1
+
+            # Extract cross-references and anchors
+            try:
+                from docvault.models import cross_references
+
+                # Extract and store anchors (identifiers) from this segment
+                anchors = cross_references.extract_anchors_from_segment(
+                    content, segment_id, document_id
+                )
+                for anchor in anchors:
+                    cross_references.store_anchor(**anchor)
+
+                # Extract potential references to other parts
+                refs = cross_references.extract_references(content, segment_id)
+                if refs:
+                    cross_references.store_references(refs)
+            except Exception as e:
+                # Don't fail scraping if cross-reference extraction fails
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    f"Failed to extract cross-references for segment {segment_id}: {e}"
+                )
+
+        # After all segments are processed, resolve cross-references
+        try:
+            from docvault.models import cross_references
+
+            resolved = cross_references.resolve_references(document_id)
+            if resolved > 0:
+                logging.getLogger(__name__).info(
+                    f"Resolved {resolved} cross-references for document {document_id}"
+                )
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"Failed to resolve cross-references for document {document_id}: {e}"
+            )
+
         self.visited_urls.add(url)
         return operations.get_document(document_id)
 

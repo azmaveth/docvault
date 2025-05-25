@@ -79,6 +79,9 @@ def migrate_schema() -> bool:
         migrations: List[Tuple[int, MigrationFunc]] = [
             (1, _migrate_to_v1),  # Add section support
             (2, _migrate_to_v2),  # Add registry support
+            (3, _migrate_to_v3),  # Add tags support
+            (4, _migrate_to_v4),  # Add cross-references support
+            (5, _migrate_to_v5),  # Add version tracking and update monitoring
         ]
 
         # Apply pending migrations
@@ -309,3 +312,24 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     )
 
     logger.info("Applied migration: Added documentation registry support")
+
+
+def _migrate_to_v3(conn: sqlite3.Connection) -> None:
+    """Migration to v3: Add tags support for documents."""
+    from . import add_tags_0003
+
+    add_tags_0003.migrate(conn)
+
+
+def _migrate_to_v4(conn: sqlite3.Connection) -> None:
+    """Migration to v4: Add cross-references support for documents."""
+    from . import add_cross_references_0004
+
+    add_cross_references_0004.migrate(conn)
+
+
+def _migrate_to_v5(conn: sqlite3.Connection) -> None:
+    """Migration to v5: Add version tracking and update monitoring."""
+    from . import add_version_tracking_0005
+
+    add_version_tracking_0005.migrate(conn)

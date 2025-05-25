@@ -1,8 +1,57 @@
 # Changelog
 
-## [0.4.0] - 2025-05-24
+## [0.5.0] - 2025-05-24
 
 ### Added
+
+- **Context-Aware Documentation**: Implemented comprehensive context extraction and suggestion features
+  - **ContextExtractor**: Extracts code examples, best practices, pitfalls, and related concepts from documentation
+  - **SuggestionEngine**: Provides intelligent suggestions for related functions, classes, and programming tasks
+  - **Enhanced Read Command**: Added `--context` flag to `dv read` for rich contextual information display
+  - **Enhanced Search Command**: Added `--suggestions` flag to `dv search text` for related function recommendations
+  - **New Suggest Command**: Created standalone `dv suggest` command with task-based and complementary function suggestions
+- **Advanced Tagging System**: Implemented context-aware document tagging and filtering
+  - Created `dv tag` command group with add, remove, list, search, create, and delete operations
+  - Added `--tags` and `--tag-mode` options to search command for filtered searches
+  - Added tag display to list command output
+- **Cross-References and Deep Linking**: Implemented document cross-referencing system
+  - Created `dv ref` command group for showing, graphing, and finding cross-references
+  - Added `--show-refs` flag to read command for navigation between related sections
+  - Automatic extraction and resolution of cross-references during document processing
+- **Version Control and Updates**: Enhanced version tracking and update management
+  - Created `dv versions` command group for checking, listing, and comparing document versions
+  - Added automatic update checking and version comparison capabilities
+  - Added update status display to list command
+- **Structured Output Formats**: Added JSON and XML output support to multiple commands
+  - Enhanced `dv list`, `dv read`, `dv import`, and `dv search` with `--format` options
+  - Improved machine readability for AI and automation integration
+- **Documentation Summarization**: Enhanced summarization capabilities
+  - Added `--summarize` flag to read and search commands
+  - Improved summary extraction with pattern-based analysis
+- **Batch Operations**: Implemented batch searching and processing
+  - Added `dv search batch` subcommand for searching multiple libraries concurrently
+  - Added progress indication and concurrent processing support
+- **Document Statistics**: Created comprehensive stats command
+  - Added `dv stats` command showing database size, document count, vector search status, and more
+  - Included storage usage analysis and health indicators
+
+### Enhanced
+
+- **Database Schema**: Added multiple new tables for tags, cross-references, and version tracking
+- **CLI Interface**: Expanded command structure with new subcommands and options
+- **Documentation Display**: Rich formatting with tables, color coding, and structured information
+- **Test Coverage**: Added comprehensive test suite for all new features (`test_context_features.py`)
+
+### Technical Improvements
+
+- **Database Migrations**: Implemented schema migrations for tags, cross-references, and version tracking
+- **Async Processing**: Enhanced concurrent operations for batch processing and suggestions
+- **Error Handling**: Improved error handling and user feedback across all new features
+- **Type Safety**: Enhanced type annotations and validation for new components
+
+## [0.4.0] - 2025-05-24
+
+### Features Added
 
 - **Default Registry Sources**: Automatically populate all 6 package registries (PyPI, npm, RubyGems, Hex, Go, Crates.io) on first initialization
 - **Document Update Feature**: Added `--update` flag to `dv add` command to force re-scraping of existing documents
@@ -86,7 +135,7 @@
 
 ## [0.3.0] - 2025-05-23
 
-### Features Added
+### New Features
 
 - **Project Dependency Import**: New `import-deps` command to automatically detect and import documentation for project dependencies
   - Supports Python (requirements.txt, pyproject.toml, setup.py, etc.)

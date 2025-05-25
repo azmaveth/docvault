@@ -16,7 +16,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] ~~**Contextual Knowledge Retrieval**: Implement feature to automatically identify required libraries from code snippets or project descriptions~~ (Complex feature with limited ROI - import-deps already handles project files)
 - [x] **Documentation Summarization**: Add option to generate concise summaries of documentation focusing on method signatures, parameters, and examples [2025-05-24]
 - [ ] ~~**Versioning Awareness**: Enhance version tracking to better handle library version compatibility~~ (Already supports library@version syntax and version filtering)
-- [ ] **Batch Operations**: Add support for batch queries to efficiently retrieve documentation for multiple libraries in a single operation
+- [x] **Batch Operations**: Add support for batch queries to efficiently retrieve documentation for multiple libraries in a single operation [2025-05-24]
 
 ## Scraping Improvements (Added Based on Testing)
 
@@ -89,8 +89,8 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ## Suggestions to Improve the Utility of docvault for Coding
 
 1. **Context-Aware Searching and Tagging**
-   - [ ] Allow tagging documents with keywords related to specific projects or libraries (e.g., "pygame", "networking", "GUI").
-   - [ ] Enable searching within specific tags or categories to quickly find relevant documentation.
+   - [x] Allow tagging documents with keywords related to specific projects or libraries (e.g., "pygame", "networking", "GUI"). [2025-05-24]
+   - [x] Enable searching within specific tags or categories to quickly find relevant documentation. [2025-05-24]
 
 2. **Incremental and Sectioned Storage**
    - [ ] Support scraping and storing only specific sections or pages of documentation rather than entire documents.
@@ -155,7 +155,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
    - [ ] Highlight relevant code snippets or function explanations based on queries.
 
 4. **Deep Linking and Cross-References**
-   - [ ] Enable creating links between related document sections, so I can easily navigate through interconnected concepts.
+   - [x] Enable creating links between related document sections, so I can easily navigate through interconnected concepts. [2025-05-24]
      - **Implementing Deep Links and Cross-References:**
        - *Approach:*
          - Linking topics: When scraping, identify anchor links or headers with unique IDs. Store these IDs as references.
@@ -167,12 +167,12 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
    - [ ] Support cross-referencing between stored documents and our internal notes or projects.
 
 5. **Dynamic Updates & Version Control**
-   - [ ] Automatically update stored docs when newer versions are available.
-   - [ ] Keep track of different versions of documentation for comparison.
+   - [x] Automatically update stored docs when newer versions are available. [2025-05-24]
+   - [x] Keep track of different versions of documentation for comparison. [2025-05-24]
 
 6. **Recall with Context and Usage Examples**
-   - [ ] When recalling documentation, include usage examples, common pitfalls, and best practices.
-   - [ ] Suggest relevant functions, classes, or modules based on the current task.
+   - [x] When recalling documentation, include usage examples, common pitfalls, and best practices. [2025-05-24]
+   - [x] Suggest relevant functions, classes, or modules based on the current task. [2025-05-24]
 
 7. **Automatic Context Building for Projects**
    - [ ] When starting a new project, scrape and store related docs automatically based on project goals or libraries.
@@ -317,7 +317,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 - [ ] **Search Within Document**: Add ability to search within a specific document (e.g., `dv search --in-doc 123 "function name"`)
 - [ ] **Bulk Export**: Add command to export multiple documents at once (e.g., `dv export 1-10 --format markdown --output ./docs/`)
-- [ ] **Document Stats Command**: Add `dv stats` to show database size, document count, index health, etc.
+- [x] **Document Stats Command**: Add `dv stats` to show database size, document count, index health, etc. [2025-05-24]
 - [ ] **Partial Document Updates**: Allow updating specific sections of a document without re-scraping everything
 - [ ] **Search History**: Store recent searches locally for quick re-execution
 - [ ] **Document Collections**: Allow grouping documents into named collections (e.g., "Python Web Dev", "Data Science")

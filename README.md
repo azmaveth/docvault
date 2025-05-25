@@ -457,6 +457,8 @@ To ensure code and documentation quality, DocVault uses [pre-commit](https://pre
    pre-commit run --all-files
    ```
 
+### Basic Commands
+
 - `dv import <url>` - Import documentation from a URL (aliases: add, scrape, fetch)
 - `dv remove <id1> [id2...]` - Remove documents from the vault (alias: rm)
 - `dv list` - List all documents in the vault (alias: ls)
@@ -464,11 +466,117 @@ To ensure code and documentation quality, DocVault uses [pre-commit](https://pre
 - `dv search <query>` - Search documents with semantic search (alias: find, default command)
 - `dv search lib <library> [--version <version>]` - Lookup and fetch library documentation
 - `dv backup [destination]` - Backup the vault to a zip file
-- `dv import-backup <file>` - Import a backup file
+- `dv restore <file>` - Restore from a backup file (alias: import-backup)
 - `dv config` - Manage configuration
 - `dv init [--wipe]` - Initialize the database (alias: init-db, use `--wipe` to clear all data)
 - `dv serve` - Start the MCP server
 - `dv index` - Index or re-index documents for vector search
+- `dv stats` - Show database statistics and health information
+
+### Advanced Features
+
+#### Context-Aware Documentation
+
+DocVault can extract and display rich contextual information from documentation including usage examples, best practices, and common pitfalls:
+
+```bash
+# Show contextual information with code examples and best practices
+dv read 1 --context
+
+# Get suggestions for related functions while searching
+dv search "file operations" --suggestions
+
+# Get task-based suggestions for programming tasks
+dv suggest "database queries" --task-based
+
+# Find complementary functions (e.g., find 'close' when you know 'open')
+dv suggest --complementary "open" query
+
+# Get suggestions in JSON format for automation
+dv suggest "error handling" --format json
+```
+
+#### Document Tagging and Organization
+
+Organize your documentation with tags for better discoverability:
+
+```bash
+# Add tags to documents
+dv tag add 1 "python" "database" "beginner"
+
+# Search by tags
+dv search --tags "python" "database"
+
+# List all tags
+dv tag list
+
+# Create and manage custom tags
+dv tag create "web-dev" "Web Development Resources"
+```
+
+#### Cross-References and Navigation
+
+Navigate between related documentation sections:
+
+```bash
+# Show cross-references in a document
+dv read 1 --show-refs
+
+# Show reference graph for a document
+dv ref graph 1
+
+# Find all references to a specific topic
+dv ref find "async functions"
+```
+
+#### Version Control and Updates
+
+Track and manage documentation versions:
+
+```bash
+# Check for document updates
+dv versions check 1
+
+# List all document versions
+dv versions list
+
+# Compare different versions
+dv versions compare 1 2
+
+# Show documents that need updates
+dv versions pending
+```
+
+#### Batch Operations
+
+Process multiple documents efficiently:
+
+```bash
+# Search multiple libraries at once
+dv search batch pandas numpy matplotlib --format json
+
+# Import multiple dependencies
+dv import-deps --format json
+
+# Export multiple documents
+dv list --format json | jq -r '.[].id' | xargs -I {} dv read {} --format markdown
+```
+
+#### Structured Output Formats
+
+Get machine-readable output for automation and AI integration:
+
+```bash
+# JSON output for various commands
+dv list --format json
+dv read 1 --format json
+dv search "python" --format json
+dv import https://example.com/doc --format json
+
+# XML output where supported
+dv list --format xml
+dv read 1 --format xml
+```
 
 ### Library Lookup Example
 

@@ -19,9 +19,14 @@ from docvault.cli.commands import (
     restore_cmd,
     search_cmd,
     serve_cmd,
+    stats_cmd,
+    suggest_cmd,
     version_cmd,
 )
+from docvault.cli.ref_commands import ref_cmd
 from docvault.cli.registry_commands import registry as registry_group
+from docvault.cli.tag_commands import tag_cmd
+from docvault.cli.version_commands import version_cmd as version_management_cmd
 
 # Import initialization function
 # from docvault.core.initialization import ensure_app_initialized
@@ -172,6 +177,21 @@ def register_commands(main):
 
     # Add version command
     main.add_command(version_cmd, name="version")
+
+    # Add stats command
+    main.add_command(stats_cmd, name="stats")
+
+    # Add tag command
+    main.add_command(tag_cmd, name="tag")
+
+    # Add ref command
+    main.add_command(ref_cmd, name="ref")
+
+    # Add version management command (avoid conflict with version_cmd)
+    main.add_command(version_management_cmd, name="versions")
+
+    # Add suggest command
+    main.add_command(suggest_cmd, name="suggest")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

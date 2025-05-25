@@ -150,6 +150,32 @@ def delete_document(document_id: int) -> bool:
     return False
 
 
+def get_document_segments(document_id: int) -> List[Dict[str, Any]]:
+    """Get all segments for a document.
+
+    Args:
+        document_id: ID of the document
+
+    Returns:
+        List of segment dictionaries
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT * FROM document_segments
+        WHERE document_id = ?
+        ORDER BY position
+    """,
+        (document_id,),
+    )
+
+    segments = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return segments
+
+
 def get_document(document_id: int) -> Optional[Dict[str, Any]]:
     """Get a document by ID"""
     conn = get_connection()
@@ -320,6 +346,11 @@ def search_segments(
                 elif key == "updated_after":
                     filter_conditions.append("d.updated_at >= ?")
                     filter_params.append(value)
+                elif key == "document_ids":
+                    if isinstance(value, list) and value:
+                        placeholders = ",".join(["?" for _ in value])
+                        filter_conditions.append(f"d.id IN ({placeholders})")
+                        filter_params.extend(value)
 
     filter_clause = (
         f"AND {' AND '.join(filter_conditions)}" if filter_conditions else ""
