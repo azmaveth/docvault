@@ -83,6 +83,25 @@ def initialize_database(force_recreate=False):
         is_available BOOLEAN,
         UNIQUE(name, version)
     );
+
+    -- Documentation sources table
+    CREATE TABLE IF NOT EXISTS documentation_sources (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        package_manager TEXT,
+        base_url TEXT,
+        version_url_template TEXT,
+        latest_version_url TEXT,
+        is_active BOOLEAN DEFAULT TRUE,
+        last_checked TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(name, package_manager)
+    );
+
+    -- Add index for documentation sources
+    CREATE INDEX IF NOT EXISTS idx_sources_package_manager ON documentation_sources(package_manager);
+    CREATE INDEX IF NOT EXISTS idx_sources_active ON documentation_sources(is_active);
     """
     )
 
@@ -104,4 +123,85 @@ def initialize_database(force_recreate=False):
     conn.commit()
     conn.close()
 
+    # Run migrations to ensure schema is up to date
+    from docvault.db.migrations.migrations import migrate_schema
+
+    migrate_schema()
+
+    # Populate default documentation sources if they don't exist
+    _populate_default_sources()
+
     return True
+
+
+def _populate_default_sources():
+    """Populate default documentation sources if they don't exist."""
+    from docvault.models.registry import (
+        add_documentation_source,
+        list_documentation_sources,
+    )
+
+    # Check if we already have sources
+    existing_sources = list_documentation_sources(active_only=False)
+    if existing_sources:
+        # Already have sources, don't override
+        return
+
+    # Default documentation sources
+    default_sources = [
+        {
+            "name": "Python",
+            "package_manager": "pypi",
+            "base_url": "https://pypi.org/project/{package}/",
+            "version_url_template": "https://pypi.org/project/{package}/{version}/",
+            "latest_version_url": "https://pypi.org/pypi/{package}/json",
+        },
+        {
+            "name": "Node.js",
+            "package_manager": "npm",
+            "base_url": "https://www.npmjs.com/package/{package}",
+            "version_url_template": "https://www.npmjs.com/package/{package}/v/{version}",
+            "latest_version_url": "https://registry.npmjs.org/{package}/latest",
+        },
+        {
+            "name": "RubyGems",
+            "package_manager": "gem",
+            "base_url": "https://rubygems.org/gems/{package}",
+            "version_url_template": "https://rubygems.org/gems/{package}/versions/{version}",
+            "latest_version_url": "https://rubygems.org/api/v1/versions/{package}/latest.json",
+        },
+        {
+            "name": "Hex",
+            "package_manager": "hex",
+            "base_url": "https://hex.pm/packages/{package}",
+            "version_url_template": "https://hex.pm/packages/{package}/{version}",
+            "latest_version_url": "https://hex.pm/api/packages/{package}",
+        },
+        {
+            "name": "Go Modules",
+            "package_manager": "go",
+            "base_url": "https://pkg.go.dev/{package}",
+            "version_url_template": "https://pkg.go.dev/{package}@v{version}",
+            "latest_version_url": "https://proxy.golang.org/{package}/@latest",
+        },
+        {
+            "name": "Crates.io",
+            "package_manager": "cargo",
+            "base_url": "https://crates.io/crates/{package}",
+            "version_url_template": "https://docs.rs/crate/{package}/{version}",
+            "latest_version_url": "https://crates.io/api/v1/crates/{package}",
+        },
+    ]
+
+    # Add default sources
+    for source in default_sources:
+        try:
+            add_documentation_source(**source)
+            logging.getLogger(__name__).info(
+                f"Added default documentation source: {source['name']}"
+            )
+        except Exception as e:
+            # Log but don't fail initialization
+            logging.getLogger(__name__).warning(
+                f"Failed to add default source {source['name']}: {e}"
+            )

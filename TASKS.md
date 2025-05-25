@@ -180,6 +180,8 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Technical Improvements
 
+- [x] **Default Registry Population**: Ensure all known package registries (PyPI, npm, RubyGems, Hex, Go, Crates.io) are populated on initial installation, not just PyPI. [2025-05-24] - Added automatic population of default documentation sources during database initialization
+
 - [x] **Document Update-on-Add & Timestamps**: When `dv add <url>` is run on a URL that already exists, update all existing data for that document (re-scrape and overwrite). Ensure the database has a timestamp for each document addition/update and display the date when viewing stored documents. [2025-05-24] - Added `--update` flag to force re-scraping existing documents
 
 - [x] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging. [2025-05-24] - Created logging utilities and console wrapper that logs messages
