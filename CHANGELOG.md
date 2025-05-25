@@ -1,15 +1,49 @@
 # Changelog
 
-## [0.3.2] - 2025-05-24
+## [0.4.0] - 2025-05-24
+
+### Added
+
+- **Default Registry Sources**: Automatically populate all 6 package registries (PyPI, npm, RubyGems, Hex, Go, Crates.io) on first initialization
+- **Document Update Feature**: Added `--update` flag to `dv add` command to force re-scraping of existing documents
+- **Comprehensive Logging**: Implemented proper logging throughout the application with console wrapper
+- **Test Infrastructure**:
+  - Created comprehensive test suite with 48 passing CLI tests
+  - Added Makefile with test targets
+  - Added CI/CD pipeline for multi-OS testing (Ubuntu, macOS, Windows)
+  - Created test runner script with coverage options
+- **Enhanced Document Rendering**:
+  - Added support for Glow markdown rendering for beautiful terminal output
+  - Added html2text for better HTML rendering
+  - Added `--raw` flag to show unrendered markdown/HTML
+
+### Changed
+
+- **Error Verbosity**: Reduced error message verbosity for better user experience
+- **Test Suite**: Complete refactor from heavily-mocked tests to integration-focused testing
+- **Registry Initialization**: Documentation sources table now created in initial schema
 
 ### Fixed
+
+- **Test Fixtures**: Fixed fixture organization and imports across all test files
+- **CLI Parameter Signatures**: Updated test_cli.py to handle new parameter requirements
+
+### Developer Experience
+
+- **Test Organization**: Created shared test utilities in utils.py and conftest.py
+- **Minimal Mocking**: Tests now focus on real integration rather than excessive mocking
+- **Better Test Isolation**: Improved test reliability and maintainability
+
+## [0.3.2] - 2025-05-24
+
+### Fixed in 0.3.2
 
 - **Critical Dependency**: Added missing `toml` dependency for PyPI installation
 - **Package Configuration**: Fixed setuptools package discovery to include all subpackages
 
 ## [0.3.1] - 2025-05-24
 
-### Bug Fixes
+### Fixed in 0.3.1
 
 - **Critical Bugs**:
   - Fixed scraper segment unpacking error that prevented adding documents
@@ -26,12 +60,12 @@
   - Fixed inconsistent return types in processor.py
   - Fixed database migration error when columns already exist
 
-### Added
+### Added in 0.3.1
 
 - **Installation Helper**: New `scripts/install-dv.sh` for easier setup
 - **Registry Migration**: Added v2 migration for documentation registry support
 
-### Changed
+### Changed in 0.3.1
 
 - **Deprecated Scripts**: Removed outdated `dv` and `scripts/dv` wrappers
 - **Documentation**: Updated all references to use new installation method
@@ -41,28 +75,6 @@
 
 - **Error Handling**: Better error messages for invalid URLs and missing documents
 - **Concurrent Operations**: Verified support for multiple simultaneous operations
-
-## [Unreleased]
-
-### Features
-
-- **Enhanced Document Rendering**:
-  - Added support for [Glow](https://github.com/charmbracelet/glow) for beautiful markdown rendering
-  - Added html2text for rendering HTML documents in the terminal
-  - New `--browser` flag for `dv read` to open HTML in default browser
-  - Improved `--raw` flag to work with both markdown and HTML formats
-  - Better error handling with fallback to raw content
-
-- **Enhanced Version Handling**: Improved `import-deps` command to respect version specifications in dependency files
-
-- **New CLI Options**:
-  - Added `--skip-existing` flag to skip dependencies with existing documentation
-  - Added `-v/--verbose` flag for detailed output
-  - Added `--raw` flag to `dv read` command to show raw content
-
-- **Better Error Handling**: More informative error messages and progress tracking
-
-- **Documentation**: Updated help text and examples for all commands
 
 ### Updates
 
