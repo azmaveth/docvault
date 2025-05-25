@@ -982,7 +982,12 @@ def list_cmd(filter, verbose, format):
     is_flag=True,
     help="Open HTML in browser instead of rendering in terminal",
 )
-def read_cmd(document_id, format, raw, use_browser):
+@click.option(
+    "--summarize",
+    is_flag=True,
+    help="Generate a concise summary focusing on functions, classes, and examples",
+)
+def read_cmd(document_id, format, raw, use_browser, summarize):
     """Read a document from the vault.
 
     By default, markdown is rendered for better readability using Glow (if installed).
@@ -994,6 +999,8 @@ def read_cmd(document_id, format, raw, use_browser):
         dv read 1 --format json
         dv read 1 --format xml
         dv read 1 --format html --browser
+        dv read 1 --summarize
+        dv read 1 --summarize --format markdown
     """
     import json
 
@@ -1014,6 +1021,87 @@ def read_cmd(document_id, format, raw, use_browser):
         return 1
 
     try:
+        # Handle summarization if requested
+        if summarize:
+            from docvault.core.summarizer import DocumentSummarizer
+
+            # Read the markdown content
+            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Generate summary
+            summarizer = DocumentSummarizer()
+            summary = summarizer.summarize(content)
+
+            # Format the summary based on requested format
+            if format == "json":
+                summary_output = {
+                    "status": "success",
+                    "document": {
+                        "id": doc["id"],
+                        "title": doc["title"] or "Untitled",
+                        "url": doc["url"],
+                        "version": doc.get("version", "unknown"),
+                        "scraped_at": doc["scraped_at"],
+                    },
+                    "summary": summary,
+                }
+                print(json.dumps(summary_output, indent=2))
+                return 0
+            elif format == "xml":
+                from xml.dom import minidom
+                from xml.etree.ElementTree import Element, SubElement, tostring
+
+                root = Element("document_summary")
+                root.set("id", str(doc["id"]))
+
+                # Add document metadata
+                title_elem = SubElement(root, "title")
+                title_elem.text = doc["title"] or "Untitled"
+
+                url_elem = SubElement(root, "url")
+                url_elem.text = doc["url"]
+
+                # Add summary elements
+                summary_elem = SubElement(root, "summary")
+
+                overview_elem = SubElement(summary_elem, "overview")
+                overview_elem.text = summary["overview"]
+
+                if summary["classes"]:
+                    classes_elem = SubElement(summary_elem, "classes")
+                    for cls in summary["classes"]:
+                        class_elem = SubElement(classes_elem, "class")
+                        class_elem.set("name", cls["name"])
+                        class_elem.text = cls["description"]
+
+                if summary["functions"]:
+                    functions_elem = SubElement(summary_elem, "functions")
+                    for func in summary["functions"]:
+                        func_elem = SubElement(functions_elem, "function")
+                        func_elem.set("name", func["name"])
+                        sig_elem = SubElement(func_elem, "signature")
+                        sig_elem.text = func["signature"]
+                        desc_elem = SubElement(func_elem, "description")
+                        desc_elem.text = func["description"]
+
+                # Pretty print XML
+                rough_string = tostring(root, encoding="unicode")
+                reparsed = minidom.parseString(rough_string)
+                print(reparsed.toprettyxml(indent="  "))
+                return 0
+            else:
+                # Text or markdown format
+                formatted_summary = summarizer.format_summary(
+                    summary, format="markdown" if format == "markdown" else "text"
+                )
+
+                console.print(f"# Summary: {doc['title']}\n", style="bold green")
+                console.print(f"URL: {doc['url']}\n")
+                console.print(formatted_summary)
+                return 0
+
+        # Normal (non-summarized) output
         if format == "json":
             # JSON output
             with open(doc["markdown_path"], "r", encoding="utf-8") as f:
@@ -1396,6 +1484,11 @@ def search_lib(library_spec, version, format, timeout, verbose):
     is_flag=True,
     help="Show detailed output including content hashes",
 )
+@click.option(
+    "--summarize",
+    is_flag=True,
+    help="Show summaries of matched documents instead of content snippets",
+)
 def search_text(
     query,
     limit,
@@ -1409,6 +1502,7 @@ def search_text(
     title_contains,
     updated_after,
     verbose,
+    summarize,
 ):
     """Search documents in the vault with metadata filtering.
 
@@ -1416,6 +1510,8 @@ def search_text(
         dv search "python sqlite" --version 3.10
         dv search --library --title-contains "API"
         dv search --updated-after 2023-01-01
+        dv search "async functions" --summarize
+        dv search "database" --summarize --limit 3
 
     If no query is provided, returns random documents matching the filters.
     """
@@ -1588,7 +1684,76 @@ def search_text(
         section_path = result.get("section_path", "0")
         doc["sections"][section_path].append(result)
 
-    # Display results by document and section
+    # Handle summarization if requested
+    if summarize:
+        from docvault.core.storage import read_markdown
+        from docvault.core.summarizer import DocumentSummarizer
+
+        summarizer = DocumentSummarizer()
+
+        # Display results with summaries
+        for doc_id, doc_info in doc_results.items():
+            doc_title = doc_info["title"]
+            doc_url = doc_info["url"]
+
+            console.print(f"\n[bold green]📄 {doc_title}[/]")
+            console.print(f"[blue]{doc_url}[/]")
+
+            # Get the document to summarize it
+            from docvault.db.operations import get_document
+
+            doc = get_document(doc_id)
+            if doc:
+                try:
+                    # Read and summarize the document
+                    content = read_markdown(doc["markdown_path"])
+                    summary = summarizer.summarize(content, max_items=5)
+
+                    # Show a brief summary
+                    console.print("\n[bold]Summary:[/]")
+
+                    if summary["overview"]:
+                        console.print(f"\n{summary['overview']}\n")
+
+                    if summary["functions"]:
+                        console.print("[bold]Key Functions:[/]")
+                        for func in summary["functions"][:3]:
+                            console.print(
+                                f"  • {func['name']}: {func['description'][:100]}"
+                            )
+
+                    if summary["classes"]:
+                        console.print("\n[bold]Key Classes:[/]")
+                        for cls in summary["classes"][:3]:
+                            console.print(
+                                f"  • {cls['name']}: {cls['description'][:100]}"
+                            )
+
+                    if summary["key_concepts"]:
+                        console.print("\n[bold]Key Concepts:[/]")
+                        console.print(
+                            "  "
+                            + ", ".join(f"`{c}`" for c in summary["key_concepts"][:10])
+                        )
+
+                    # Show match locations
+                    total_matches = sum(
+                        len(section_hits)
+                        for section_hits in doc_info["sections"].values()
+                    )
+                    console.print(
+                        f"\n[dim]Query '{query}' found in {total_matches} locations[/]"
+                    )
+
+                except Exception as e:
+                    logger.warning(f"Failed to summarize document {doc_id}: {e}")
+                    console.print(f"[yellow]Could not generate summary: {e}[/]")
+
+            console.print("[dim]" + "─" * 60 + "[/]")
+
+        return
+
+    # Display results by document and section (normal mode)
     for doc_id, doc_info in doc_results.items():
         doc_title = doc_info["title"]
         doc_url = doc_info["url"]
