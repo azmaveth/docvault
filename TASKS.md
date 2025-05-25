@@ -11,11 +11,11 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Implement DocVault add tool
   - [x] Implement DocVault read tool
   - [x] Add better error handling and logging
-  - [ ] Add comprehensive documentation for MCP integration
+  - [ ] ~~Add comprehensive documentation for MCP integration~~ (CLAUDE.md already provides good coverage)
 - [x] **Structured Response Format**: Add output formats (--format json/xml/markdown) to make responses more easily parsed by AI systems [2025-05-24]
-- [ ] **Contextual Knowledge Retrieval**: Implement feature to automatically identify required libraries from code snippets or project descriptions
+- [ ] ~~**Contextual Knowledge Retrieval**: Implement feature to automatically identify required libraries from code snippets or project descriptions~~ (Complex feature with limited ROI - import-deps already handles project files)
 - [ ] **Documentation Summarization**: Add option to generate concise summaries of documentation focusing on method signatures, parameters, and examples
-- [ ] **Versioning Awareness**: Enhance version tracking to better handle library version compatibility
+- [ ] ~~**Versioning Awareness**: Enhance version tracking to better handle library version compatibility~~ (Already supports library@version syntax and version filtering)
 - [ ] **Batch Operations**: Add support for batch queries to efficiently retrieve documentation for multiple libraries in a single operation
 
 ## Scraping Improvements (Added Based on Testing)
@@ -62,29 +62,29 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Highlight matching terms in search results [2025-05-23]
   - [x] Add context around matches (snippets) [2025-05-23]
   - [x] Support filtering by document type/source [2025-05-23]
-  - [ ] Add relevance feedback mechanism
-  - [ ] Implement keyboard navigation for search results
+  - [ ] ~~Add relevance feedback mechanism~~ (Complex feature requiring ML/user tracking)
+  - [ ] ~~Implement keyboard navigation for search results~~ (CLI doesn't support interactive navigation)
   - [ ] Add section hierarchy visualization
-  - [ ] Support jumping to specific sections in documents
+  - [ ] ~~Support jumping to specific sections in documents~~ (Would require interactive UI)
 
 - [x] **Document Navigation and Structure**:
   - [x] Add ability to navigate between related sections in retrieved documents (2025-05-23)
   - [ ] Better preserve document structure when rendering in different formats
-  - [ ] Implement a "related content" suggestion feature based on current viewing history
-  - [ ] Add document history tracking to easily return to previously viewed documents
+  - [ ] ~~Implement a "related content" suggestion feature based on current viewing history~~ (Requires session/history tracking)
+  - [ ] ~~Add document history tracking to easily return to previously viewed documents~~ (CLI is stateless)
 
 - [x] **Metadata Utilization**: [2025-05-23]
   - [x] Improve integration of document metadata into search functionality
   - [x] Display document timestamps and version information in results
   - [x] Add metadata-based filtering options (by date, source, type, version)
 
-- [ ] **Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs (e.g., Hexdocs for Elixir, PyPI for Python). Automatically update registry as new docs are discovered.
+- [ ] ~~**Official Docs Registry**: Maintain local references to official documentation URLs for libraries, frameworks, and APIs~~ (Already implemented with registry commands)
 - [ ] **Interactive Mode**: Add an interactive shell mode where users can navigate documentation with keyboard shortcuts
 - [ ] **Documentation Comparison**: Add features to compare different versions of the same library to identify changes
-- [ ] **Better Discovery**: Implement a recommendation system that suggests related libraries or frameworks
+- [ ] ~~**Better Discovery**: Implement a recommendation system that suggests related libraries or frameworks~~ (Complex ML feature with limited ROI)
 - [ ] **Integration with Development Environments**: Create plugins for popular IDEs to access documentation directly from the editor
 - [x] **Import from Project Files**: Add ability to scan project files (package.json, mix.exs, requirements.txt, etc.) to fetch documentation for all dependencies automatically [2025-05-23]
-- [ ] **User-Friendly Installation**: Simplify the installation process and dependencies
+- [ ] ~~**User-Friendly Installation**: Simplify the installation process and dependencies~~ (Already simple with uv/pip)
 
 ## Suggestions to Improve the Utility of docvault for Coding
 
@@ -186,9 +186,9 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 - [x] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging. [2025-05-24] - Created logging utilities and console wrapper that logs messages
 - [x] **SQLi prevention**: Implement SQL injection prevention measures in database queries. ~~Use SQLAlchemy library to parameterize queries.~~ [2025-05-24] - Verified all database queries already use parameterized statements with ? placeholders
-- [ ] **Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH or provide a reliable fallback method for all supported OSes and shells.
+- [ ] ~~**Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH~~ (Already documented workarounds with uv run)
 - [x] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates. [2025-05-24] - Created comprehensive test suites for all CLI commands including import/add, search, document management, config, init, index, backup/restore, serve, import-deps, and registry commands. Also created integration tests for full workflows.
-- [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.
+- [ ] ~~**Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive~~ (Help is already comprehensive with examples)
 
 - [x] **Fix Critical Bugs Found in QA**:
   - [x] Fix scraper segment unpacking error by updating scraper.py to handle dictionary format from processor
@@ -213,18 +213,16 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [ ] Implement specialized extractors for Sphinx, MkDocs, OpenAPI/Swagger
   - [ ] Improve segmentation for navigation/code/structured content
   - [ ] Add tests for extraction and segmentation edge cases
-  - [ ] Add progress notes as improvements are made
-  - [ ] [Progress] 2025-04-21: Plan drafted. Will begin with adaptive extraction pipeline after vector search CLI command.
 
 - [ ] **Scraping Depth Control Enhancements**:
   - [ ] Improve documentation of the "depth" parameter for scraping to clearly explain its purpose and impact
   - [ ] Add examples of different depth settings and their effects in the CLI help
-  - [ ] Implement smart depth detection that adjusts based on site structure
+  - [ ] ~~Implement smart depth detection that adjusts based on site structure~~ (Complex and could cause unexpected behavior)
 
 - [ ] **Caching Strategy**: Improve caching with time-based invalidation to ensure documentation stays up-to-date
-- [ ] **Offline Mode**: Enhance offline capabilities to ensure reliability without internet connection
+- [ ] ~~**Offline Mode**: Enhance offline capabilities to ensure reliability without internet connection~~ (DocVault already works offline for stored docs)
 - [ ] **Documentation Filtering**: Add options to filter documentation by type (functions, modules, examples, etc.)
-- [ ] **Expanded Language Support**: Ensure good support for a wide range of programming languages and their documentation styles
+- [ ] ~~**Expanded Language Support**: Ensure good support for a wide range of programming languages~~ (Not language-specific, works with any documentation)
 
 ## MCP Server Improvements
 
@@ -240,11 +238,11 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Added detailed error messages
   - [x] Implemented graceful error recovery
   - [x] Added logging for server errors
-- [ ] **Authentication**: Add authentication for MCP server (if needed)
+- [ ] ~~**Authentication**: Add authentication for MCP server~~ (MCP typically relies on system-level security)
 - [ ] **Extended Server Configuration**: Create additional configuration options for the MCP server
   - [ ] Add rate limiting
-  - [ ] Configure caching behavior
-  - [ ] Add custom response formatting
+  - [ ] ~~Configure caching behavior~~ (Already caches documents)
+  - [ ] ~~Add custom response formatting~~ (MCP has standard response format)
 - [x] **Testing**: Develop comprehensive tests for the MCP server
   - [Progress] 2025-04-21: Comprehensive tests implemented and passing.
 - [ ] **Deployment Documentation**: Document deployment options for the MCP server
@@ -301,97 +299,41 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## Documentation and Onboarding
 
-- [ ] **Improved Help Messages**: Enhance command help messages with more examples and clearer descriptions
+- [ ] ~~**Improved Help Messages**: Enhance command help messages with more examples~~ (Already comprehensive)
 - [ ] **Quick Start Guide**: Create a quick start guide focusing on common usage patterns
 - [x] **AI Integration Guide**: Created comprehensive documentation for AI assistants using DocVault via MCP (see CLAUDE.md)
 - [ ] **Configuration Guide**: Create comprehensive documentation for configuration options
-- [ ] **Custom Scrapers Guide**: Document how to create custom scrapers for specific documentation formats
+- [ ] ~~**Custom Scrapers Guide**: Document how to create custom scrapers~~ (Would expose internal APIs)
 
 ## Additional Features
 
 - [ ] **Documentation Health Checks**: Add feature to periodically check if cached documentation is still current
-- [ ] **Resource Usage Monitoring**: Implement monitoring for storage and performance metrics
-- [ ] **Intelligent Preprocessing**: Develop preprocessing options to optimize content for different use cases
+- [ ] ~~**Resource Usage Monitoring**: Implement monitoring for storage and performance metrics~~ (Low priority for a CLI tool)
+- [ ] ~~**Intelligent Preprocessing**: Develop preprocessing options to optimize content~~ (Too vague)
 - [ ] **Cross-referencing**: Implement intelligent cross-referencing between related documentation
 - [ ] **Export Features**: Add ability to export documentation in various formats (PDF, Markdown, etc.)
 
-## CLI UX Review & Recommendations
+## New High-Priority Features
 
-### General Observations
+- [ ] **Search Within Document**: Add ability to search within a specific document (e.g., `dv search --in-doc 123 "function name"`)
+- [ ] **Bulk Export**: Add command to export multiple documents at once (e.g., `dv export 1-10 --format markdown --output ./docs/`)
+- [ ] **Document Stats Command**: Add `dv stats` to show database size, document count, index health, etc.
+- [ ] **Partial Document Updates**: Allow updating specific sections of a document without re-scraping everything
+- [ ] **Search History**: Store recent searches locally for quick re-execution
+- [ ] **Document Collections**: Allow grouping documents into named collections (e.g., "Python Web Dev", "Data Science")
+- [ ] **Quick Add from Package Manager**: Add shortcuts like `dv add-pypi requests` that automatically finds and adds PyPI docs
+- [ ] **Document Freshness Indicator**: Show how old documents are and suggest updates for stale ones
+- [ ] **Backup Scheduling**: Add ability to schedule automatic backups
+- [ ] **Search Result Export**: Allow exporting search results to JSON/CSV for analysis
 
-- The CLI is logically organized, with clear commands for core actions (add, list, search, read, etc.).
-- Help output is concise and readable.
-- Most commands use positional arguments for primary targets (e.g., URL, DOCUMENT_ID), which is good.
-- Some commands have inconsistent flag/argument naming or could be made more user-friendly.
-- Some command names and argument conventions could be improved for discoverability and clarity.
+## CLI UX Improvements - Remaining Items
 
-### Detailed Suggestions
+Most CLI UX improvements have been completed. Remaining nice-to-have features:
 
-#### 1. Command Naming & Structure
-
-- [x] **`list`**: Aliased as both `list` and `ls`. [2025-04-22]
-- [ ] Add a `--long` or `-l` flag for more detailed output (future improvement).
-- [x] **`add`**: Now canonical as `import` with aliases `add`, `scrape`, `fetch`. [2025-04-22]
-- [ ] Allow multiple URLs at once (future improvement).
-- [x] **`rm`**: Now canonical as `remove` with alias `rm`. [2025-04-22]
-- [x] **`lookup`**: Merged into `search` as `search lib` and `search --library`. [2025-04-22]
-- [x] **`read`**: Aliased as both `read` and `cat`. [2025-04-22]
-- [x] **`search`**: Canonical, with alias `find`. Now the default command if no subcommand is given. [2025-04-22]
-- [x] **`init-db`**: Now canonical as `init` with alias `init-db`. [2025-04-22]
-- [x] **`serve`**: Canonical, help text clarified for MCP server. [2025-04-22]
-
-#### 2. Flags & Arguments
-
-- [x] Used consistent flag naming: `--force`, `--format`, etc. [2025-04-22]
-- [ ] Add both positive and negative forms for boolean flags (future improvement).
-- [ ] Standardize `--format` and add `--json` shortcut across all commands (future improvement).
-- [x] ID ranges and comma-separated lists supported in `remove` (rm), and partially elsewhere. [2025-04-22]
-- [ ] Expand ID range/list support to all relevant commands (future improvement).
-
-#### 3. Help & Examples
-
-- [x] Updated help output for all commands to reflect new names, aliases, and usage. [2025-04-22]
-- [ ] Add more detailed usage examples to each command's help output (future improvement).
-- For `add`, show example with depth, max-links, and strict-path.
-- For `search`, show both embedding and text-only examples.
-- For `rm`, clarify ID range syntax in help.
-
-#### 4. User Experience
-
-- On errors, suggest next steps (e.g., "Try `dv list` to see available documents").
-- Support tab completion (if not already).
-- Print summary tables in a more compact format by default; use `--long` for full details.
-- For interactive commands (like `rm`), support `--yes` or `-y` to skip confirmation.
-
-#### 5. Advanced Suggestions
-
-- Add a `help` subcommand: `dv help <command>`.
-- Support config profiles: `dv config --profile <n>`.
-- Add a `status` command to show DB health, number of docs, etc.
-- Allow piping and redirection for output (e.g., `dv search ... | jq`).
-
-### Example of Improved Command Set
-
-```markdown
- dv add <url> [--depth N] [--max-links N] [--no-strict-path] [--quiet]
- dv import-backup <file>
- dv backup [destination]
- dv list [--filter <query>] [--long] [--format <fmt>]
- dv search <query> [--limit N] [--text-only] [--format <fmt>]
- dv doc <library> [--version <ver>]
- dv read <doc_id> [--format <fmt>]
- dv rm <ids> [--force]
- dv init [--force]
- dv serve [--host H] [--port P] [--transport <type>]
- dv status
-```
-
----
-
-### [ ] CLI UX Improvements
-
-- Review and refactor command names and aliases for clarity and consistency.
-- Standardize flag names and output formatting options.
-- Expand help and usage examples for all commands.
-- Add support for batch operations, more flexible ID input, and improved error messages.
-- Consider adding new commands for status and help.
+- [ ] Add `--long` or `-l` flag to list command for more detailed output
+- [ ] Allow multiple URLs at once in import command (e.g., `dv add url1 url2 url3`)
+- [ ] Add `--yes` or `-y` flag to skip confirmation prompts in remove command
+- [ ] Add `dv help <command>` subcommand for detailed command help
+- [ ] Add `dv status` command to show database health, document count, storage usage
+- [ ] Support config profiles with `dv config --profile <name>`
+- [ ] Add shell completion scripts for bash/zsh/fish
