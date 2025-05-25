@@ -1,0 +1,101 @@
+---
+name: Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+        exclude:
+          # Exclude some combinations to save CI time
+          - os: windows-latest
+            python-version: "3.11"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Run unit tests
+        run: |
+          uv run pytest tests/test_basic.py tests/test_embeddings.py \
+            tests/test_library_manager.py tests/test_processor.py \
+            tests/test_scraper.py tests/test_sections.py \
+            tests/test_schema.py tests/test_db_operations.py -v
+
+      - name: Run CLI tests
+        run: |
+          uv run pytest tests/test_cli*.py -v
+
+      - name: Run MCP tests
+        run: |
+          uv run pytest tests/test_mcp_server.py -v
+
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          uv run pytest --cov=docvault --cov-report=xml \
+            --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Run ruff check
+        run: |
+          uv run ruff check .
+
+      - name: Run ruff format check
+        run: |
+          uv run ruff format --check .
+
+      - name: Run mypy
+        run: |
+          uv run mypy docvault --ignore-missing-imports || true

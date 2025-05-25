@@ -185,7 +185,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [x] **Comprehensive Logging**: Ensure proper logging is implemented throughout the app. All major operations and failures should log error, warning, and info messages as appropriate, so that users and developers can easily diagnose issues. Replace console.print() with logging. [2025-05-24] - Created logging utilities and console wrapper that logs messages
 - [x] **SQLi prevention**: Implement SQL injection prevention measures in database queries. ~~Use SQLAlchemy library to parameterize queries.~~ [2025-05-24] - Verified all database queries already use parameterized statements with ? placeholders
 - [ ] **Test dv command on fresh installs**: Ensure the `dv` command is always installed to PATH or provide a reliable fallback method for all supported OSes and shells.
-- [ ] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates.
+- [x] **Automated CLI testing**: Implement automated tests or a test harness for the CLI to catch issues like missing options or broken commands after updates. [2025-05-24] - Created comprehensive test suites for all CLI commands including import/add, search, document management, config, init, index, backup/restore, serve, import-deps, and registry commands. Also created integration tests for full workflows.
 - [ ] **Improve CLI help output**: Ensure `dv --help` and subcommand help texts are comprehensive and up-to-date, including all options and usage examples.
 
 - [x] **Fix Critical Bugs Found in QA**:

@@ -666,15 +666,62 @@ We welcome contributions to DocVault! Check out the [TASKS.md](TASKS.md) file fo
 
 We provide a convenient script to set up a development environment using UV:
 
-```bashbash
+```bash
 # Make the script executable if needed
 chmod +x scripts/dev-setup.sh
 
 # Run the setup script
 ./scripts/dev-setup.sh
-```bash
+```
 
 This script creates a virtual environment, installs dependencies with UV, and checks for the sqlite-vec extension.
+
+### Running Tests
+
+DocVault includes a comprehensive test suite. You can run tests using the provided test runner script or make commands:
+
+```bash
+# Run all tests
+./scripts/run-tests.sh
+# or
+make test
+
+# Run specific test suites
+./scripts/run-tests.sh unit      # Unit tests only
+./scripts/run-tests.sh cli       # CLI tests only
+./scripts/run-tests.sh mcp       # MCP server tests only
+./scripts/run-tests.sh quick     # Quick smoke tests
+
+# Run with coverage
+./scripts/run-tests.sh -c all
+# or
+make test-coverage
+
+# Run with verbose output
+./scripts/run-tests.sh -v all
+
+# See all options
+./scripts/run-tests.sh --help
+```
+
+### Code Quality
+
+```bash
+# Run linting
+make lint
+
+# Format code
+make format
+```
+
+### Continuous Integration
+
+DocVault uses GitHub Actions for CI/CD. Tests are automatically run on:
+
+- Push to main/master/develop branches
+- Pull requests
+- Multiple OS (Ubuntu, macOS, Windows)
+- Multiple Python versions (3.11, 3.12)
 
 ## License
 
