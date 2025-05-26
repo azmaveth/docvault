@@ -425,6 +425,26 @@ class WebScraper:
         if not html_content:
             raise ValueError(f"Failed to fetch URL: {url}. Reason: {fetch_error}")
 
+        # Check for llms.txt file at the site root
+        llms_txt_url = None
+        llms_txt_content = None
+        try:
+            from ..core.llms_txt import detect_llms_txt
+
+            potential_llms_url = detect_llms_txt(url)
+            if potential_llms_url:
+                llms_content, llms_error = await self._safe_fetch_url(
+                    potential_llms_url
+                )
+                if llms_content and not llms_error:
+                    # Check if it's actually an llms.txt file (starts with # and has markdown)
+                    if llms_content.strip().startswith("#"):
+                        llms_txt_url = potential_llms_url
+                        llms_txt_content = llms_content
+                        self.logger.info(f"Found llms.txt file at {llms_txt_url}")
+        except Exception as e:
+            self.logger.debug(f"Error checking for llms.txt: {e}")
+
         # Apply section filtering if requested
         if sections or filter_selector:
             self.logger.info(
@@ -578,9 +598,70 @@ class WebScraper:
             library_id=library_id,
             is_library_doc=is_library_doc,
             content_hash=content_hash,
+            has_llms_txt=bool(llms_txt_content),
+            llms_txt_url=llms_txt_url,
         )
         # Update stats
         self.stats["pages_scraped"] += 1
+
+        # Process llms.txt if found
+        if llms_txt_content and llms_txt_url:
+            try:
+                from ..core.llms_txt import LLMsParser
+                from ..db.operations_llms import (
+                    add_llms_txt_metadata,
+                    add_llms_txt_resource,
+                )
+
+                parser = LLMsParser()
+                llms_doc = parser.parse(llms_txt_content, llms_txt_url)
+
+                # Validate the document
+                is_valid, errors = parser.validate(llms_doc)
+                if is_valid:
+                    # Store metadata
+                    sections_json = json.dumps(
+                        {
+                            section: [
+                                {
+                                    "title": r.title,
+                                    "url": r.url,
+                                    "description": r.description,
+                                }
+                                for r in resources
+                            ]
+                            for section, resources in llms_doc.sections.items()
+                        }
+                    )
+
+                    add_llms_txt_metadata(
+                        document_id=document_id,
+                        llms_title=llms_doc.title,
+                        llms_summary=llms_doc.summary,
+                        llms_introduction=llms_doc.introduction,
+                        llms_sections=sections_json,
+                    )
+
+                    # Store individual resources for searchability
+                    for section, resources in llms_doc.sections.items():
+                        for resource in resources:
+                            add_llms_txt_resource(
+                                document_id=document_id,
+                                section=section,
+                                title=resource.title,
+                                url=resource.url,
+                                description=resource.description,
+                                is_optional=resource.is_optional,
+                            )
+
+                    self.logger.info(
+                        f"Stored llms.txt metadata for document {document_id}"
+                    )
+                else:
+                    self.logger.warning(f"Invalid llms.txt file: {errors}")
+            except Exception as e:
+                self.logger.error(f"Error processing llms.txt: {e}")
+
         # Segment and embed content
         segments = processor.segment_markdown(markdown_content)
         for i, segment in enumerate(segments):

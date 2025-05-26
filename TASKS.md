@@ -17,14 +17,17 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [x] **Documentation Summarization**: Add option to generate concise summaries of documentation focusing on method signatures, parameters, and examples [2025-05-24]
 - [ ] ~~**Versioning Awareness**: Enhance version tracking to better handle library version compatibility~~ (Already supports library@version syntax and version filtering)
 - [x] **Batch Operations**: Add support for batch queries to efficiently retrieve documentation for multiple libraries in a single operation [2025-05-24]
-- [ ] **llms.txt Support**: Add support for llms.txt files to improve AI accessibility
-  - [ ] Automatically detect and parse llms.txt files when scraping documentation
-  - [ ] Generate llms.txt format output for stored documents
-  - [ ] Add CLI command to export documentation in llms.txt format
-  - [ ] Support llms.txt metadata (tags, description, etc.)
-  - [ ] Implement llms.txt validation according to spec
-  - [ ] Add option to prefer llms.txt content when available
-  - Reference: https://github.com/AnswerDotAI/llms-txt
+- [x] **llms.txt Support**: Add support for llms.txt files to improve AI accessibility [2025-05-26]
+  - [x] Automatically detect and parse llms.txt files when scraping documentation
+  - [x] Generate llms.txt format output for stored documents
+  - [x] Add CLI command to export documentation in llms.txt format
+  - [x] Support llms.txt metadata (tags, description, etc.)
+  - [x] Implement llms.txt validation according to spec
+  - [x] Add option to prefer llms.txt content when available
+  - [x] Store llms.txt metadata in dedicated database tables
+  - [x] Add `dv llms` commands for managing llms.txt functionality
+  - [x] Integrate llms.txt info into search results display
+  - Reference: https://llmstxt.org/
 
 ## Scraping Improvements (Added Based on Testing)
 

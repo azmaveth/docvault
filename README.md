@@ -36,6 +36,7 @@ DocVault is designed to help AI assistants and developers access up-to-date docu
 - **Smart Caching**: Document freshness tracking with staleness indicators
 - **CLI Interface**: Comprehensive command-line tool for document management
 - **Security**: Input validation, secure storage, and terminal output sanitization
+- **llms.txt Support**: Automatic detection and parsing of llms.txt files for AI-friendly documentation
 
 ## Installation
 
@@ -479,6 +480,53 @@ dv search --tags security oauth2
 # Multiple tag modes
 dv search "api" --tags rest graphql --tag-mode any   # Match ANY tag
 dv search "api" --tags python rest --tag-mode all    # Must have ALL tags
+```
+
+### llms.txt Support
+
+DocVault automatically detects and parses [llms.txt](https://llmstxt.org/) files when scraping websites. These files provide AI-friendly documentation that can be easily consumed by language models.
+
+#### Viewing llms.txt Documents
+
+```bash
+# List all documents with llms.txt files
+dv llms list
+
+# Show llms.txt details for a specific document
+dv llms show <document_id>
+
+# Search through llms.txt resources
+dv llms search "installation"
+```
+
+#### Adding llms.txt Documents
+
+```bash
+# Add a document and detect its llms.txt file
+dv add https://example.com
+
+# Add a document specifically for its llms.txt
+dv llms add https://example.com/llms.txt
+```
+
+#### Exporting in llms.txt Format
+
+```bash
+# Export documents as llms.txt
+dv llms export --title "My Project Docs" --output llms.txt
+
+# Export from a specific collection
+dv llms export --collection "My Project" --title "Project Documentation"
+
+# Export documents with specific tags
+dv llms export --tag python --tag api --title "Python API Docs"
+```
+
+When searching, documents with llms.txt files are marked with ✨ in the results:
+
+```bash
+dv search "documentation"
+# Results show: "✨ has llms.txt" for documents with llms.txt metadata
 ```
 
 ## CLI Commands

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-05-26
+
+### Added
+
+- **llms.txt Support**: Complete implementation of llms.txt specification support
+  - Automatic detection and parsing of llms.txt files when scraping websites
+  - Storage of llms.txt metadata in dedicated database tables
+  - New `dv llms` command group with subcommands:
+    - `list`: View all documents with llms.txt files
+    - `show <id>`: Display detailed llms.txt information
+    - `search <query>`: Search through llms.txt resources
+    - `add <url>`: Add documents specifically for llms.txt
+    - `export`: Generate llms.txt format from stored documents
+  - Integration with search results (marked with ✨ indicator)
+  - Export functionality supporting collections and tags
+  - Comprehensive test coverage for parsing and storage
+  - Full compliance with llms.txt specification at https://llmstxt.org/
+
+## [0.5.1] - 2025-05-25
+
 ### Added
 
 - **Rate Limiting and Resource Management**: Implemented comprehensive rate limiting

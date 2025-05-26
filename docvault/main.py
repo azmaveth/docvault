@@ -33,6 +33,7 @@ from docvault.cli.commands import (
     version_cmd,
 )
 from docvault.cli.credential_commands import credentials as credentials_cmd
+from docvault.cli.llms_commands import llms_commands
 from docvault.cli.ref_commands import ref_cmd
 from docvault.cli.registry_commands import registry as registry_group
 from docvault.cli.security_commands import security as security_cmd
@@ -220,6 +221,9 @@ def register_commands(main):
 
     # Add collection command
     main.add_command(collection_cmd, name="collection")
+
+    # Add llms.txt commands
+    main.add_command(llms_commands, name="llms")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

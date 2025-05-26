@@ -84,6 +84,7 @@ def migrate_schema() -> bool:
             (5, _migrate_to_v5),  # Add version tracking and update monitoring
             (6, _migrate_to_v6),  # Add caching and staleness tracking
             (7, _migrate_to_v7),  # Add collections for project-based organization
+            (8, _migrate_to_v8),  # Add llms.txt support
         ]
 
         # Apply pending migrations
@@ -349,3 +350,10 @@ def _migrate_to_v7(conn: sqlite3.Connection) -> None:
     from . import add_collections_0007
 
     add_collections_0007.upgrade(conn)
+
+
+def _migrate_to_v8(conn: sqlite3.Connection) -> None:
+    """Migration to v8: Add llms.txt support for AI-friendly documentation."""
+    from . import add_llms_txt_support_0008
+
+    add_llms_txt_support_0008.upgrade(conn)

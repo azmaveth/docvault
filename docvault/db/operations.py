@@ -51,6 +51,8 @@ def add_document(
     is_library_doc: bool = False,
     version: str = "latest",
     content_hash: Optional[str] = None,
+    has_llms_txt: bool = False,
+    llms_txt_url: Optional[str] = None,
 ) -> int:
     """Add a document to the database, supporting versioning and content hash."""
     conn = get_connection()
@@ -58,8 +60,8 @@ def add_document(
     cursor.execute(
         """
     INSERT INTO documents 
-    (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
             url,
@@ -71,6 +73,8 @@ def add_document(
             library_id,
             is_library_doc,
             datetime.datetime.now(),
+            has_llms_txt,
+            llms_txt_url,
         ),
     )
     document_id = cursor.lastrowid
@@ -88,6 +92,8 @@ def update_document_by_url(
     is_library_doc: bool = False,
     version: str = "latest",
     content_hash: Optional[str] = None,
+    has_llms_txt: bool = False,
+    llms_txt_url: Optional[str] = None,
 ) -> int:
     """Update a document by deleting the old one (if any) and re-adding it with a new timestamp/version."""
     old_doc = get_document_by_url(url)
@@ -102,6 +108,8 @@ def update_document_by_url(
         is_library_doc,
         version,
         content_hash,
+        has_llms_txt,
+        llms_txt_url,
     )
 
 

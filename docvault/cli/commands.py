@@ -2650,6 +2650,13 @@ def search_text(
         if doc_info["is_library_doc"] and doc_info["library_name"]:
             metadata_parts.append(f"library: {doc_info['library_name']}")
 
+        # Check for llms.txt
+        from docvault.db.operations_llms import get_llms_txt_metadata
+
+        llms_metadata = get_llms_txt_metadata(doc_id)
+        if llms_metadata:
+            metadata_parts.append("✨ has llms.txt")
+
         console.print(f"\n[bold green]📄 {doc_title}[/]")
         console.print(f"[blue]{doc_url}[/]")
         if metadata_parts:
