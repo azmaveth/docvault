@@ -320,9 +320,10 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 ## Documentation and Onboarding
 
 - [ ] ~~**Improved Help Messages**: Enhance command help messages with more examples~~ (Already comprehensive)
-- [ ] **Quick Start Guide**: Create a quick start guide focusing on common usage patterns
+- [x] **Quick Start Guide**: Create a quick start guide focusing on common usage patterns
 - [x] **AI Integration Guide**: Created comprehensive documentation for AI assistants using DocVault via MCP (see CLAUDE.md)
-- [ ] **Configuration Guide**: Create comprehensive documentation for configuration options
+- [x] **Configuration Guide**: Create comprehensive documentation for configuration options
+- [x] **Comprehensive User Guide**: Complete guide covering every feature in DocVault with examples and best practices
 - [ ] ~~**Custom Scrapers Guide**: Document how to create custom scrapers~~ (Would expose internal APIs)
 
 ## Additional Features
@@ -358,8 +359,8 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Works seamlessly with tags for powerful filtering combinations
   - [x] Comprehensive documentation explaining tags vs collections distinction
   - [x] Example workflows showing tags+collections power
-- [ ] **Quick Add from Package Manager**: Add shortcuts like `dv add-pypi requests` that automatically finds and adds PyPI docs
-- [ ] **Document Freshness Indicator**: Show how old documents are and suggest updates for stale ones
+- [x] **Quick Add from Package Manager**: Add shortcuts like `dv add-pypi requests` that automatically finds and adds PyPI docs
+- [x] **Document Freshness Indicator**: Show how old documents are and suggest updates for stale ones
 - [ ] **Backup Scheduling**: Add ability to schedule automatic backups
 - [ ] **Search Result Export**: Allow exporting search results to JSON/CSV for analysis
 

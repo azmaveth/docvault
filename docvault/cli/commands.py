@@ -1054,6 +1054,7 @@ def list_cmd(filter, verbose, format):
             table.add_column("Content Hash", style="yellow")
 
         table.add_column("Scraped At", style="cyan")
+        table.add_column("Freshness", style="cyan", width=12)
 
         # Import tags and version control modules
         from docvault.models.tags import get_document_tags
@@ -1099,6 +1100,15 @@ def list_cmd(filter, verbose, format):
                 row.append(doc.get("content_hash", "") or "")
 
             row.append(doc["scraped_at"])
+
+            # Add freshness indicator
+            from docvault.utils.freshness import format_freshness_display
+
+            freshness = format_freshness_display(
+                doc["scraped_at"], show_icon=True, show_color=True
+            )
+            row.append(freshness)
+
             table.add_row(*row)
 
         console.print(table)
@@ -1257,7 +1267,29 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 )
 
                 console.print(f"# Summary: {doc['title']}\n", style="bold green")
-                console.print(f"URL: {doc['url']}\n")
+                console.print(f"URL: {doc['url']}")
+
+                # Show document freshness
+                from docvault.utils.freshness import (
+                    format_freshness_display,
+                    get_freshness_info,
+                    get_update_suggestion,
+                )
+
+                freshness_level, formatted_age, icon = get_freshness_info(
+                    doc["scraped_at"]
+                )
+                freshness_display = format_freshness_display(doc["scraped_at"])
+                console.print(f"Age: {freshness_display}")
+
+                # Show update suggestion if needed
+                suggestion = get_update_suggestion(freshness_level)
+                if suggestion:
+                    console.print(f"\n💡 {suggestion}", style="yellow")
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to refresh this document"
+                    )
+                console.print()
 
                 # Show staleness warning if needed
                 from docvault.core.caching import StalenessStatus
@@ -1348,7 +1380,28 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
             else:
                 content = read_html(doc["html_path"])
 
-            console.print(f"# {doc['title']}\n", style="bold green")
+            console.print(f"# {doc['title']}", style="bold green")
+            console.print(f"URL: {doc['url']}")
+
+            # Show document freshness
+            from docvault.utils.freshness import (
+                format_freshness_display,
+                get_freshness_info,
+                get_update_suggestion,
+            )
+
+            freshness_level, formatted_age, icon = get_freshness_info(doc["scraped_at"])
+            freshness_display = format_freshness_display(doc["scraped_at"])
+            console.print(f"Age: {freshness_display}")
+
+            # Show update suggestion if needed
+            suggestion = get_update_suggestion(freshness_level)
+            if suggestion:
+                console.print(f"\n💡 {suggestion}", style="yellow")
+                console.print(
+                    f"   Run [cyan]dv update {document_id}[/] to refresh this document"
+                )
+            console.print()
 
             # Show staleness warning if needed
             from docvault.core.caching import StalenessStatus
@@ -1373,7 +1426,30 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
             # Markdown (default)
             content = read_markdown(doc["markdown_path"], render=not raw)
             if not raw:
-                console.print(f"# {doc['title']}\n", style="bold green")
+                console.print(f"# {doc['title']}", style="bold green")
+                console.print(f"URL: {doc['url']}")
+
+                # Show document freshness
+                from docvault.utils.freshness import (
+                    format_freshness_display,
+                    get_freshness_info,
+                    get_update_suggestion,
+                )
+
+                freshness_level, formatted_age, icon = get_freshness_info(
+                    doc["scraped_at"]
+                )
+                freshness_display = format_freshness_display(doc["scraped_at"])
+                console.print(f"Age: {freshness_display}")
+
+                # Show update suggestion if needed
+                suggestion = get_update_suggestion(freshness_level)
+                if suggestion:
+                    console.print(f"\n💡 {suggestion}", style="yellow")
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to refresh this document"
+                    )
+                console.print()
 
                 # Show staleness warning if needed
                 from docvault.core.caching import StalenessStatus

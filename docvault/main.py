@@ -34,7 +34,12 @@ from docvault.cli.commands import (
     version_cmd,
 )
 from docvault.cli.credential_commands import credentials as credentials_cmd
+from docvault.cli.freshness_commands import check_document_freshness, freshness_check
 from docvault.cli.llms_commands import llms_commands
+from docvault.cli.quick_add_commands import (
+    add_package_manager,
+    create_quick_add_command,
+)
 from docvault.cli.ref_commands import ref_cmd
 from docvault.cli.registry_commands import registry as registry_group
 from docvault.cli.security_commands import security as security_cmd
@@ -227,6 +232,26 @@ def register_commands(main):
 
     # Add llms.txt commands
     main.add_command(llms_commands, name="llms")
+
+    # Add quick add commands for package managers
+    main.add_command(add_package_manager, name="add-pm")
+
+    # Register individual package manager commands
+    for pm_alias, pm_display in [
+        ("pypi", "PyPI"),
+        ("npm", "npm"),
+        ("gem", "RubyGems"),
+        ("hex", "Hex"),
+        ("go", "Go"),
+        ("crates", "crates.io"),
+        ("composer", "Packagist"),
+    ]:
+        cmd = create_quick_add_command(pm_alias, pm_display)
+        main.add_command(cmd, name=f"add-{pm_alias}")
+
+    # Add freshness commands
+    main.add_command(freshness_check, name="freshness")
+    main.add_command(check_document_freshness, name="check-freshness")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

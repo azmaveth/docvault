@@ -59,10 +59,19 @@ def main():
     # Rust (crates.io)
     add_documentation_source(
         name="Crates.io",
-        package_manager="cargo",
+        package_manager="crates",
         base_url="https://crates.io/crates/{package}",
         version_url_template="https://docs.rs/crate/{package}/{version}",
         latest_version_url="https://crates.io/api/v1/crates/{package}",
+    )
+
+    # PHP (Packagist)
+    add_documentation_source(
+        name="Packagist",
+        package_manager="packagist",
+        base_url="https://packagist.org/packages/{package}",
+        version_url_template="https://packagist.org/packages/{package}#{version}",
+        latest_version_url="https://packagist.org/packages/{package}.json",
     )
 
     print("Successfully populated documentation registry with common sources.")

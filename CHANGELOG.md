@@ -9,6 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Quick Add from Package Managers**: Shortcuts to add documentation directly from package managers
+  - New commands: `dv add-pypi`, `dv add-npm`, `dv add-gem`, `dv add-hex`, `dv add-go`, `dv add-crates`, `dv add-composer`
+  - Universal command `dv add-pm` with syntax like `pypi:requests` or `npm:express`
+  - Automatically finds and scrapes package documentation
+  - Supports version specification with `--version` flag
+  - Force update with `--force` flag
+  - JSON output format for automation
+  - Integrates with existing library registry system
+  - Supported package managers: PyPI, npm, RubyGems, Hex, Go, crates.io, Packagist
+
+- **Document Freshness Indicators**: Visual indicators and commands to track document age
+  - Added freshness column to `dv list` with color-coded age indicators
+  - Enhanced `dv read` to display document age and update suggestions
+  - New `dv freshness` command for comprehensive freshness report
+  - New `dv check-freshness <id>` for individual document checks
+  - Four freshness levels: Fresh (<7 days), Recent (<30 days), Stale (<90 days), Outdated (>90 days)
+  - Automatic update suggestions for stale and outdated documents
+  - Multiple output formats: table, json, list
+  - Filter by freshness level or show only documents needing updates
+
+- **Quick Start Guide**: Comprehensive guide to get users up and running in 5 minutes
+  - Installation instructions for multiple methods
+  - Essential commands with examples
+  - Common workflows for different use cases
+  - Power user tips and shortcuts
+  - Troubleshooting section
+  - AI integration examples
+
+- **Configuration Guide**: Complete documentation for all configuration options
+  - All environment variables with descriptions and defaults
+  - Multiple configuration methods (.env, shell, Docker)
+  - Detailed examples for different scenarios
+  - Security configuration and best practices
+  - Performance tuning options
+  - Troubleshooting common configuration issues
+
+- **Comprehensive User Guide**: Complete guide covering every feature in DocVault
+  - Detailed documentation of all 60+ commands and subcommands
+  - Core features: adding, searching, reading, and managing documents
+  - Organization with tags and collections
+  - Package manager integration for all supported platforms
+  - Document freshness tracking and cache management
+  - Advanced features: MCP integration, AI assistant support, bulk operations
+  - Security features and credential management
+  - Best practices, tips, and troubleshooting guidance
+
+- **Documentation Organization**: Reorganized documentation into structured hierarchy
+  - Created comprehensive documentation index with navigation in docs/
+  - Moved user guides to docs/ directory for better organization
+  - Kept CLAUDE.md and TASKS.md in root for automated tools and AI assistants
+  - Updated all cross-references and links
+  - Clear documentation hierarchy for users and contributors
+
 - **Bulk Export Command**: Export multiple documents at once
   - New `dv export` command for exporting documents in bulk
   - Supports ranges (1-10), lists (1,3,5), combinations (1-5,8,10), and 'all'

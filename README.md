@@ -4,6 +4,10 @@
 
 A document management system with vector search and MCP integration for AI assistants.
 
+📚 **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes!
+📖 **[Complete User Guide](docs/USER_GUIDE.md)** - Comprehensive guide to every feature
+📖 **[Documentation Index](docs/README.md)** - All guides and references
+
 ---
 
 **CLI Command Structure Updated!**
@@ -776,6 +780,42 @@ dv list --format xml
 dv read 1 --format xml
 ```
 
+#### Document Freshness Indicators
+
+DocVault tracks document age and displays freshness indicators to help you identify potentially outdated documentation:
+
+```bash
+# List documents with freshness indicators
+dv list
+
+# Example output:
+# ID: 1  📘 Python SQLite3 Documentation  🌐 https://docs.python.org/3/library/sqlite3.html  📅 2024-01-15 ✅
+# ID: 2  📘 Django ORM Guide  🌐 https://docs.djangoproject.com/orm/  📅 2023-12-01 🟡 (2 months old)
+# ID: 3  📘 Flask Tutorial  🌐 https://flask.palletsprojects.com/  📅 2023-06-15 🔴 (7 months old)
+```
+
+Freshness indicators:
+
+- **✅ Fresh** - Less than 30 days old
+- **🟡 Getting stale** - 30-90 days old (may need updating)
+- **🔴 Stale** - Over 90 days old (likely outdated)
+
+Use these indicators to:
+
+- Identify documents that may need refreshing
+- Prioritize which documentation to update
+- Ensure you're working with current information
+
+To refresh stale documents:
+
+```bash
+# Re-scrape a stale document
+dv add https://example.com/doc --force
+
+# Check specific document age
+dv read 3 --show-metadata
+```
+
 ### Library Lookup Example
 
 ```bash
@@ -787,7 +827,43 @@ dv search lib tensorflow --version 2.0.0
 
 # Alternate syntax (option flag):
 dv search --library pandas
-```## Connecting DocVault to AI Assistants
+```
+
+### Quick Add from Package Managers
+
+DocVault provides shortcuts to quickly add documentation for packages from various package managers:
+
+```bash
+# Quick add from specific package managers
+dv add-pypi requests              # Add from PyPI
+dv add-npm express                # Add from npm
+dv add-gem rails --version 7.0    # Add from RubyGems with version
+dv add-hex phoenix                # Add from Hex (Elixir)
+dv add-go gin                     # Add from Go
+dv add-crates tokio               # Add from crates.io (Rust)
+dv add-composer laravel           # Add from Packagist (PHP)
+
+# Universal syntax using package manager prefix
+dv add-pm pypi:requests
+dv add-pm npm:@angular/core
+dv add-pm rust:serde
+dv add-pm php:symfony/framework-bundle
+
+# Force re-fetch even if already exists
+dv add-pypi django --force
+
+# Get JSON output for automation
+dv add-npm react --format json
+```
+
+These commands automatically:
+
+- Find the package's documentation URL
+- Scrape and store the documentation
+- Add the package to the registry for future reference
+- Show the document ID for immediate viewing
+
+## Connecting DocVault to AI Assistants
 
 ### What is MCP?
 
@@ -966,6 +1042,8 @@ Available configuration options include:
 - `SERVER_PORT` - [legacy/stdio mode only] MCP server port (not used by Uvicorn)
 - `LOG_LEVEL` - Logging level (INFO, DEBUG, etc.)
 
+For a comprehensive guide on all configuration options including security settings, rate limiting, and advanced configurations, see [CONFIGURATION.md](CONFIGURATION.md).
+
 ## Development
 
 We welcome contributions to DocVault! Check out the [TASKS.md](TASKS.md) file for planned improvements and tasks you can help with.
@@ -1038,6 +1116,7 @@ DocVault is at version 0.5.0 (Alpha). See [CHANGELOG.md](CHANGELOG.md) for versi
 ### Versioning Policy
 
 We follow [Semantic Versioning](https://semver.org/):
+
 - MAJOR.MINOR.PATCH (e.g., 0.5.0)
 - Breaking changes bump MAJOR (after 1.0.0)
 - New features bump MINOR
@@ -1046,10 +1125,39 @@ We follow [Semantic Versioning](https://semver.org/):
 ### Contributing
 
 When contributing:
+
 1. Update version in `docvault/version.py`
 2. Document changes in CHANGELOG.md
 3. Follow conventional commit format
 4. Run full test suite before submitting
+
+## Documentation
+
+All project documentation is organized in the `docs/` directory for easy access and maintenance:
+
+### User Documentation
+
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
+- **[User Guide](docs/USER_GUIDE.md)** - Comprehensive guide covering all features
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Detailed configuration options and examples
+
+### Feature Guides
+
+- **[Collections vs Tags](docs/COLLECTIONS_VS_TAGS.md)** - Understanding DocVault's organization system
+- **[AI Assistant Instructions](docs/CLAUDE.md)** - Guide for AI assistants using DocVault
+
+### Development Documentation
+
+- **[Project Rules](docs/PROJECT_RULES.md)** - Development standards and practices
+- **[Tasks](docs/TASKS.md)** - Current roadmap and task tracking
+- **[Version Management](docs/VERSION_MANAGEMENT.md)** - Versioning policies and procedures
+- **[Threat Model](docs/THREAT_MODEL.md)** - Security considerations and mitigations
+
+### Documentation Index
+
+- **[Documentation Overview](docs/README.md)** - Complete index of all documentation
+
+> **Note for Automated Tools**: The `CLAUDE.md` and `TASKS.md` files are maintained in the project root directory for easy access by AI assistants and automation tools, while the rest of the documentation is organized in the `docs/` directory.
 
 ## License
 
