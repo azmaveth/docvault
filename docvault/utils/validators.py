@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 from urllib.parse import urlparse
 
-from docvault.utils.path_security import PathSecurityError, validate_file_path
+from docvault.utils.path_security import PathSecurityError, validate_path
 
 
 class ValidationError(Exception):
@@ -24,7 +24,7 @@ class Validators:
     # Regular expressions for common patterns
     SAFE_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
     SAFE_FILENAME = re.compile(r"^[a-zA-Z0-9._-]+$")
-    SQL_DANGEROUS_CHARS = re.compile(r'[;\'"\\--]|/\*|\*/')
+    SQL_DANGEROUS_CHARS = re.compile(r"[;'\"\\]|--|/\*|\*/")
     SHELL_DANGEROUS_CHARS = re.compile(r'[;&|`$<>\\"\']')
     HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
     VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$")
@@ -146,7 +146,7 @@ class Validators:
         """
         try:
             # Use existing path security validation
-            validated_path = validate_file_path(str(path))
+            validated_path = validate_path(str(path))
             return Path(validated_path)
         except PathSecurityError as e:
             raise ValidationError(f"Invalid file path: {e}")

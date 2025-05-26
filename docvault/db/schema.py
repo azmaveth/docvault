@@ -7,6 +7,8 @@ from docvault import config
 
 def initialize_database(force_recreate=False):
     """Initialize the SQLite database with sqlite-vec extension"""
+    import os
+
     # Ensure directory exists
     db_path = pathlib.Path(config.DB_PATH)
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -16,7 +18,12 @@ def initialize_database(force_recreate=False):
         db_path.unlink()
         print(f"Deleted existing database at {db_path}")
 
+    # Create database connection
     conn = sqlite3.connect(config.DB_PATH)
+
+    # Set secure permissions on database file (Unix only)
+    if os.name != "nt" and db_path.exists():
+        os.chmod(db_path, 0o600)
 
     # Load sqlite-vec extension (if available)
     try:

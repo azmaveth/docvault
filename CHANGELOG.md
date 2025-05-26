@@ -18,6 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cooldown periods for burst protection
   - Clear error messages when limits exceeded
 
+- **File Permission Security**: Added local file security module
+  - Automatic permission checking for sensitive files
+  - Database files set to 600 (owner read/write only)
+  - Config and credential files secured
+  - New CLI commands: `dv security audit`, `dv security audit --fix`
+  - Security status command: `dv security status`
+  - Umask checking with warnings for insecure settings
+
+- **Terminal Output Sanitization**: Protect against malicious ANSI sequences
+  - Removes dangerous terminal control sequences from output
+  - Preserves safe formatting (colors, bold, italic)
+  - Prevents terminal title changes, screen clearing, cursor manipulation
+  - Blocks alternate buffer switching and mouse tracking
+  - Integrated into all console output functions
+  - Can be disabled via DOCVAULT_DISABLE_SANITIZATION=1
+
 - **Secure Credential Management**: Added encrypted credential storage
   - AES encryption using Fernet (cryptography library)
   - Secure key generation and storage (600 permissions)

@@ -1,11 +1,16 @@
-"""Console output utilities with logging integration."""
+"""Console output utilities with logging integration and terminal sanitization."""
 
+import os
 from typing import Optional
 
 from rich.console import Console as RichConsole
 from rich.table import Table
 
 from docvault.utils.logging import get_logger
+from docvault.utils.terminal_sanitizer import (
+    contains_suspicious_sequences,
+    sanitize_output,
+)
 
 # Global console instance
 _console = RichConsole()
@@ -13,16 +18,34 @@ logger = get_logger(__name__)
 
 
 class LoggingConsole:
-    """Console wrapper that logs messages in addition to printing them."""
+    """Console wrapper that logs messages and sanitizes output."""
 
-    def __init__(self, console: Optional[RichConsole] = None):
+    def __init__(self, console: Optional[RichConsole] = None, sanitize: bool = True):
         self.console = console or _console
         self.logger = get_logger("docvault.console")
+        # Enable sanitization by default, can be disabled via env var
+        self.sanitize = sanitize and os.getenv("DOCVAULT_DISABLE_SANITIZATION") != "1"
 
     def print(self, *args, style: Optional[str] = None, **kwargs):
-        """Print to console and log the message."""
-        # Convert args to string
-        message = " ".join(str(arg) for arg in args)
+        """Print to console and log the message with sanitization."""
+        # Convert args to string and sanitize if needed
+        sanitized_args = []
+        suspicious = False
+
+        for arg in args:
+            arg_str = str(arg)
+            if self.sanitize and contains_suspicious_sequences(arg_str):
+                suspicious = True
+                arg_str = sanitize_output(arg_str)
+            sanitized_args.append(arg_str)
+
+        message = " ".join(sanitized_args)
+
+        # Log warning if suspicious sequences were found
+        if suspicious:
+            self.logger.warning(
+                "Suspicious terminal sequences detected and removed from output"
+            )
 
         # Log based on style
         if style and ("error" in style or "red" in style):
@@ -34,26 +57,34 @@ class LoggingConsole:
         else:
             self.logger.info(message)
 
-        # Print to console
-        self.console.print(*args, style=style, **kwargs)
+        # Print sanitized content to console
+        self.console.print(*sanitized_args, style=style, **kwargs)
 
     def error(self, message: str, **kwargs):
-        """Print error message."""
+        """Print error message with sanitization."""
+        if self.sanitize:
+            message = sanitize_output(message)
         self.logger.error(message)
         self.console.print(f"❌ {message}", style="bold red", **kwargs)
 
     def warning(self, message: str, **kwargs):
-        """Print warning message."""
+        """Print warning message with sanitization."""
+        if self.sanitize:
+            message = sanitize_output(message)
         self.logger.warning(message)
         self.console.print(f"⚠️  {message}", style="yellow", **kwargs)
 
     def success(self, message: str, **kwargs):
-        """Print success message."""
+        """Print success message with sanitization."""
+        if self.sanitize:
+            message = sanitize_output(message)
         self.logger.info(f"SUCCESS: {message}")
         self.console.print(f"✅ {message}", style="green", **kwargs)
 
     def info(self, message: str, **kwargs):
-        """Print info message."""
+        """Print info message with sanitization."""
+        if self.sanitize:
+            message = sanitize_output(message)
         self.logger.info(message)
         self.console.print(message, **kwargs)
 
