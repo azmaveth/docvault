@@ -18,6 +18,7 @@ from docvault.cli.collection_commands import collection as collection_cmd
 from docvault.cli.commands import (
     backup_cmd,
     config_cmd,
+    export_cmd,
     import_cmd,
     import_deps_cmd,
     index_cmd,
@@ -162,6 +163,8 @@ def register_commands(main):
 
     main.add_command(read_cmd, name="read")
     main.add_command(read_cmd, name="cat")
+
+    main.add_command(export_cmd, name="export")
 
     main.add_command(search_cmd, name="search")
     main.add_command(search_cmd, name="find")

@@ -343,7 +343,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Includes document validation to ensure target document exists
   - [x] Works with both vector and text-only search modes
   - [x] Compatible with all other search filters (version, tags, etc.)
-- [ ] **Bulk Export**: Add command to export multiple documents at once (e.g., `dv export 1-10 --format markdown --output ./docs/`)
+- [x] **Bulk Export**: Add command to export multiple documents at once (e.g., `dv export 1-10 --format markdown --output ./docs/`) [2025-05-26]
 - [x] **Document Stats Command**: Add `dv stats` to show database size, document count, index health, etc. [2025-05-24]
 - [ ] **Partial Document Updates**: Allow updating specific sections of a document without re-scraping everything
 - [ ] **Search History**: Store recent searches locally for quick re-execution

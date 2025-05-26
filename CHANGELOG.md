@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bulk Export Command**: Export multiple documents at once
+  - New `dv export` command for exporting documents in bulk
+  - Supports ranges (1-10), lists (1,3,5), combinations (1-5,8,10), and 'all'
+  - Multiple output formats: markdown, html, json, xml, llms
+  - Option to combine into single file or separate files
+  - Include/exclude metadata in exports
+  - Raw content export option for HTML
+  - Automatic filename sanitization
+  - Creates output directory if needed
+  - Shows progress and summary of exported files
+  
 - **Section Hierarchy Visualization**: Added tree view for search results
   - New `--tree` flag for `dv search` command displays results in hierarchical structure
   - Shows parent-child relationships between document sections

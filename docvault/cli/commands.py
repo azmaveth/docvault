@@ -1630,6 +1630,411 @@ class DefaultGroup(click.Group):
         return None
 
 
+@click.command(name="export", help="Export multiple documents at once")
+@click.argument("document_ids", required=True)
+@click.option(
+    "--format",
+    type=click.Choice(
+        ["markdown", "html", "json", "xml", "llms"], case_sensitive=False
+    ),
+    default="markdown",
+    help="Output format for all documents",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(file_okay=False, dir_okay=True, writable=True),
+    help="Output directory (creates if not exists)",
+)
+@click.option(
+    "--raw",
+    is_flag=True,
+    help="Export raw content without rendering",
+)
+@click.option(
+    "--separate-files",
+    is_flag=True,
+    default=True,
+    help="Export each document to a separate file (default)",
+)
+@click.option(
+    "--single-file",
+    is_flag=True,
+    help="Combine all documents into a single file",
+)
+@click.option(
+    "--include-metadata",
+    is_flag=True,
+    help="Include document metadata in exports",
+)
+def export_cmd(
+    document_ids, format, output, raw, separate_files, single_file, include_metadata
+):
+    """Export multiple documents at once.
+
+    DOCUMENT_IDS can be:
+    - A single ID: 1
+    - A range: 1-10
+    - A comma-separated list: 1,3,5,7
+    - A combination: 1-5,8,10-15
+    - The word 'all' to export all documents
+
+    Examples:
+        dv export 1-10 --output ./docs/
+        dv export 1,3,5 --format json --output ./exports/
+        dv export all --format markdown --output ./all-docs/
+        dv export 1-5 --single-file --output ./combined.md
+        dv export 1-10 --format llms --output ./llms-docs/
+    """
+    import json
+    from pathlib import Path
+
+    from docvault.core.storage import read_html, read_markdown
+    from docvault.db.operations import get_document, list_documents
+    from docvault.utils.console import console
+
+    # Parse document IDs
+    doc_ids = []
+
+    if document_ids.lower() == "all":
+        # Export all documents
+        all_docs = list_documents()
+        doc_ids = [doc["id"] for doc in all_docs]
+        if not doc_ids:
+            console.print("❌ No documents found in vault", style="bold red")
+            import sys
+
+            sys.exit(1)
+    else:
+        # Parse the ID specification
+        try:
+            for part in document_ids.split(","):
+                part = part.strip()
+                if "-" in part and not part.startswith("-"):
+                    # Range
+                    start, end = part.split("-", 1)
+                    start = int(start.strip())
+                    end = int(end.strip())
+                    if start > end:
+                        start, end = end, start
+                    doc_ids.extend(range(start, end + 1))
+                else:
+                    # Single ID
+                    doc_ids.append(int(part))
+        except ValueError:
+            console.print(
+                f"❌ Invalid document ID specification: {document_ids}",
+                style="bold red",
+            )
+            console.print("Use format like: 1-10 or 1,3,5 or 1-5,8,10-15", style="dim")
+            import sys
+
+            sys.exit(1)
+
+    # Remove duplicates and sort
+    doc_ids = sorted(set(doc_ids))
+
+    # Validate output options
+    if single_file and separate_files:
+        single_file = True
+        separate_files = False
+
+    # Set up output directory
+    if output:
+        output_dir = Path(output)
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        output_dir = Path.cwd()
+
+    # Fetch documents
+    documents = []
+    missing_ids = []
+
+    with console.status(f"[bold blue]Loading {len(doc_ids)} documents...[/]"):
+        for doc_id in doc_ids:
+            doc = get_document(doc_id)
+            if doc:
+                documents.append(doc)
+            else:
+                missing_ids.append(doc_id)
+
+    if missing_ids:
+        console.print(
+            f"[yellow]Warning: {len(missing_ids)} documents not found: {missing_ids}[/]"
+        )
+
+    if not documents:
+        console.print("❌ No valid documents to export", style="bold red")
+        import sys
+
+        sys.exit(1)
+
+    console.print(f"[green]Found {len(documents)} documents to export[/]")
+
+    # Export based on format
+    exported_files = []
+
+    try:
+        if format == "llms":
+            # Special handling for llms.txt format
+            from docvault.core.llms_txt import LLMsGenerator
+
+            generator = LLMsGenerator()
+
+            if single_file:
+                # Combine all documents into one llms.txt
+                title = "DocVault Export"
+                doc_list = []
+                for doc in documents:
+                    doc_entry = {
+                        "title": doc["title"] or f"Document {doc['id']}",
+                        "url": doc["url"],
+                        "description": f"Exported from DocVault (ID: {doc['id']})",
+                    }
+                    doc_list.append(doc_entry)
+
+                content = generator.generate(title, doc_list)
+                output_file = output_dir / "export.llms.txt"
+
+                with open(output_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+                exported_files.append(output_file)
+            else:
+                # Export each document as a separate llms.txt
+                for doc in documents:
+                    doc_list = [
+                        {
+                            "title": doc["title"] or f"Document {doc['id']}",
+                            "url": doc["url"],
+                            "description": "Exported from DocVault",
+                        }
+                    ]
+
+                    content = generator.generate(doc["title"], doc_list)
+
+                    # Create filename
+                    safe_title = "".join(
+                        c for c in doc["title"] if c.isalnum() or c in (" ", "-", "_")
+                    ).rstrip()
+                    safe_title = safe_title.replace(" ", "_")[:50]
+                    filename = f"{doc['id']}_{safe_title}.llms.txt"
+                    output_file = output_dir / filename
+
+                    with open(output_file, "w", encoding="utf-8") as f:
+                        f.write(content)
+
+                    exported_files.append(output_file)
+
+        elif single_file:
+            # Combine all documents into a single file
+            combined_content = []
+
+            for i, doc in enumerate(documents):
+                if i > 0:
+                    combined_content.append("\n" + "=" * 80 + "\n")
+
+                # Add metadata if requested
+                if include_metadata:
+                    combined_content.append(f"# Document ID: {doc['id']}\n")
+                    combined_content.append(f"# Title: {doc['title']}\n")
+                    combined_content.append(f"# URL: {doc['url']}\n")
+                    combined_content.append(f"# Scraped: {doc['scraped_at']}\n")
+                    combined_content.append("\n")
+
+                # Get content based on format
+                if format == "markdown":
+                    content = read_markdown(doc["markdown_path"], render=False)
+                elif format == "html":
+                    if raw:
+                        with open(doc["html_path"], "r", encoding="utf-8") as f:
+                            content = f.read()
+                    else:
+                        content = read_html(doc["html_path"])
+                elif format == "json":
+                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                        content = f.read()
+                    doc_data = {
+                        "id": doc["id"],
+                        "title": doc["title"],
+                        "url": doc["url"],
+                        "scraped_at": doc["scraped_at"],
+                        "content": content,
+                    }
+                    content = json.dumps(doc_data, indent=2)
+                elif format == "xml":
+                    # Generate XML for this document
+                    from xml.dom import minidom
+                    from xml.etree.ElementTree import Element, SubElement, tostring
+
+                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                        content_text = f.read()
+
+                    root = Element("document")
+                    root.set("id", str(doc["id"]))
+
+                    title_elem = SubElement(root, "title")
+                    title_elem.text = doc["title"] or "Untitled"
+
+                    url_elem = SubElement(root, "url")
+                    url_elem.text = doc["url"]
+
+                    scraped_elem = SubElement(root, "scraped_at")
+                    scraped_elem.text = doc["scraped_at"]
+
+                    content_elem = SubElement(root, "content")
+                    content_elem.text = content_text
+
+                    rough_string = tostring(root, encoding="unicode")
+                    reparsed = minidom.parseString(rough_string)
+                    content = reparsed.toprettyxml(indent="  ")
+
+                combined_content.append(content)
+
+            # Determine file extension
+            ext_map = {
+                "markdown": ".md",
+                "html": ".html",
+                "json": ".json",
+                "xml": ".xml",
+            }
+            ext = ext_map.get(format, ".txt")
+
+            output_file = output_dir / f"export{ext}"
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(combined_content))
+
+            exported_files.append(output_file)
+
+        else:
+            # Export each document to a separate file
+            for doc in documents:
+                # Create filename
+                safe_title = "".join(
+                    c for c in doc["title"] if c.isalnum() or c in (" ", "-", "_")
+                ).rstrip()
+                safe_title = safe_title.replace(" ", "_")[:50]
+
+                # Determine file extension
+                ext_map = {
+                    "markdown": ".md",
+                    "html": ".html",
+                    "json": ".json",
+                    "xml": ".xml",
+                }
+                ext = ext_map.get(format, ".txt")
+
+                filename = f"{doc['id']}_{safe_title}{ext}"
+                output_file = output_dir / filename
+
+                # Get content based on format
+                if format == "markdown":
+                    content = read_markdown(doc["markdown_path"], render=False)
+
+                    # Add metadata if requested
+                    if include_metadata:
+                        metadata = "---\n"
+                        metadata += f"id: {doc['id']}\n"
+                        metadata += f"title: {doc['title']}\n"
+                        metadata += f"url: {doc['url']}\n"
+                        metadata += f"scraped_at: {doc['scraped_at']}\n"
+                        metadata += "---\n\n"
+                        content = metadata + content
+
+                elif format == "html":
+                    if raw:
+                        with open(doc["html_path"], "r", encoding="utf-8") as f:
+                            content = f.read()
+                    else:
+                        content = read_html(doc["html_path"])
+
+                    # Add metadata if requested
+                    if include_metadata:
+                        meta_html = f"""<!-- 
+Document ID: {doc['id']}
+Title: {doc['title']}
+URL: {doc['url']}
+Scraped: {doc['scraped_at']}
+-->
+"""
+                        content = meta_html + content
+
+                elif format == "json":
+                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                        content_text = f.read()
+
+                    doc_data = {
+                        "id": doc["id"],
+                        "title": doc["title"],
+                        "url": doc["url"],
+                        "scraped_at": doc["scraped_at"],
+                        "content": content_text,
+                    }
+
+                    if not include_metadata:
+                        doc_data = {"content": content_text}
+
+                    content = json.dumps(doc_data, indent=2)
+
+                elif format == "xml":
+                    from xml.dom import minidom
+                    from xml.etree.ElementTree import Element, SubElement, tostring
+
+                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                        content_text = f.read()
+
+                    root = Element("document")
+
+                    if include_metadata:
+                        root.set("id", str(doc["id"]))
+
+                        title_elem = SubElement(root, "title")
+                        title_elem.text = doc["title"] or "Untitled"
+
+                        url_elem = SubElement(root, "url")
+                        url_elem.text = doc["url"]
+
+                        scraped_elem = SubElement(root, "scraped_at")
+                        scraped_elem.text = doc["scraped_at"]
+
+                    content_elem = SubElement(root, "content")
+                    content_elem.text = content_text
+
+                    rough_string = tostring(root, encoding="unicode")
+                    reparsed = minidom.parseString(rough_string)
+                    content = reparsed.toprettyxml(indent="  ")
+
+                # Write the file
+                with open(output_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+                exported_files.append(output_file)
+
+        # Summary
+        console.print(
+            f"\n[green]✓ Successfully exported {len(exported_files)} files[/]"
+        )
+
+        # Show exported files
+        if len(exported_files) <= 10:
+            console.print("\n[bold]Exported files:[/]")
+            for file in exported_files:
+                console.print(f"  • {file}")
+        else:
+            console.print(
+                f"\n[bold]Exported {len(exported_files)} files to:[/] {output_dir}"
+            )
+
+        return 0
+
+    except Exception as e:
+        console.print(f"[red]Error during export: {e}[/]", style="bold")
+        import traceback
+
+        traceback.print_exc()
+        return 1
+
+
 @click.group(
     cls=DefaultGroup,
     name="search",

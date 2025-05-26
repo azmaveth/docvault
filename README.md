@@ -627,6 +627,7 @@ To ensure code and documentation quality, DocVault uses [pre-commit](https://pre
 - `dv remove <id1> [id2...]` - Remove documents from the vault (alias: rm)
 - `dv list` - List all documents in the vault (alias: ls)
 - `dv read <id>` - Read a document (alias: cat)
+- `dv export <ids>` - Export multiple documents at once (e.g., `1-10`, `1,3,5`, or `all`)
 - `dv search <query>` - Search documents with semantic search (alias: find, default command)
 - `dv search lib <library> [--version <version>]` - Lookup and fetch library documentation
 - `dv backup [destination]` - Backup the vault to a zip file
@@ -711,6 +712,42 @@ dv versions compare 1 2
 dv versions pending
 ```
 
+#### Bulk Export
+
+Export multiple documents at once in various formats:
+
+```bash
+# Export a range of documents
+dv export 1-10 --output ./docs/
+
+# Export specific documents
+dv export 1,3,5,7 --format json --output ./exports/
+
+# Export all documents
+dv export all --format markdown --output ./all-docs/
+
+# Export to a single combined file
+dv export 1-5 --single-file --output ./combined.md
+
+# Export with metadata included
+dv export 1-10 --include-metadata --output ./docs-with-meta/
+
+# Export in different formats
+dv export 1-3 --format html --output ./html-docs/
+dv export 1-3 --format xml --output ./xml-docs/
+dv export 1-3 --format llms --output ./llms-docs/
+
+# Export raw HTML without conversion
+dv export 1 --format html --raw --output ./raw-html/
+```
+
+Supported formats:
+- `markdown` (default) - Clean markdown files
+- `html` - HTML files (converted to text by default, use --raw for original)
+- `json` - JSON format with content and metadata
+- `xml` - XML format with structured data
+- `llms` - llms.txt format for AI consumption
+
 #### Batch Operations
 
 Process multiple documents efficiently:
@@ -721,9 +758,6 @@ dv search batch pandas numpy matplotlib --format json
 
 # Import multiple dependencies
 dv import-deps --format json
-
-# Export multiple documents
-dv list --format json | jq -r '.[].id' | xargs -I {} dv read {} --format markdown
 ```
 
 #### Structured Output Formats
