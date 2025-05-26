@@ -480,7 +480,39 @@ dv search --tags security oauth2
 # Multiple tag modes
 dv search "api" --tags rest graphql --tag-mode any   # Match ANY tag
 dv search "api" --tags python rest --tag-mode all    # Must have ALL tags
+
+# View results in hierarchical tree structure
+dv search "database" --tree                          # Shows section hierarchy
+dv search --collection "My Project" --tree           # Tree view for collection
 ```
+
+### Section Hierarchy Visualization
+
+DocVault can display search results in a hierarchical tree structure, showing how sections are organized within documents:
+
+```bash
+# Display search results as a tree
+dv search "authentication" --tree
+
+# Tree view works with all search filters
+dv search "api" --tags python --tree
+dv search --collection "Web App" --tree
+
+# JSON output also supports tree format
+dv search "database" --tree --format json
+```
+
+The tree view shows:
+- Document structure with parent-child relationships
+- Number of matches in each section
+- Visual hierarchy using tree connectors (├── and └──)
+- Section nesting levels
+
+This is particularly useful for:
+- Understanding document organization
+- Finding related content in nearby sections
+- Navigating large documentation files
+- Getting an overview of where matches occur
 
 ### llms.txt Support
 

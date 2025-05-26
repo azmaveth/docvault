@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Section Hierarchy Visualization**: Added tree view for search results
+  - New `--tree` flag for `dv search` command displays results in hierarchical structure
+  - Shows parent-child relationships between document sections
+  - Displays match counts for each section in the tree
+  - Works with all existing search filters (tags, collections, etc.)
+  - JSON output format also supports tree structure when `--tree` is used
+  - Particularly useful for understanding document organization and finding related content
+
 ## [0.5.2] - 2025-05-26
 
 ### Added

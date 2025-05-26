@@ -75,7 +75,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Support filtering by document type/source [2025-05-23]
   - [ ] ~~Add relevance feedback mechanism~~ (Complex feature requiring ML/user tracking)
   - [ ] ~~Implement keyboard navigation for search results~~ (CLI doesn't support interactive navigation)
-  - [ ] Add section hierarchy visualization
+  - [x] Add section hierarchy visualization [2025-05-26]
   - [ ] ~~Support jumping to specific sections in documents~~ (Would require interactive UI)
 
 - [x] **Document Navigation and Structure**:

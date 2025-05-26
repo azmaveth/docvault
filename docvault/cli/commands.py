@@ -2165,6 +2165,11 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     "--collection",
     help="Search within a specific collection by name",
 )
+@click.option(
+    "--tree",
+    is_flag=True,
+    help="Display results in a hierarchical tree structure",
+)
 @validate_search_query
 @validate_tags
 def search_text(
@@ -2186,6 +2191,7 @@ def search_text(
     suggestions,
     in_doc,
     collection,
+    tree,
 ):
     """Search documents in the vault with metadata filtering.
 
@@ -2445,31 +2451,109 @@ def search_text(
 
     if format == "json":
         import json
+        from collections import defaultdict
+
+        # Group results by document and section first
+        doc_results = defaultdict(
+            lambda: {
+                "title": None,
+                "url": None,
+                "version": None,
+                "updated_at": None,
+                "is_library_doc": False,
+                "library_name": None,
+                "sections": defaultdict(list),
+            }
+        )
+
+        for result in results:
+            doc_id = result["document_id"]
+            doc = doc_results[doc_id]
+            doc["title"] = result.get("title") or "Untitled"
+            doc["url"] = result.get("url", "")
+            doc["version"] = result.get("version")
+            doc["updated_at"] = result.get("updated_at")
+            doc["is_library_doc"] = result.get("is_library_doc", False)
+            doc["library_name"] = result.get("library_name")
+
+            # Group by section path to avoid duplicate sections
+            section_path = result.get("section_path", "0")
+            doc["sections"][section_path].append(result)
 
         # Prepare results for JSON output
-        json_results = []
-        for result in results:
-            json_results.append(
-                {
-                    "score": float(f"{result['score']:.2f}"),
-                    "title": result["title"] or "Untitled",
-                    "url": result["url"],
-                    "content_hash": (
-                        result.get("content_hash") if verbose else "[hidden]"
-                    ),
-                    "content_preview": result["content"][:200]
-                    + ("..." if len(result["content"]) > 200 else ""),
-                    "document_id": result.get("document_id"),
-                    "segment_id": result.get("segment_id"),
-                }
+        if tree:
+            # Tree-structured JSON output
+            from docvault.utils.tree_display import (
+                aggregate_section_data,
+                build_section_tree,
             )
 
-        json_response = {
-            "status": "success",
-            "count": len(json_results),
-            "query": query,
-            "results": json_results,
-        }
+            json_documents = []
+            for doc_id, doc_info in doc_results.items():
+                # Aggregate section data
+                section_data = aggregate_section_data(doc_info["sections"])
+
+                # Build tree structure
+                section_list = list(section_data.values())
+                tree_nodes = build_section_tree(section_list)
+
+                # Convert tree to JSON-serializable format
+                def tree_to_dict(node):
+                    return {
+                        "title": node.title,
+                        "path": node.path,
+                        "level": node.level,
+                        "match_count": node.metadata.get("match_count", 0),
+                        "children": [tree_to_dict(child) for child in node.children],
+                    }
+
+                doc_json = {
+                    "document_id": doc_id,
+                    "title": doc_info["title"],
+                    "url": doc_info["url"],
+                    "version": doc_info.get("version"),
+                    "total_matches": sum(
+                        len(section_hits)
+                        for section_hits in doc_info["sections"].values()
+                    ),
+                    "section_count": len(doc_info["sections"]),
+                    "section_tree": [tree_to_dict(root) for root in tree_nodes],
+                }
+                json_documents.append(doc_json)
+
+            json_response = {
+                "status": "success",
+                "query": query,
+                "format": "tree",
+                "document_count": len(json_documents),
+                "documents": json_documents,
+            }
+        else:
+            # Flat JSON output (existing)
+            json_results = []
+            for result in results:
+                json_results.append(
+                    {
+                        "score": float(f"{result['score']:.2f}"),
+                        "title": result["title"] or "Untitled",
+                        "url": result["url"],
+                        "content_hash": (
+                            result.get("content_hash") if verbose else "[hidden]"
+                        ),
+                        "content_preview": result["content"][:200]
+                        + ("..." if len(result["content"]) > 200 else ""),
+                        "document_id": result.get("document_id"),
+                        "segment_id": result.get("segment_id"),
+                    }
+                )
+
+            json_response = {
+                "status": "success",
+                "count": len(json_results),
+                "query": query,
+                "results": json_results,
+            }
+
         if in_doc:
             json_response["search_scope"] = {
                 "document_id": in_doc,
@@ -2530,34 +2614,36 @@ def search_text(
         except Exception as e:
             console.print(f"[red]Error analyzing embedding: {e}")
 
-    from collections import defaultdict
+    # Only build doc_results if not already done for JSON format
+    if format != "json":
+        from collections import defaultdict
 
-    # Group results by document and section
-    doc_results = defaultdict(
-        lambda: {
-            "title": None,
-            "url": None,
-            "version": None,
-            "updated_at": None,
-            "is_library_doc": False,
-            "library_name": None,
-            "sections": defaultdict(list),
-        }
-    )
+        # Group results by document and section
+        doc_results = defaultdict(
+            lambda: {
+                "title": None,
+                "url": None,
+                "version": None,
+                "updated_at": None,
+                "is_library_doc": False,
+                "library_name": None,
+                "sections": defaultdict(list),
+            }
+        )
 
-    for result in results:
-        doc_id = result["document_id"]
-        doc = doc_results[doc_id]
-        doc["title"] = result.get("title") or "Untitled"
-        doc["url"] = result.get("url", "")
-        doc["version"] = result.get("version")
-        doc["updated_at"] = result.get("updated_at")
-        doc["is_library_doc"] = result.get("is_library_doc", False)
-        doc["library_name"] = result.get("library_name")
+        for result in results:
+            doc_id = result["document_id"]
+            doc = doc_results[doc_id]
+            doc["title"] = result.get("title") or "Untitled"
+            doc["url"] = result.get("url", "")
+            doc["version"] = result.get("version")
+            doc["updated_at"] = result.get("updated_at")
+            doc["is_library_doc"] = result.get("is_library_doc", False)
+            doc["library_name"] = result.get("library_name")
 
-        # Group by section path to avoid duplicate sections
-        section_path = result.get("section_path", "0")
-        doc["sections"][section_path].append(result)
+            # Group by section path to avoid duplicate sections
+            section_path = result.get("section_path", "0")
+            doc["sections"][section_path].append(result)
 
     # Handle summarization if requested
     if summarize:
@@ -2624,6 +2710,72 @@ def search_text(
                     logger.warning(f"Failed to summarize document {doc_id}: {e}")
                     console.print(f"[yellow]Could not generate summary: {e}[/]")
 
+            console.print("[dim]" + "─" * 60 + "[/]")
+
+        return
+
+    # Display results in tree format if requested
+    if tree:
+        from docvault.utils.tree_display import (
+            aggregate_section_data,
+            build_section_tree,
+            render_tree_with_style,
+        )
+
+        console.print("\n[bold]Search Results - Tree View[/bold]")
+        console.print(f"[dim]Found matches in {len(doc_results)} documents[/dim]\n")
+
+        for doc_id, doc_info in doc_results.items():
+            doc_title = doc_info["title"]
+            doc_url = doc_info["url"]
+
+            # Document header
+            console.print(f"[bold green]📄 {doc_title}[/]")
+            console.print(f"[blue]{doc_url}[/]")
+
+            # Build metadata line
+            metadata_parts = []
+            if doc_info["version"]:
+                metadata_parts.append(f"v{doc_info['version']}")
+            if doc_info["is_library_doc"] and doc_info["library_name"]:
+                metadata_parts.append(f"library: {doc_info['library_name']}")
+
+            # Check for llms.txt
+            from docvault.db.operations_llms import get_llms_txt_metadata
+
+            llms_metadata = get_llms_txt_metadata(doc_id)
+            if llms_metadata:
+                metadata_parts.append("✨ has llms.txt")
+
+            if metadata_parts:
+                console.print(f"[dim]{' • '.join(metadata_parts)}[/]")
+
+            # Aggregate section data
+            section_data = aggregate_section_data(doc_info["sections"])
+
+            # Build tree from sections
+            section_list = list(section_data.values())
+            tree_nodes = build_section_tree(section_list)
+
+            # Render and display tree
+            console.print("\n[bold]Section Hierarchy:[/bold]")
+            styled_lines = render_tree_with_style(
+                tree_nodes, show_paths=False, show_counts=True
+            )
+
+            for line, style in styled_lines:
+                if style:
+                    console.print(f"[{style}]{line}[/{style}]")
+                else:
+                    console.print(line)
+
+            # Show total matches
+            total_matches = sum(
+                len(section_hits) for section_hits in doc_info["sections"].values()
+            )
+            console.print(
+                f"\n[dim]Total: {total_matches} matches across {len(doc_info['sections'])} sections[/]"
+            )
             console.print("[dim]" + "─" * 60 + "[/]")
 
         return
