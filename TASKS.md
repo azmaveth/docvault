@@ -222,12 +222,21 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [ ] Improve segmentation for navigation/code/structured content
   - [ ] Add tests for extraction and segmentation edge cases
 
-- [ ] **Scraping Depth Control Enhancements**:
-  - [ ] Improve documentation of the "depth" parameter for scraping to clearly explain its purpose and impact
-  - [ ] Add examples of different depth settings and their effects in the CLI help
-  - [ ] ~~Implement smart depth detection that adjusts based on site structure~~ (Complex and could cause unexpected behavior)
+- [x] **Scraping Depth Control Enhancements**: [2025-05-25]
+  - [x] Improved documentation of the "depth" parameter - now accepts strategies (auto/conservative/aggressive)
+  - [x] Added examples in CLI help showing different depth settings and strategies
+  - [x] Implemented smart depth detection with DepthAnalyzer that adjusts based on site structure and content quality
 
-- [ ] **Caching Strategy**: Improve caching with time-based invalidation to ensure documentation stays up-to-date
+- [x] **Caching Strategy**: Implement smart caching with staleness tracking to ensure documentation stays up-to-date [2025-05-25]
+  - [x] Added document staleness tracking (fresh/stale/outdated) based on configurable time thresholds
+  - [x] Implemented `dv check-updates` command to list stale documents
+  - [x] Added `dv update` command to re-scrape stale documents with change detection
+  - [x] Created `dv pin` command to prevent specific documents from becoming stale
+  - [x] Added visual indicators in `dv read` showing document freshness
+  - [x] Implemented HTTP caching with ETag/Last-Modified support for efficient updates
+  - [x] Added `dv cache-stats` for monitoring cache health
+  - [ ] Future: Implement diff view for comparing document versions
+  - [ ] Future: Add automatic update scheduling with cron-like configuration
 - [ ] ~~**Offline Mode**: Enhance offline capabilities to ensure reliability without internet connection~~ (DocVault already works offline for stored docs)
 - [ ] **Documentation Filtering**: Add options to filter documentation by type (functions, modules, examples, etc.)
 - [ ] ~~**Expanded Language Support**: Ensure good support for a wide range of programming languages~~ (Not language-specific, works with any documentation)
@@ -323,12 +332,29 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 
 ## New High-Priority Features
 
-- [ ] **Search Within Document**: Add ability to search within a specific document (e.g., `dv search --in-doc 123 "function name"`)
+- [x] **Search Within Document**: Add ability to search within a specific document [2025-05-25]
+  - [x] Added `--in-doc` flag to search command to scope search to specific document ID
+  - [x] Integrated with existing search infrastructure using document_ids filter
+  - [x] Enhanced status messages and output to indicate document scope
+  - [x] Added search_scope information to JSON output for API consumers
+  - [x] Includes document validation to ensure target document exists
+  - [x] Works with both vector and text-only search modes
+  - [x] Compatible with all other search filters (version, tags, etc.)
 - [ ] **Bulk Export**: Add command to export multiple documents at once (e.g., `dv export 1-10 --format markdown --output ./docs/`)
 - [x] **Document Stats Command**: Add `dv stats` to show database size, document count, index health, etc. [2025-05-24]
 - [ ] **Partial Document Updates**: Allow updating specific sections of a document without re-scraping everything
 - [ ] **Search History**: Store recent searches locally for quick re-execution
-- [ ] **Document Collections**: Allow grouping documents into named collections (e.g., "Python Web Dev", "Data Science")
+- [x] **Document Collections**: Allow grouping documents into named collections [2025-05-25]
+  - [x] Created project-based collections system distinct from tags
+  - [x] Collections are curated document sets for specific purposes/projects
+  - [x] Documents can belong to multiple collections with optional notes
+  - [x] Collections can maintain document order (for learning paths)
+  - [x] Collections can suggest default tags for consistency
+  - [x] Full CLI commands: create, list, show, add, remove, update, delete, find
+  - [x] Integrated with search: `dv search --collection "My Project"`
+  - [x] Works seamlessly with tags for powerful filtering combinations
+  - [x] Comprehensive documentation explaining tags vs collections distinction
+  - [x] Example workflows showing tags+collections power
 - [ ] **Quick Add from Package Manager**: Add shortcuts like `dv add-pypi requests` that automatically finds and adds PyPI docs
 - [ ] **Document Freshness Indicator**: Show how old documents are and suggest updates for stale ones
 - [ ] **Backup Scheduling**: Add ability to schedule automatic backups

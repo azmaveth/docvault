@@ -238,6 +238,13 @@ def build_document_filter(
     if "library_name" in doc_filter:
         fb.add_condition("l.name = ?", doc_filter["library_name"])
 
+    # Collection filter
+    if "collection_id" in doc_filter:
+        fb.add_condition(
+            "d.id IN (SELECT document_id FROM collection_documents WHERE collection_id = ?)",
+            doc_filter["collection_id"],
+        )
+
     return fb.build()
 
 

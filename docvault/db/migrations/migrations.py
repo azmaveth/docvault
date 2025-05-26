@@ -82,6 +82,8 @@ def migrate_schema() -> bool:
             (3, _migrate_to_v3),  # Add tags support
             (4, _migrate_to_v4),  # Add cross-references support
             (5, _migrate_to_v5),  # Add version tracking and update monitoring
+            (6, _migrate_to_v6),  # Add caching and staleness tracking
+            (7, _migrate_to_v7),  # Add collections for project-based organization
         ]
 
         # Apply pending migrations
@@ -333,3 +335,17 @@ def _migrate_to_v5(conn: sqlite3.Connection) -> None:
     from . import add_version_tracking_0005
 
     add_version_tracking_0005.migrate(conn)
+
+
+def _migrate_to_v6(conn: sqlite3.Connection) -> None:
+    """Migration to v6: Add caching and staleness tracking fields."""
+    from . import add_caching_fields_0006
+
+    add_caching_fields_0006.upgrade(conn)
+
+
+def _migrate_to_v7(conn: sqlite3.Connection) -> None:
+    """Migration to v7: Add collections for project-based document organization."""
+    from . import add_collections_0007
+
+    add_collections_0007.upgrade(conn)

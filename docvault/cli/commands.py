@@ -1174,6 +1174,12 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
             console.print(f"❌ Document not found: {document_id}", style="bold red")
         return 1
 
+    # Check document freshness
+    from docvault.core.caching import get_cache_manager
+
+    cache_manager = get_cache_manager()
+    staleness_status = cache_manager.update_staleness_status(document_id)
+
     try:
         # Handle summarization if requested
         if summarize:
@@ -1252,6 +1258,25 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
 
                 console.print(f"# Summary: {doc['title']}\n", style="bold green")
                 console.print(f"URL: {doc['url']}\n")
+
+                # Show staleness warning if needed
+                from docvault.core.caching import StalenessStatus
+
+                if staleness_status == StalenessStatus.STALE:
+                    console.print(
+                        "⚠️  [yellow]This document was last updated more than 7 days ago[/]"
+                    )
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                    )
+                elif staleness_status == StalenessStatus.OUTDATED:
+                    console.print(
+                        "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                    )
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                    )
+
                 console.print(formatted_summary)
                 return 0
 
@@ -1272,6 +1297,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                     "content_hash": doc.get("content_hash", "") or None,
                     "content": content if raw else content,
                     "format": "markdown",
+                    "staleness_status": staleness_status.value,
                 },
             }
             print(json.dumps(output, indent=2))
@@ -1323,12 +1349,50 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 content = read_html(doc["html_path"])
 
             console.print(f"# {doc['title']}\n", style="bold green")
+
+            # Show staleness warning if needed
+            from docvault.core.caching import StalenessStatus
+
+            if staleness_status == StalenessStatus.STALE:
+                console.print(
+                    "⚠️  [yellow]This document was last updated more than 7 days ago[/]"
+                )
+                console.print(
+                    f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                )
+            elif staleness_status == StalenessStatus.OUTDATED:
+                console.print(
+                    "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                )
+                console.print(
+                    f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                )
+
             console.print(content)
         else:
             # Markdown (default)
             content = read_markdown(doc["markdown_path"], render=not raw)
             if not raw:
                 console.print(f"# {doc['title']}\n", style="bold green")
+
+                # Show staleness warning if needed
+                from docvault.core.caching import StalenessStatus
+
+                if staleness_status == StalenessStatus.STALE:
+                    console.print(
+                        "⚠️  [yellow]This document was last updated more than 7 days ago[/]"
+                    )
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                    )
+                elif staleness_status == StalenessStatus.OUTDATED:
+                    console.print(
+                        "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                    )
+                    console.print(
+                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                    )
+
             console.print(content)
 
             # Show cross-references if requested
@@ -2092,6 +2156,15 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     is_flag=True,
     help="Show related functions and classes based on search query",
 )
+@click.option(
+    "--in-doc",
+    type=int,
+    help="Search within a specific document by ID",
+)
+@click.option(
+    "--collection",
+    help="Search within a specific collection by name",
+)
 @validate_search_query
 @validate_tags
 def search_text(
@@ -2111,18 +2184,27 @@ def search_text(
     tags,
     tag_mode,
     suggestions,
+    in_doc,
+    collection,
 ):
     """Search documents in the vault with metadata filtering.
 
+    You can combine text queries with any filters including tags, collections, etc.
+
     Examples:
         dv search "python sqlite" --version 3.10
+        dv search "authentication" --tags python security
+        dv search "async functions" --tags python --collection "My Project"
+        dv search --tags django orm  # Search by tags only
         dv search --library --title-contains "API"
         dv search --updated-after 2023-01-01
-        dv search "async functions" --summarize
         dv search "database" --summarize --limit 3
         dv search "file operations" --suggestions
+        dv search "function name" --in-doc 123
+        dv search "authentication" --collection "My SaaS Project"
+        dv search --collection "Python Web Dev" --tags django react
 
-    If no query is provided, returns random documents matching the filters.
+    If no query is provided, returns documents matching the filters only.
     """
 
     # Debug line removed
@@ -2171,6 +2253,103 @@ def search_text(
         doc_filter["is_library_doc"] = True
     if title_contains:
         doc_filter["title_contains"] = title_contains
+    if in_doc:
+        # Validate document exists
+        from docvault.db.operations import get_document
+
+        doc = get_document(in_doc)
+        if not doc:
+            if format == "json":
+                import json
+
+                print(
+                    json.dumps(
+                        {
+                            "status": "error",
+                            "error": f"Document not found: {in_doc}",
+                            "query": query,
+                        }
+                    )
+                )
+            else:
+                console.print(f"❌ Document not found: {in_doc}", style="bold red")
+            return
+        doc_filter["document_ids"] = [in_doc]
+    if collection:
+        # Validate collection exists and get documents
+        from docvault.models.collections import (
+            get_collection_by_name,
+            search_documents_by_collection,
+        )
+
+        coll = get_collection_by_name(collection)
+        if not coll:
+            if format == "json":
+                import json
+
+                print(
+                    json.dumps(
+                        {
+                            "status": "error",
+                            "error": f"Collection not found: {collection}",
+                            "query": query,
+                        }
+                    )
+                )
+            else:
+                console.print(
+                    f"❌ Collection not found: {collection}", style="bold red"
+                )
+            return
+
+        # Get document IDs in collection
+        collection_doc_ids = search_documents_by_collection(coll["id"])
+        if not collection_doc_ids:
+            if format == "json":
+                import json
+
+                print(
+                    json.dumps(
+                        {
+                            "status": "success",
+                            "count": 0,
+                            "results": [],
+                            "query": query,
+                            "collection": collection,
+                        }
+                    )
+                )
+            else:
+                console.print(f"No documents in collection '{collection}'")
+            return
+
+        # If we already have document_ids from --in-doc, intersect them
+        if "document_ids" in doc_filter:
+            # Find intersection
+            existing_ids = set(doc_filter["document_ids"])
+            collection_ids = set(collection_doc_ids)
+            doc_filter["document_ids"] = list(existing_ids & collection_ids)
+
+            if not doc_filter["document_ids"]:
+                if format == "json":
+                    import json
+
+                    print(
+                        json.dumps(
+                            {
+                                "status": "success",
+                                "count": 0,
+                                "results": [],
+                                "query": query,
+                                "message": "No documents match both document and collection filters",
+                            }
+                        )
+                    )
+                else:
+                    console.print("No documents match both filters")
+                return
+        else:
+            doc_filter["document_ids"] = collection_doc_ids
     if updated_after:
         try:
             from datetime import datetime
@@ -2212,11 +2391,25 @@ def search_text(
         # Add document IDs to filter
         doc_filter["document_ids"] = [doc["id"] for doc in tag_filtered_docs]
 
-    status_msg = (
-        f"[bold blue]Searching for '{query}'...[/]"
-        if query
-        else "[bold blue]Searching documents...[/]"
-    )
+    if in_doc:
+        doc_title = doc.get("title", f"Document {in_doc}")
+        status_msg = (
+            f"[bold blue]Searching for '{query}' in '{doc_title}'...[/]"
+            if query
+            else f"[bold blue]Searching within '{doc_title}'...[/]"
+        )
+    elif collection:
+        status_msg = (
+            f"[bold blue]Searching for '{query}' in collection '{collection}'...[/]"
+            if query
+            else f"[bold blue]Searching within collection '{collection}'...[/]"
+        )
+    else:
+        status_msg = (
+            f"[bold blue]Searching for '{query}'...[/]"
+            if query
+            else "[bold blue]Searching documents...[/]"
+        )
     with console.status(status_msg, spinner="dots"):
         results = asyncio.run(
             search_docs(
@@ -2231,11 +2424,21 @@ def search_text(
         if format == "json":
             import json
 
-            print(
-                json.dumps(
-                    {"status": "success", "count": 0, "results": [], "query": query}
-                )
-            )
+            json_response = {
+                "status": "success",
+                "count": 0,
+                "results": [],
+                "query": query,
+            }
+            if in_doc:
+                json_response["search_scope"] = {
+                    "document_id": in_doc,
+                    "document_title": doc.get("title"),
+                }
+            if collection:
+                json_response["search_scope"] = {"collection": collection}
+
+            print(json.dumps(json_response))
         else:
             console.print("No matching documents found")
         return
@@ -2261,21 +2464,56 @@ def search_text(
                 }
             )
 
-        print(
-            json.dumps(
-                {
-                    "status": "success",
-                    "count": len(json_results),
-                    "query": query,
-                    "results": json_results,
-                },
-                indent=2,
-            )
-        )
+        json_response = {
+            "status": "success",
+            "count": len(json_results),
+            "query": query,
+            "results": json_results,
+        }
+        if in_doc:
+            json_response["search_scope"] = {
+                "document_id": in_doc,
+                "document_title": doc.get("title"),
+            }
+        if collection:
+            json_response["search_scope"] = {"collection": collection}
+
+        print(json.dumps(json_response, indent=2))
         return
 
-    # Default text output
-    console.print(f"Found {len(results)} results for '{query}'")
+    # Default text output - build descriptive message
+    result_msg = f"Found {len(results)} results"
+
+    # Add query info if present
+    if query:
+        result_msg += f" for '{query}'"
+
+    # Add filter descriptions
+    filters = []
+    if tags:
+        tag_str = f"tags: {', '.join(tags)}"
+        filters.append(tag_str)
+    if in_doc:
+        doc_title = doc.get("title", f"Document {in_doc}")
+        filters.append(f"in document: '{doc_title}'")
+    elif collection:
+        filters.append(f"in collection: '{collection}'")
+    if version:
+        filters.append(f"version: {version}")
+    if library:
+        filters.append("library docs only")
+
+    # Append filters to message
+    if filters:
+        if not query:
+            result_msg += " with"
+        else:
+            result_msg += " (filtered by"
+        result_msg += f" {', '.join(filters)}"
+        if query and filters:
+            result_msg += ")"
+
+    console.print(result_msg)
     if debug and not text_only:
         console.print("[bold]Query embedding diagnostics:[/]")
         try:

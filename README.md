@@ -26,14 +26,16 @@ DocVault is designed to help AI assistants and developers access up-to-date docu
 
 ## Features
 
-- **Web Scraper**: Fetch and store documentation from URLs
-- **Document Storage**: Store HTML and Markdown versions
-- **Vector Search**: Semantic search using document embeddings
-- **Section Navigation**: Hierarchical document sections with parent-child relationships
+- **Web Scraper**: Fetch and store documentation from URLs with smart depth control
+- **Document Storage**: Store HTML and Markdown versions with version tracking
+- **Vector Search**: Semantic search using document embeddings (requires Ollama)
+- **Organization**: Two-tier system with Tags (attributes) and Collections (projects)
+- **Section Navigation**: Hierarchical document sections with cross-references
 - **MCP Server**: Expose functionality to AI assistants through Model Context Protocol
-- **Library Manager**: Automatically fetch library documentation
-- **CLI Interface**: Command-line tool for document management
-- **Database Migrations**: Automatic schema updates with versioning
+- **Library Manager**: Automatically fetch library documentation with registry support
+- **Smart Caching**: Document freshness tracking with staleness indicators
+- **CLI Interface**: Comprehensive command-line tool for document management
+- **Security**: Input validation, secure storage, and terminal output sanitization
 
 ## Installation
 
@@ -398,6 +400,86 @@ dv serve --transport sse
 ```
 
 This will start a server at [http://127.0.0.1:8000](http://127.0.0.1:8000) that AI assistants can interact with.
+
+## Organizing Your Documentation: Tags vs Collections
+
+DocVault provides two powerful ways to organize your documentation:
+
+### Tags (Descriptive Attributes)
+Tags are labels that describe what a document is about. Use them for categorization and filtering.
+
+```bash
+# Add tags to documents
+dv tag add 123 python async security
+
+# Search by tags only
+dv search --tags python security
+
+# Combine text search with tags (very powerful!)
+dv search "authentication" --tags python security
+
+# List all documents with a tag
+dv tag list python
+```
+
+**Good tags:** `python`, `javascript`, `authentication`, `tutorial`, `api-reference`, `deprecated`
+
+### Collections (Project Groupings)
+Collections are curated sets of documents organized for specific projects or purposes.
+
+```bash
+# Create a project collection
+dv collection create "My SaaS App" --description "All docs for my startup"
+
+# Add documents to collection
+dv collection add "My SaaS App" 123 456 789
+
+# Search within a collection
+dv search authentication --collection "My SaaS App"
+
+# View collection contents
+dv collection show "My SaaS App"
+```
+
+**Good collections:** "Python Web Project", "Learning React", "Security Best Practices"
+
+### Using Both Together
+The real power comes from combining tags and collections:
+
+```bash
+# Create a collection with default tags
+dv collection create "Django Project" --tags python django web
+
+# Search for Python security docs in your project
+dv search --collection "Django Project" --tags python security
+
+# Find which collections contain a document
+dv collection find 123
+```
+
+See [COLLECTIONS_VS_TAGS.md](COLLECTIONS_VS_TAGS.md) for a comprehensive guide.
+
+### Powerful Search Combinations
+
+DocVault's search is extremely flexible - combine text queries with any filters:
+
+```bash
+# Text search with tags
+dv search "async functions" --tags python
+
+# Search within a collection
+dv search "authentication" --collection "My SaaS Project"
+
+# Combine everything!
+dv search "database models" --tags django orm --collection "Web App"
+
+# Filter by tags only (no text query)
+dv search --tags security oauth2
+
+# Multiple tag modes
+dv search "api" --tags rest graphql --tag-mode any   # Match ANY tag
+dv search "api" --tags python rest --tag-mode all    # Must have ALL tags
+```
 
 ## CLI Commands
 

@@ -5,6 +5,15 @@ from datetime import datetime
 
 import click
 
+from docvault.cli.cache_commands import (
+    cache_config,
+    cache_stats,
+    check_updates,
+    pin,
+    update,
+)
+from docvault.cli.collection_commands import collection as collection_cmd
+
 # Import CLI commands directly
 from docvault.cli.commands import (
     backup_cmd,
@@ -201,6 +210,16 @@ def register_commands(main):
 
     # Add security command
     main.add_command(security_cmd, name="security")
+
+    # Add cache commands
+    main.add_command(check_updates, name="check-updates")
+    main.add_command(update, name="update")
+    main.add_command(pin, name="pin")
+    main.add_command(cache_stats, name="cache-stats")
+    main.add_command(cache_config, name="cache-config")
+
+    # Add collection command
+    main.add_command(collection_cmd, name="collection")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
