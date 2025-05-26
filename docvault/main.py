@@ -23,6 +23,7 @@ from docvault.cli.commands import (
     suggest_cmd,
     version_cmd,
 )
+from docvault.cli.credential_commands import credentials as credentials_cmd
 from docvault.cli.ref_commands import ref_cmd
 from docvault.cli.registry_commands import registry as registry_group
 from docvault.cli.tag_commands import tag_cmd
@@ -192,6 +193,10 @@ def register_commands(main):
 
     # Add suggest command
     main.add_command(suggest_cmd, name="suggest")
+
+    # Add credentials command
+    main.add_command(credentials_cmd, name="credentials")
+    main.add_command(credentials_cmd, name="creds")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

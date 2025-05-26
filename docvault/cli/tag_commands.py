@@ -6,6 +6,8 @@ from rich.table import Table
 
 from docvault.db import operations
 from docvault.models import tags
+from docvault.utils.validation_decorators import validate_doc_id
+from docvault.utils.validators import ValidationError, Validators
 
 console = Console()
 
@@ -19,6 +21,7 @@ def tag_cmd():
 @tag_cmd.command("add")
 @click.argument("document_id", type=int)
 @click.argument("tag_names", nargs=-1, required=True)
+@validate_doc_id
 def add_tag(document_id, tag_names):
     """Add tags to a document.
 
@@ -37,10 +40,15 @@ def add_tag(document_id, tag_names):
 
     for tag_name in tag_names:
         try:
-            if tags.add_tag_to_document(document_id, tag_name):
-                added.append(tag_name)
+            # Validate tag name
+            validated_tag = Validators.validate_tag(tag_name)
+            if tags.add_tag_to_document(document_id, validated_tag):
+                added.append(validated_tag)
             else:
-                already_exists.append(tag_name)
+                already_exists.append(validated_tag)
+        except ValidationError as e:
+            console.print(f"[red]Invalid tag '{tag_name}':[/] {e}")
+            continue
         except Exception as e:
             console.print(f"[red]Error adding tag '{tag_name}':[/] {e}")
 

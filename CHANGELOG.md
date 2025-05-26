@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Rate Limiting and Resource Management**: Implemented comprehensive rate limiting
+  - Per-domain rate limits (60/min, 1000/hr) with burst detection
+  - Global rate limits (300/min, 5000/hr) across all domains
+  - Concurrent request limiting (max 10)
+  - Memory usage monitoring and limits (1024MB default)
+  - Operation timeout tracking (300s max)
+  - Cooldown periods for burst protection
+  - Clear error messages when limits exceeded
+
+- **Secure Credential Management**: Added encrypted credential storage
+  - AES encryption using Fernet (cryptography library)
+  - Secure key generation and storage (600 permissions)
+  - Credential categories for organization
+  - Key rotation support with automatic re-encryption
+  - CLI commands: `dv credentials set/get/remove/list/rotate-key`
+  - Environment variable fallback and migration
+  - Integration with GitHub token retrieval
+
+- **Input Validation Framework**: Comprehensive input sanitization and validation
+  - Centralized validators for all input types (queries, IDs, tags, URLs, paths)
+  - SQL injection prevention in search queries
+  - Command injection prevention in shell arguments
+  - Path traversal protection for file operations
+  - HTML tag stripping and sanitization
+  - Length limits on all string inputs
+  - Validation decorators for automatic CLI input validation
+  - Integrated into search, read, import, remove, and tag commands
+
 ### Changed
 
 ### Deprecated
@@ -18,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+- Enhanced security with rate limiting to prevent DoS attacks
+- Secure credential storage prevents plaintext secrets in config files
+- Automatic file permission setting (600) for credential files
+- Key rotation capability for periodic security updates
 
 ## [0.5.1] - 2025-05-25
 

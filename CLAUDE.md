@@ -232,6 +232,30 @@ DocVault enforces the following limits (configurable):
 - Max scraping depth: 5 levels (MAX_SCRAPING_DEPTH)
 - Max pages per domain: 100 (MAX_PAGES_PER_DOMAIN)
 
+### Rate Limiting
+
+DocVault includes comprehensive rate limiting to prevent abuse:
+
+**Per-Domain Limits:**
+- 60 requests per minute (RATE_LIMIT_PER_MINUTE)
+- 1000 requests per hour (RATE_LIMIT_PER_HOUR)
+- Burst detection: 10 requests (RATE_LIMIT_BURST_SIZE)
+
+**Global Limits:**
+- 300 requests per minute across all domains (GLOBAL_RATE_LIMIT_PER_MINUTE)
+- 5000 requests per hour across all domains (GLOBAL_RATE_LIMIT_PER_HOUR)
+
+**Resource Management:**
+- Max concurrent requests: 10 (MAX_CONCURRENT_REQUESTS)
+- Max memory usage: 1024MB (MAX_MEMORY_MB)
+- Max processing time: 300 seconds per operation (MAX_PROCESSING_TIME_SECONDS)
+
+When rate limits are exceeded, DocVault will:
+- Return clear error messages explaining the limit
+- Implement cooldown periods for burst protection
+- Track and limit concurrent operations
+- Monitor memory usage to prevent system overload
+
 ### Other Security Features
 
 - SQL injection prevention via parameterized queries

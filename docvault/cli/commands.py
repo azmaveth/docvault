@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import shutil
 import sqlite3
 import sys
@@ -22,6 +23,12 @@ from docvault.utils.path_security import (
     get_safe_path,
     is_safe_archive_member,
     validate_path,
+)
+from docvault.utils.validation_decorators import (
+    validate_doc_id,
+    validate_search_query,
+    validate_tags,
+    validate_url,
 )
 from docvault.version import __version__
 
@@ -520,6 +527,7 @@ def _scrape(
     "--filter-selector",
     help="CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')",
 )
+@validate_url
 def import_cmd(
     url, depth, max_links, quiet, strict_path, update, format, sections, filter_selector
 ):
@@ -828,25 +836,42 @@ def remove_cmd(id_ranges, force):
     """
     document_ids = []
     # Parse the id_ranges argument
-    ranges = id_ranges.replace(" ", "").split(",")
-    for r in ranges:
-        if "-" in r:
-            try:
-                start, end = map(int, r.split("-"))
-                document_ids.extend(range(start, end + 1))
-            except ValueError:
-                console.print(
-                    f"⚠️ Invalid range format: {r}. Expected 'start-end'", style="yellow"
-                )
-                continue
-        else:
-            try:
-                document_ids.append(int(r))
-            except ValueError:
-                console.print(
-                    f"⚠️ Invalid document ID: {r}. Must be an integer.", style="yellow"
-                )
-                continue
+    try:
+        # Validate the input format first
+        if not re.match(r"^[\d,\s-]+$", id_ranges):
+            raise click.ClickException(
+                "Invalid ID format. Use numbers, commas, and hyphens only."
+            )
+
+        ranges = id_ranges.replace(" ", "").split(",")
+        for r in ranges:
+            if "-" in r:
+                try:
+                    start, end = map(int, r.split("-"))
+                    # Validate range
+                    if start <= 0 or end <= 0:
+                        raise ValueError("IDs must be positive")
+                    if start > end:
+                        raise ValueError("Invalid range")
+                    document_ids.extend(range(start, end + 1))
+                except ValueError:
+                    console.print(
+                        f"⚠️ Invalid range format: {r}. Expected 'start-end'",
+                        style="yellow",
+                    )
+                    continue
+            else:
+                try:
+                    document_ids.append(int(r))
+                except ValueError:
+                    console.print(
+                        f"⚠️ Invalid document ID: {r}. Must be an integer.",
+                        style="yellow",
+                    )
+                    continue
+    except Exception as e:
+        raise click.ClickException(f"Error parsing document IDs: {e}")
+
     if not document_ids:
         console.print("❌ No valid document IDs provided", style="bold red")
         return
@@ -1113,6 +1138,7 @@ def list_cmd(filter, verbose, format):
     is_flag=True,
     help="Show contextual information including usage examples, best practices, and pitfalls",
 )
+@validate_doc_id
 def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, context):
     """Read a document from the vault.
 
@@ -2066,6 +2092,8 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     is_flag=True,
     help="Show related functions and classes based on search query",
 )
+@validate_search_query
+@validate_tags
 def search_text(
     query,
     limit,

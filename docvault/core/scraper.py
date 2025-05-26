@@ -3,6 +3,7 @@ import base64
 import hashlib
 import json
 import logging
+import time
 from typing import Any, Dict, Optional, Union
 from urllib.parse import urljoin, urlparse
 
@@ -700,6 +701,24 @@ class WebScraper:
         # Check pages per domain limit
         parsed = urlparse(url)
         domain = parsed.netloc
+
+        # Check rate limits
+        from docvault.utils.rate_limiter import get_rate_limiter, get_resource_monitor
+
+        rate_limiter = get_rate_limiter()
+        resource_monitor = get_resource_monitor()
+
+        # Check if we're allowed to make this request
+        allowed, reason = await rate_limiter.check_rate_limit(domain)
+        if not allowed:
+            self.logger.warning(f"Rate limit exceeded for {domain}: {reason}")
+            return None, reason
+
+        # Check memory usage
+        allowed, reason = await resource_monitor.check_memory_usage()
+        if not allowed:
+            self.logger.error(f"Resource limit exceeded: {reason}")
+            return None, reason
         if hasattr(self, "pages_per_domain"):
             if domain not in self.pages_per_domain:
                 self.pages_per_domain[domain] = 0
@@ -715,7 +734,12 @@ class WebScraper:
 
         # Attach GitHub token if available
         headers = {"User-Agent": "DocVault/0.5.0 Documentation Indexer"}
-        token = config.GITHUB_TOKEN if hasattr(config, "GITHUB_TOKEN") else None
+
+        # Try to get GitHub token from secure storage or environment
+        from docvault.utils.secure_credentials import get_github_token
+
+        token = get_github_token()
+
         if token and "github.com" in urlparse(url).netloc:
             headers["Authorization"] = f"token {token}"
 
@@ -730,71 +754,81 @@ class WebScraper:
         timeout = aiohttp.ClientTimeout(total=config.REQUEST_TIMEOUT)
 
         content, error_detail = None, None
+        operation_id = f"fetch_{domain}_{int(time.time())}"
+
         try:
-            connector = aiohttp.TCPConnector(ssl=True)  # Enforce SSL/TLS
-            async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.get(
-                    url, headers=headers, timeout=timeout, proxy=proxy
-                ) as response:
-                    if response.status == 200:
-                        content_type = response.headers.get("Content-Type", "")
-                        if (
-                            "text/html" not in content_type
-                            and "application/xhtml+xml" not in content_type
-                            and "application/xml" not in content_type
-                            and "application/json" not in content_type
-                            and "text/plain" not in content_type
-                        ):
-                            msg = f"Skipping non-text content: {url} (Content-Type: {content_type})"
-                            if not self.quiet:
-                                self.logger.warning(msg)
-                            else:
-                                self.logger.debug(msg)
-                            error_detail = msg
-                        else:
-                            # Check content length
-                            content_length = response.headers.get("Content-Length")
+            # Start tracking operation time
+            await resource_monitor.start_operation(operation_id)
+
+            # Acquire rate limiter slot
+            async with rate_limiter:
+                # Record the request
+                await rate_limiter.record_request(domain)
+
+                connector = aiohttp.TCPConnector(ssl=True)  # Enforce SSL/TLS
+                async with aiohttp.ClientSession(connector=connector) as session:
+                    async with session.get(
+                        url, headers=headers, timeout=timeout, proxy=proxy
+                    ) as response:
+                        if response.status == 200:
+                            content_type = response.headers.get("Content-Type", "")
                             if (
-                                content_length
-                                and int(content_length) > config.MAX_RESPONSE_SIZE
+                                "text/html" not in content_type
+                                and "application/xhtml+xml" not in content_type
+                                and "application/xml" not in content_type
+                                and "application/json" not in content_type
+                                and "text/plain" not in content_type
                             ):
-                                msg = f"Response too large: {int(content_length)} bytes (max: {config.MAX_RESPONSE_SIZE})"
-                                self.logger.warning(msg)
+                                msg = f"Skipping non-text content: {url} (Content-Type: {content_type})"
+                                if not self.quiet:
+                                    self.logger.warning(msg)
+                                else:
+                                    self.logger.debug(msg)
                                 error_detail = msg
                             else:
-                                try:
-                                    # Read with size limit
-                                    content_bytes = b""
-                                    async for chunk in response.content.iter_chunked(
-                                        8192
-                                    ):
-                                        content_bytes += chunk
-                                        if (
-                                            len(content_bytes)
-                                            > config.MAX_RESPONSE_SIZE
-                                        ):
-                                            msg = f"Response exceeded size limit of {config.MAX_RESPONSE_SIZE} bytes"
-                                            self.logger.warning(msg)
-                                            error_detail = msg
-                                            content_bytes = None
-                                            break
-
-                                    if content_bytes:
-                                        content = content_bytes.decode(
-                                            "utf-8", errors="replace"
-                                        )
-                                except UnicodeDecodeError as e:
-                                    msg = f"Unicode decode error for {url}: {e}"
-                                    if not self.quiet:
-                                        self.logger.warning(msg)
-                                    else:
-                                        self.logger.debug(msg)
+                                # Check content length
+                                content_length = response.headers.get("Content-Length")
+                                if (
+                                    content_length
+                                    and int(content_length) > config.MAX_RESPONSE_SIZE
+                                ):
+                                    msg = f"Response too large: {int(content_length)} bytes (max: {config.MAX_RESPONSE_SIZE})"
+                                    self.logger.warning(msg)
                                     error_detail = msg
-                    else:
-                        msg = f"Failed to fetch URL: {url} (Status: {response.status})"
-                        if response.status != 404:
-                            self.logger.warning(msg)
-                        error_detail = msg
+                                else:
+                                    try:
+                                        # Read with size limit
+                                        content_bytes = b""
+                                        async for (
+                                            chunk
+                                        ) in response.content.iter_chunked(8192):
+                                            content_bytes += chunk
+                                            if (
+                                                len(content_bytes)
+                                                > config.MAX_RESPONSE_SIZE
+                                            ):
+                                                msg = f"Response exceeded size limit of {config.MAX_RESPONSE_SIZE} bytes"
+                                                self.logger.warning(msg)
+                                                error_detail = msg
+                                                content_bytes = None
+                                                break
+
+                                        if content_bytes:
+                                            content = content_bytes.decode(
+                                                "utf-8", errors="replace"
+                                            )
+                                    except UnicodeDecodeError as e:
+                                        msg = f"Unicode decode error for {url}: {e}"
+                                        if not self.quiet:
+                                            self.logger.warning(msg)
+                                        else:
+                                            self.logger.debug(msg)
+                                        error_detail = msg
+                        else:
+                            msg = f"Failed to fetch URL: {url} (Status: {response.status})"
+                            if response.status != 404:
+                                self.logger.warning(msg)
+                            error_detail = msg
         except asyncio.TimeoutError:
             error_detail = f"Request timed out after {config.REQUEST_TIMEOUT} seconds"
             self.logger.debug(f"Timeout fetching URL: {url}")
@@ -812,6 +846,10 @@ class WebScraper:
         except Exception as e:
             error_detail = "Unexpected error"
             self.logger.debug(f"Unexpected error fetching {url}: {e}", exc_info=True)
+        finally:
+            # Always clean up operation tracking
+            await resource_monitor.end_operation(operation_id)
+
         if content is not None:
             self.visited_urls.add(url)
             # Increment pages per domain counter
