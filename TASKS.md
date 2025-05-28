@@ -219,11 +219,12 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [Progress] 2025-04-21: All vector search improvements completed; proceeding to performance and extraction enhancements.
 
 - [ ] **Performance Optimization**: Optimize document scraping and indexing for faster retrieval
-- [ ] **Content Extraction Improvements**: Enhance scraping to better handle different documentation formats and structures
-  - [ ] Refactor scraper to detect documentation type (Sphinx, MkDocs, OpenAPI)
-  - [ ] Implement specialized extractors for Sphinx, MkDocs, OpenAPI/Swagger
-  - [ ] Improve segmentation for navigation/code/structured content
-  - [ ] Add tests for extraction and segmentation edge cases
+- [x] **Content Extraction Improvements**: Enhance scraping to better handle different documentation formats and structures (2025-05-27)
+  - [x] Refactor scraper to detect documentation type (Sphinx, MkDocs, OpenAPI)
+  - [x] Implement specialized extractors for Sphinx, MkDocs, OpenAPI/Swagger
+  - [x] Improve segmentation for navigation/code/structured content
+  - [x] Add tests for extraction and segmentation edge cases
+  - **Complete**: Implemented DocTypeDetector that identifies documentation formats based on URL patterns, HTML signatures, and content patterns. Created specialized extractors (SphinxExtractor, MkDocsExtractor, OpenAPIExtractor) that extract format-specific metadata like API signatures, navigation structures, code examples, admonitions, etc. Added comprehensive tests and documentation. The scraper now automatically uses the appropriate extractor based on detected type. Branch: `feature/content-extraction-improvements`
 
 - [x] **Scraping Depth Control Enhancements**: [2025-05-25]
   - [x] Improved documentation of the "depth" parameter - now accepts strategies (auto/conservative/aggressive)
