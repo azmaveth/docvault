@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 # Import shared fixtures from utils
-from .utils import mock_app_initialization, temp_project
 
 
 @pytest.fixture
