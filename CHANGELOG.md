@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-05-28
+
+### Fixed
+
+- **Update Flag Functionality**: Fixed --update flag in `dv add` command not working
+  - Added `force_update` parameter to `add_document()` function in database operations
+  - Modified scraper to properly handle existing documents when force_update=True
+  - Resolves UNIQUE constraint failed errors when re-scraping existing URLs
+  - Now correctly deletes existing document and segments before re-inserting
+  - Enables testing new extractors on existing URLs and refreshing outdated content
+
+### Technical
+
+- Enhanced `operations.add_document()` to support force updates
+- Updated all `add_document()` calls in scraper to pass force_update parameter
+- Improved error handling for document replacement scenarios
+
 ## [0.6.1] - 2025-05-28
 
 ### Fixed

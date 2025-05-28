@@ -259,6 +259,7 @@ class WebScraper:
                     library_id=library_id,
                     is_library_doc=is_library_doc,
                     content_hash=content_hash,
+                    force_update=force_update,
                 )
                 self.stats["pages_scraped"] += 1
                 segments = processor.segment_markdown(markdown_content)
@@ -354,6 +355,7 @@ class WebScraper:
                         library_id=library_id,
                         is_library_doc=is_library_doc,
                         content_hash=content_hash,
+                        force_update=force_update,
                     )
                     self.stats["pages_scraped"] += 1
                     segments = processor.segment_markdown(md_content)
@@ -416,7 +418,7 @@ class WebScraper:
                         )
                         self.stats["segments_created"] += 1
                     await self._process_github_repo_structure(
-                        owner, repo, library_id, is_library_doc
+                        owner, repo, library_id, is_library_doc, force_update
                     )
                     return operations.get_document(document_id)
 
@@ -562,6 +564,7 @@ class WebScraper:
             metadata=json.dumps(extracted_metadata) if extracted_metadata else None,
             has_llms_txt=bool(llms_txt_content),
             llms_txt_url=llms_txt_url,
+            force_update=force_update,
         )
         self.stats["pages_scraped"] += 1
 
@@ -794,6 +797,7 @@ class WebScraper:
         # Only try to get GitHub token for GitHub URLs
         if "github.com" in urlparse(url).netloc:
             from docvault.utils.secure_credentials import get_github_token
+
             token = get_github_token()
             if token:
                 headers["Authorization"] = f"token {token}"
@@ -1121,7 +1125,7 @@ class WebScraper:
         return None
 
     async def _process_github_repo_structure(
-        self, owner: str, repo: str, library_id: Optional[int], is_library_doc: bool
+        self, owner: str, repo: str, library_id: Optional[int], is_library_doc: bool, force_update: bool = False
     ):
         """Fetch and store documentation files from a GitHub repository structure"""
         import aiohttp
@@ -1183,6 +1187,7 @@ class WebScraper:
                     markdown_path=markdown_path,
                     library_id=library_id,
                     is_library_doc=is_library_doc,
+                    force_update=force_update,
                 )
                 self.stats["pages_scraped"] += 1
                 segments = processor.segment_markdown(decoded)

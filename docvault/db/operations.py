@@ -55,10 +55,24 @@ def add_document(
     llms_txt_url: Optional[str] = None,
     doc_type: Optional[str] = None,
     metadata: Optional[str] = None,
+    force_update: bool = False,
 ) -> int:
     """Add a document to the database, supporting versioning and content hash."""
     conn = get_connection()
     cursor = conn.cursor()
+
+    # Handle force_update by deleting existing document if it exists
+    if force_update:
+        cursor.execute(
+            "SELECT id FROM documents WHERE url = ? AND version = ?", (url, version)
+        )
+        existing_doc = cursor.fetchone()
+        if existing_doc:
+            # Delete existing document and all its segments
+            delete_document(existing_doc[0])
+            # Get a new connection since delete_document closes it
+            conn = get_connection()
+            cursor = conn.cursor()
 
     # Check if the new columns exist
     cursor.execute("PRAGMA table_info(documents)")
