@@ -789,15 +789,14 @@ class WebScraper:
                 )
 
         # Attach GitHub token if available
-        headers = {"User-Agent": "DocVault/0.5.0 Documentation Indexer"}
+        headers = {"User-Agent": "DocVault/0.6.0 Documentation Indexer"}
 
-        # Try to get GitHub token from secure storage or environment
-        from docvault.utils.secure_credentials import get_github_token
-
-        token = get_github_token()
-
-        if token and "github.com" in urlparse(url).netloc:
-            headers["Authorization"] = f"token {token}"
+        # Only try to get GitHub token for GitHub URLs
+        if "github.com" in urlparse(url).netloc:
+            from docvault.utils.secure_credentials import get_github_token
+            token = get_github_token()
+            if token:
+                headers["Authorization"] = f"token {token}"
 
         # Configure proxy if available
         proxy = None
