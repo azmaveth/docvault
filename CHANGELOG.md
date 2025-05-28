@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-05-28
+
+### Fixed
+
+- **GitHub Credentials Bug**: Fixed scraper attempting to fetch GitHub credentials for all URLs
+  - Now only requests GitHub token when actually accessing github.com URLs
+  - Eliminates "Failed to load credentials" errors when scraping non-GitHub documentation sites
+  - Improves reliability and performance for general documentation scraping
+
+### Technical
+
+- **User-Agent Update**: Updated scraper User-Agent to reflect v0.6.1
+
 ## [0.6.0] - 2025-05-28
 
 ### Added

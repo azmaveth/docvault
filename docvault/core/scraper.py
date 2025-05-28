@@ -789,7 +789,7 @@ class WebScraper:
                 )
 
         # Attach GitHub token if available
-        headers = {"User-Agent": "DocVault/0.6.0 Documentation Indexer"}
+        headers = {"User-Agent": "DocVault/0.6.1 Documentation Indexer"}
 
         # Only try to get GitHub token for GitHub URLs
         if "github.com" in urlparse(url).netloc:
