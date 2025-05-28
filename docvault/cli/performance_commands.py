@@ -365,7 +365,7 @@ def system():
     storage_path = getattr(config, "STORAGE_PATH", None)
     if storage_path and os.path.exists(storage_path):
         total_size = 0
-        for dirpath, dirnames, filenames in os.walk(storage_path):
+        for dirpath, _, filenames in os.walk(storage_path):
             for filename in filenames:
                 filepath = os.path.join(dirpath, filename)
                 total_size += os.path.getsize(filepath)

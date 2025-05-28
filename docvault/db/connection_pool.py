@@ -5,7 +5,7 @@ Database connection pool for improved performance.
 import sqlite3
 import threading
 from contextlib import contextmanager
-from queue import Empty, Queue
+from queue import Empty, Full, Queue
 from typing import Generator, Optional
 
 from docvault import config
@@ -73,7 +73,7 @@ class ConnectionPool:
         """Return a connection to the pool."""
         try:
             self._pool.put_nowait(conn)
-        except:
+        except Full:
             # Pool is full, close the connection
             conn.close()
             with self._lock:
