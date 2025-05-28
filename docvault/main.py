@@ -42,6 +42,7 @@ from docvault.cli.quick_add_commands import (
 )
 from docvault.cli.ref_commands import ref_cmd
 from docvault.cli.registry_commands import registry as registry_group
+from docvault.cli.section_commands import sections as sections_cmd
 from docvault.cli.security_commands import security as security_cmd
 from docvault.cli.tag_commands import tag_cmd
 from docvault.cli.version_commands import version_cmd as version_management_cmd
@@ -206,6 +207,9 @@ def register_commands(main):
 
     # Add ref command
     main.add_command(ref_cmd, name="ref")
+
+    # Add section commands
+    main.add_command(sections_cmd, name="sections")
 
     # Add version management command (avoid conflict with version_cmd)
     main.add_command(version_management_cmd, name="versions")
