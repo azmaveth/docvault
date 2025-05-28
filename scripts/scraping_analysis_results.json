@@ -1,0 +1,205 @@
+{
+  "requests": {
+    "status_code": 200,
+    "content_length": 140168,
+    "title": "Specification - Model Context Protocol",
+    "headings": [
+      "Specification",
+      "\u200bOverview",
+      "\u200bKey Details",
+      "\u200bBase Protocol",
+      "\u200bFeatures",
+      "\u200bAdditional Utilities",
+      "\u200bSecurity and Trust & Safety",
+      "\u200bKey Principles",
+      "\u200bImplementation Guidelines",
+      "\u200bLearn More",
+      "Architecture",
+      "Base Protocol",
+      "Server Features",
+      "Client Features",
+      "Contributing"
+    ],
+    "links": 61,
+    "code_blocks": 0,
+    "content_preview": "Specification - Model Context ProtocolModel Context Protocol home pageSearch...Python SDKTypeScript SDKJava SDKKotlin SDKC# SDKSwift SDK2025-03-26 (Latest)SpecificationKey ChangesArchitectureBase ProtocolClient FeaturesServer Features2024-11-05SpecificationArchitectureBase ProtocolClient FeaturesServer FeaturesdraftSpecificationKey ChangesArchitectureBase ProtocolClient FeaturesServer FeaturesResourcesVersioningContributionsModel Context Protocol home pageSearch...GitHubGitHubSearch...Navigation",
+    "has_navigation": true,
+    "has_sidebar": false,
+    "javascript_required": false
+  },
+  "aiohttp": {
+    "status_code": 200,
+    "content_length": 140012,
+    "title": "Specification - Model Context Protocol",
+    "headings": [
+      "Specification",
+      "\u200bOverview",
+      "\u200bKey Details",
+      "\u200bBase Protocol",
+      "\u200bFeatures",
+      "\u200bAdditional Utilities",
+      "\u200bSecurity and Trust & Safety",
+      "\u200bKey Principles",
+      "\u200bImplementation Guidelines",
+      "\u200bLearn More",
+      "Architecture",
+      "Base Protocol",
+      "Server Features",
+      "Client Features",
+      "Contributing"
+    ],
+    "links": 61,
+    "code_blocks": 0,
+    "content_preview": "Specification - Model Context ProtocolModel Context Protocol home pageSearch...Python SDKTypeScript SDKJava SDKKotlin SDKC# SDKSwift SDK2025-03-26 (Latest)SpecificationKey ChangesArchitectureBase ProtocolClient FeaturesServer Features2024-11-05SpecificationArchitectureBase ProtocolClient FeaturesServer FeaturesdraftSpecificationKey ChangesArchitectureBase ProtocolClient FeaturesServer FeaturesResourcesVersioningContributionsModel Context Protocol home pageSearch...GitHubGitHubSearch...Navigation",
+    "has_navigation": true,
+    "has_sidebar": false,
+    "headers": {
+      "Date": "Wed, 28 May 2025 05:10:00 GMT",
+      "Content-Type": "text/html; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "keep-alive",
+      "Age": "26121",
+      "Cache-Control": "public, max-age=0, must-revalidate",
+      "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=LU3tjtKOjWSHi%2BwurLffz95aKjYGigmh6rVDT0XFsV5JTaE8GphouJFfepWKnEJzz07696uea%2BZxQRdbqBvNo%2BVGg8daztYEBMOXtktjDbpk6MT4VETd\"}]}",
+      "Content-Security-Policy": "worker-src * blob: data: 'unsafe-eval' 'unsafe-inline'; object-src data: ; base-uri 'self'; form-action 'self' https://codesandbox.io; upgrade-insecure-requests; frame-ancestors 'none';",
+      "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+      "Server": "cloudflare",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Frame-Options": "DENY",
+      "X-Matched-Path": "/_sites/[subdomain]/[[...slug]]",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "HIT",
+      "X-Vercel-Id": "iad1::iad1::cwfpf-1748408999966-60157eb2ccb3",
+      "Cf-Cache-Status": "DYNAMIC",
+      "Vary": "accept-encoding",
+      "Content-Encoding": "gzip",
+      "CF-RAY": "946b3e395fe4bd48-ATL",
+      "alt-svc": "h3=\":443\"; ma=86400"
+    }
+  },
+  "selenium": {
+    "error": "Selenium not available"
+  },
+  "docvault": {
+    "detected_type": "generic",
+    "detection_confidence": 0.0,
+    "extracted_content_length": 5158,
+    "metadata_keys": [
+      "title",
+      "meta_viewport",
+      "meta_msapplication-config",
+      "meta_apple-mobile-web-app-title",
+      "meta_application-name",
+      "meta_msapplication-TileColor",
+      "meta_theme-color",
+      "meta_generator",
+      "meta_charset",
+      "meta_og:type",
+      "meta_og:site_name",
+      "meta_twitter:card",
+      "meta_og:title",
+      "meta_twitter:title",
+      "meta_og:image",
+      "meta_og:image:width",
+      "meta_og:image:height",
+      "meta_twitter:image",
+      "meta_twitter:image:width",
+      "meta_twitter:image:height",
+      "meta_og:url",
+      "meta_next-head-count"
+    ],
+    "content_preview": "Model Context Protocol\n\nhome page\n\nSearch...\n\nPython SDK\n\nTypeScript SDK\n\nJava SDK\n\nKotlin SDK\n\nC# SDK\n\nSwift SDK\n\n2025-03-26 (Latest)\n\nSpecification\n\nKey Changes\n\nArchitecture\n\nBase Protocol\n\nClient Features\n\nServer Features\n\n2024-11-05\n\nSpecification\n\nArchitecture\n\nBase Protocol\n\nClient Features\n\nServer Features\n\ndraft\n\nSpecification\n\nKey Changes\n\nArchitecture\n\nBase Protocol\n\nClient Features\n\nServer Features\n\nResources\n\nVersioning\n\nContributions\n\nModel Context Protocol\n\nhome page\n\nSearch...\n\nS",
+    "has_navigation": false,
+    "has_code_examples": false,
+    "extractor_used": "GenericExtractor"
+  },
+  "child_pages": {
+    "https://modelcontextprotocol.io/specification/draft": {
+      "status_code": 200,
+      "title": "Specification - Model Context Protocol",
+      "headings": [
+        "Specification",
+        "\u200bOverview",
+        "\u200bKey Details",
+        "\u200bBase Protocol",
+        "\u200bFeatures",
+        "\u200bAdditional Utilities",
+        "\u200bSecurity and Trust & Safety",
+        "\u200bKey Principles",
+        "\u200bImplementation Guidelines",
+        "\u200bLearn More",
+        "Architecture",
+        "Base Protocol",
+        "Server Features",
+        "Client Features",
+        "Contributing"
+      ],
+      "content_length": 140372,
+      "has_code": false
+    },
+    "https://modelcontextprotocol.io/specification/contributing": {
+      "status_code": 200,
+      "title": "Contributions - Model Context Protocol",
+      "headings": [
+        "Contributions"
+      ],
+      "content_length": 88198,
+      "has_code": false
+    },
+    "https://modelcontextprotocol.io/specification/architecture": {
+      "status_code": 200,
+      "title": "Introduction - Model Context Protocol",
+      "headings": [
+        "Introduction",
+        "\u200bWhy MCP?",
+        "\u200bGeneral architecture",
+        "\u200bGet started",
+        "For Server Developers",
+        "For Client Developers",
+        "For Claude Desktop Users",
+        "Example Servers",
+        "Example Clients",
+        "\u200bTutorials",
+        "Building MCP with LLMs",
+        "Debugging Guide",
+        "MCP Inspector",
+        "MCP Workshop (Video, 2hr)",
+        "\u200bExplore MCP",
+        "Core architecture",
+        "Resources",
+        "Prompts",
+        "Tools",
+        "Sampling",
+        "Transports",
+        "\u200bContributing",
+        "\u200bSupport and Feedback"
+      ],
+      "content_length": 150218,
+      "has_code": false
+    },
+    "https://modelcontextprotocol.io/specification/2025-03-26/changelog": {
+      "status_code": 200,
+      "title": "Key Changes - Model Context Protocol",
+      "headings": [
+        "Key Changes",
+        "\u200bMajor changes",
+        "\u200bOther schema changes",
+        "\u200bFull changelog"
+      ],
+      "content_length": 102285,
+      "has_code": true
+    },
+    "https://modelcontextprotocol.io/specification/draft/changelog": {
+      "status_code": 200,
+      "title": "Key Changes - Model Context Protocol",
+      "headings": [
+        "Key Changes",
+        "\u200bMajor changes",
+        "\u200bOther schema changes",
+        "\u200bFull changelog"
+      ],
+      "content_length": 100405,
+      "has_code": false
+    }
+  }
+}

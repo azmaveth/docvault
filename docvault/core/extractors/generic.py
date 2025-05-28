@@ -13,7 +13,7 @@ class GenericExtractor(BaseExtractor):
     def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract content using generic patterns."""
         # Extract metadata
-        metadata = self._extract_metadata(soup)
+        metadata = self.extract_metadata(soup)
 
         # Extract main content
         content = self._extract_main_content(soup)

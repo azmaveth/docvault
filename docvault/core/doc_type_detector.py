@@ -18,6 +18,7 @@ class DocType(Enum):
     SWAGGER = "swagger"
     READTHEDOCS = "readthedocs"
     GITHUB = "github"
+    NEXTJS = "nextjs"
     GENERIC = "generic"
 
 
@@ -69,6 +70,12 @@ class DocTypeDetector:
             ("div", {"class": "wy-nav-content"}),
             ("nav", {"data-toggle": "wy-nav-shift"}),
         ],
+        DocType.NEXTJS: [
+            ("script", {"id": "__NEXT_DATA__"}),
+            ("script", {"src": re.compile(r"/_next/")}),
+            ("meta", {"name": "generator", "content": re.compile(r"Next\.js", re.I)}),
+            ("div", {"id": "__next"}),
+        ],
     }
 
     # Content patterns that indicate documentation type
@@ -88,6 +95,12 @@ class DocTypeDetector:
             r'"swagger":\s*"2\.',
             r'"paths":\s*{',
             r'"definitions":\s*{',
+        ],
+        DocType.NEXTJS: [
+            r'"props":\s*{\s*"pageProps"',
+            r'"mdxSource":\s*{',
+            r'"compiledSource":\s*"',
+            r"__NEXT_DATA__",
         ],
     }
 
@@ -255,6 +268,15 @@ class DocTypeDetector:
                 "extract_readme": True,
                 "follow_doc_links": True,
                 "max_depth": 2,
+            },
+            DocType.NEXTJS: {
+                "parse_next_data": True,
+                "extract_mdx_source": True,
+                "extract_page_props": True,
+                "content_selector": "main, div#__next",
+                "fallback_to_static": True,
+                "extract_table_of_contents": True,
+                "extract_code_examples": True,
             },
             DocType.GENERIC: {
                 "content_selector": "main, article, div.content, body",

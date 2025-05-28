@@ -497,6 +497,7 @@ class WebScraper:
         from docvault.core.extractors import (
             GenericExtractor,
             MkDocsExtractor,
+            NextJSExtractor,
             OpenAPIExtractor,
             SphinxExtractor,
         )
@@ -512,6 +513,7 @@ class WebScraper:
         extractors = {
             "sphinx": SphinxExtractor(),
             "mkdocs": MkDocsExtractor(),
+            "nextjs": NextJSExtractor(),
             "openapi": OpenAPIExtractor(),
             "swagger": OpenAPIExtractor(),  # Both swagger and openapi use the same extractor
             "readthedocs": SphinxExtractor(),  # ReadTheDocs often uses Sphinx

@@ -335,6 +335,68 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
 - [ ] **Cross-referencing**: Implement intelligent cross-referencing between related documentation
 - [ ] **Export Features**: Add ability to export documentation in various formats (PDF, Markdown, etc.)
 
+## JavaScript-Rendered Documentation Scraping (Added 2025-05-28)
+
+Based on analysis of MCP specification site (<https://modelcontextprotocol.io/specification/2025-03-26>), identified major limitations in scraping modern documentation sites that use client-side rendering:
+
+### Issues Discovered
+
+- **Content Extraction Gap**: DocVault only extracts ~5KB from 140KB HTML on Next.js sites
+- **Detection Failure**: Sites with 0.00 confidence detection fall back to generic extraction
+- **Client-Side Rendering**: MDX content compiled to JavaScript not accessible via static HTML parsing
+- **Next.js Data Source**: Actual content stored in **__NEXT_DATA__** script as compiled MDX requires JavaScript execution
+
+### High Priority Tasks
+
+- [ ] **Next.js Documentation Support**: Add specialized extractor for Next.js-based documentation sites
+  - [ ] Implement NextJSExtractor that parses `__NEXT_DATA__` script content
+  - [ ] Extract MDX content from compiled JavaScript functions
+  - [ ] Parse pageProps.mdxSource.compiledSource for actual documentation text
+  - [ ] Handle mdxExtracts (tableOfContents, codeExamples) for structured content
+  - [ ] Add Next.js site detection patterns (scripts containing "next", __NEXT_DATA__ presence)
+  - [ ] Create tests using MCP specification site as reference
+
+- [ ] **JavaScript Rendering Support**: Add optional JavaScript execution for documentation extraction
+  - [ ] Integrate headless browser support (Playwright/Selenium) as optional dependency
+  - [ ] Add `--render-js` flag to enable JavaScript rendering for static HTML extraction
+  - [ ] Implement fallback strategy: try static extraction first, then JS if content is insufficient
+  - [ ] Add configuration for JS rendering timeout and resource limits
+  - [ ] Create browser pool management for efficient resource usage
+
+- [ ] **React/SPA Documentation Patterns**: Enhance detection for modern documentation frameworks
+  - [ ] Add detection patterns for React-based documentation (Docusaurus, Gitiles, etc.)
+  - [ ] Implement content extraction from client-side rendered applications
+  - [ ] Add support for documentation sites using Gatsby, Nuxt.js, and similar frameworks
+  - [ ] Create specialized extractors for popular documentation generators
+
+- [ ] **Enhanced Content Discovery**: Improve extraction completeness for complex sites
+  - [ ] Implement content completeness validation (compare extracted vs total text length)
+  - [ ] Add warnings when extraction appears incomplete (< 50% of available text)
+  - [ ] Create fallback strategies for sites with minimal static content
+  - [ ] Add option to extract from multiple content sources (static HTML + JSON data + JS execution)
+
+### Medium Priority Tasks
+
+- [ ] **Documentation Site Framework Detection**: Expand site type detection beyond current patterns
+  - [ ] Add detection for Nuxt.js, Gatsby, Docusaurus, GitBook, and other modern doc platforms
+  - [ ] Implement confidence scoring improvements for better extractor selection
+  - [ ] Create framework-specific extraction strategies
+  - [ ] Add user agent and request header optimization for different platforms
+
+- [ ] **Performance Optimization for JS Rendering**: Optimize JavaScript execution overhead
+  - [ ] Implement smart caching for rendered content
+  - [ ] Add selective JS rendering (only when static extraction fails)
+  - [ ] Create lightweight content extraction without full page rendering
+  - [ ] Implement parallel processing for bulk operations with JS rendering
+
+### Testing and Validation
+
+- [ ] **Create Test Suite for Modern Documentation Sites**:
+  - [ ] Add test cases for MCP specification site extraction
+  - [ ] Create fixtures for Next.js, React, and SPA documentation patterns
+  - [ ] Implement content completeness validation tests
+  - [ ] Add performance benchmarks for JS vs static extraction
+
 ## New High-Priority Features
 
 - [x] **Search Within Document**: Add ability to search within a specific document [2025-05-25]
