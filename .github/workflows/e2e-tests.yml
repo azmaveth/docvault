@@ -1,0 +1,153 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: 'Test filter pattern'
+        required: false
+        default: ''
+
+jobs:
+  e2e-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Exclude some combinations to save CI time
+          - os: windows-latest
+            python-version: '3.9'
+          - os: windows-latest
+            python-version: '3.10'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sqlite3
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install sqlite3
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -r requirements-test.txt
+
+    - name: Run end-to-end tests
+      env:
+        DOCVAULT_TEST_MODE: "true"
+        LOG_LEVEL: "ERROR"
+      run: |
+        python -m tests.e2e.test_runner --verbose --report e2e-report-${{ matrix.os }}-${{ matrix.python-version }}.json ${{ github.event.inputs.filter && format('--filter {0}', github.event.inputs.filter) || '' }}
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-report-${{ matrix.os }}-${{ matrix.python-version }}
+        path: e2e-report-*.json
+
+    - name: Generate test summary
+      if: always()
+      run: |
+        python -c "
+        import json
+        import sys
+        try:
+            with open('e2e-report-${{ matrix.os }}-${{ matrix.python-version }}.json') as f:
+                report = json.load(f)
+            summary = report['summary']
+            print(f\"## E2E Test Results - ${{ matrix.os }} Python ${{ matrix.python-version }}\")
+            print(f\"- Total: {summary['total']}\")
+            print(f\"- Passed: {summary['passed']} ✅\")
+            print(f\"- Failed: {summary['failed']} ❌\")
+            print(f\"- Errors: {summary['errors']} 💥\")
+            print(f\"- Success Rate: {summary['success_rate']:.1f}%\")
+            
+            if summary['failed'] > 0 or summary['errors'] > 0:
+                print(f\"\n### Failed Tests:\")
+                for result in report['results']:
+                    if result['status'] in ['failed', 'error']:
+                        print(f\"- **{result['name']}**: {result['error']}\")
+                        if result.get('stdout'):
+                            print(f\"  Output: {result['stdout'][:200]}...\")
+        except Exception as e:
+            print(f\"Failed to generate summary: {e}\")
+        " >> $GITHUB_STEP_SUMMARY
+
+  e2e-test-matrix-summary:
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: reports
+
+    - name: Generate combined report
+      run: |
+        python -c "
+        import json
+        import glob
+        
+        all_results = {'total': 0, 'passed': 0, 'failed': 0, 'errors': 0}
+        failed_tests = []
+        
+        for report_file in glob.glob('reports/*/e2e-report-*.json'):
+            try:
+                with open(report_file) as f:
+                    report = json.load(f)
+                summary = report['summary']
+                all_results['total'] += summary['total']
+                all_results['passed'] += summary['passed']
+                all_results['failed'] += summary['failed']
+                all_results['errors'] += summary['errors']
+                
+                for result in report['results']:
+                    if result['status'] in ['failed', 'error']:
+                        failed_tests.append({
+                            'name': result['name'],
+                            'error': result['error'],
+                            'platform': report_file
+                        })
+            except:
+                pass
+        
+        print('# 📊 E2E Test Summary Across All Platforms')
+        print(f\"- **Total Tests Run**: {all_results['total']}\")
+        print(f\"- **Passed**: {all_results['passed']} ✅\")
+        print(f\"- **Failed**: {all_results['failed']} ❌\")
+        print(f\"- **Errors**: {all_results['errors']} 💥\")
+        
+        if all_results['total'] > 0:
+            success_rate = (all_results['passed'] / all_results['total']) * 100
+            print(f\"- **Overall Success Rate**: {success_rate:.1f}%\")
+        
+        if failed_tests:
+            print('\n## Failed Tests by Platform')
+            for test in failed_tests[:10]:  # Show first 10
+                print(f\"- **{test['name']}** ({test['platform']}): {test['error']}\")
+        " >> $GITHUB_STEP_SUMMARY

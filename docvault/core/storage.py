@@ -19,6 +19,8 @@ def generate_filename(url: str) -> str:
 
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.replace("www.", "")
+    # Replace invalid filename characters
+    domain = domain.replace(":", "_").replace("/", "_")
 
     return f"{domain}_{url_hash}"
 

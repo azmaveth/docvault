@@ -33,13 +33,23 @@ class LoggingConsole:
         suspicious = False
 
         for arg in args:
-            arg_str = str(arg)
-            if self.sanitize and contains_suspicious_sequences(arg_str):
-                suspicious = True
-                arg_str = sanitize_output(arg_str)
-            sanitized_args.append(arg_str)
+            # Special handling for Rich Table objects
+            if isinstance(arg, Table):
+                # Rich tables should be passed through without conversion
+                sanitized_args.append(arg)
+            else:
+                arg_str = str(arg)
+                if self.sanitize and contains_suspicious_sequences(arg_str):
+                    suspicious = True
+                    arg_str = sanitize_output(arg_str)
+                sanitized_args.append(arg_str)
 
-        message = " ".join(sanitized_args)
+        # Build message for logging (skip Table objects)
+        message_parts = []
+        for arg in sanitized_args:
+            if not isinstance(arg, Table):
+                message_parts.append(str(arg))
+        message = " ".join(message_parts) if message_parts else "<table output>"
 
         # Log warning if suspicious sequences were found
         if suspicious:
@@ -47,15 +57,16 @@ class LoggingConsole:
                 "Suspicious terminal sequences detected and removed from output"
             )
 
-        # Log based on style
-        if style and ("error" in style or "red" in style):
-            self.logger.error(message)
-        elif style and ("warning" in style or "yellow" in style):
-            self.logger.warning(message)
-        elif style and ("success" in style or "green" in style):
-            self.logger.info(f"SUCCESS: {message}")
-        else:
-            self.logger.info(message)
+        # Log based on style (only if we have non-table content)
+        if message != "<table output>":
+            if style and ("error" in style or "red" in style):
+                self.logger.error(message)
+            elif style and ("warning" in style or "yellow" in style):
+                self.logger.warning(message)
+            elif style and ("success" in style or "green" in style):
+                self.logger.info(f"SUCCESS: {message}")
+            else:
+                self.logger.info(message)
 
         # Print sanitized content to console
         self.console.print(*sanitized_args, style=style, **kwargs)

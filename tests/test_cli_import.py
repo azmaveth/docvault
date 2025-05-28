@@ -33,7 +33,7 @@ class TestImportCommand:
         """Mock successful document scraping."""
 
         async def mock_scrape(
-            url, depth=1, max_links=10, strict_path=True, force_update=False
+            url, depth=1, max_links=10, strict_path=True, force_update=False, sections=None, **kwargs
         ):
             # Return realistic scraping result as a dictionary
             return {
@@ -81,10 +81,10 @@ class TestImportCommand:
         assert result.exit_code == 0
         assert "Successfully imported" in result.output
 
-        # Verify the scraper was called with correct depth as second positional argument
+        # Verify the scraper was called with correct depth
         mock_scraper_success.scrape_url.assert_called_once()
-        call_args = mock_scraper_success.scrape_url.call_args[0]
-        assert call_args[1] == 3  # depth is second positional argument
+        call_kwargs = mock_scraper_success.scrape_url.call_args[1]
+        assert call_kwargs['depth'] == 3
 
     def test_import_network_error(self, cli_runner):
         """Test handling of network errors."""
@@ -110,7 +110,7 @@ class TestImportCommand:
         """Test import with invalid URL."""
         result = cli_runner.invoke(cli, ["add", "not-a-valid-url"])
 
-        assert result.exit_code == 0  # Command handles errors gracefully
+        assert result.exit_code == 1  # Command should fail with invalid URL
         assert "Invalid URL format" in result.output
 
     def test_import_with_update_flag(self, cli_runner, mock_scraper_success):

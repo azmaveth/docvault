@@ -224,9 +224,10 @@ def validate_url_path(
         # Normalize hostname to lowercase
         hostname_lower = hostname.lower()
 
-        # Check for localhost
+        # Check for localhost (unless in test mode)
         if hostname_lower in ["localhost", "127.0.0.1", "::1", "0.0.0.0"]:
-            raise PathSecurityError("Cannot fetch from localhost")
+            if not os.getenv("DOCVAULT_ALLOW_LOCALHOST"):
+                raise PathSecurityError("Cannot fetch from localhost")
 
         # Check for metadata service endpoints (cloud SSRF)
         metadata_hosts = [

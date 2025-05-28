@@ -67,3 +67,18 @@ docs/_build/
 # Local development-specific files
 local_settings.py
 .aider*
+
+# Test artifacts
+test_tmp*/
+docvault_e2e_*/
+tests/e2e/reports/*.json
+tests/e2e/reports/*.xml
+tests/e2e/__pycache__/
+.pytest_cache/
+*.log
+MagicMock/
+
+# Temporary fix scripts
+tests/e2e/fix_*.py
+tests/e2e/*_temp.py
+tests/e2e/test_basic.py

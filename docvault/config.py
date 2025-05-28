@@ -13,6 +13,7 @@ except ImportError:
 HOME_DIR = pathlib.Path.home()
 DEFAULT_BASE_DIR = HOME_DIR / ".docvault"
 DEFAULT_BASE_DIR.mkdir(exist_ok=True)
+CONFIG_DIR = DEFAULT_BASE_DIR  # Alias for compatibility
 
 # Load .env file if it exists (first check current directory, then ~/.docvault)
 load_dotenv()

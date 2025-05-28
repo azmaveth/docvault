@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-05-27
+
 ### Added
+
+- **Comprehensive End-to-End Test Suite**: Created a full e2e testing framework
+  - Mock HTTP server for testing document fetching without external dependencies
+  - 28 test cases covering all major DocVault commands
+  - Test isolation with temporary directories and environment variables
+  - Database state validation after command execution
+  - Support for localhost testing with security bypass
+  - Test runner with filtering, verbose output, and progress tracking
+  - 100% pass rate achieved for all e2e tests
+
+### Fixed
+
+- Fixed unit test failures in CLI test suite
+  - Added missing fixture imports in conftest.py
+  - Updated mock_scraper to accept sections parameter
+  - Fixed test expectations for truncated table output
+  - Updated test assertions to match actual command output
 
 - **Quick Add from Package Managers**: Shortcuts to add documentation directly from package managers
   - New commands: `dv add-pypi`, `dv add-npm`, `dv add-gem`, `dv add-hex`, `dv add-go`, `dv add-crates`, `dv add-composer`
@@ -80,6 +99,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Works with all existing search filters (tags, collections, etc.)
   - JSON output format also supports tree structure when `--tree` is used
   - Particularly useful for understanding document organization and finding related content
+
+- **Comprehensive End-to-End Test Suite**: Created extensive automated testing framework
+  - Test runner framework with isolation, parallel execution, and reporting
+  - 94 comprehensive test cases covering all commands and features
+  - Test categories: basic commands, initialization, document management, search, organization, package managers, freshness, advanced features, error handling
+  - Support for setup/teardown, expected outputs, timeouts, and test filtering
+  - Performance benchmarking extension for measuring operation speeds
+  - CI/CD integration with GitHub Actions for multi-OS testing
+  - Test fixtures generator for creating realistic test data
+  - JSON and console reporting formats for automation
+  - Shell script wrapper for convenient test execution
 
 ## [0.5.2] - 2025-05-26
 

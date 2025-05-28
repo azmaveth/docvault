@@ -441,11 +441,28 @@ Most CLI UX improvements have been completed. Remaining nice-to-have features:
 
 ## AI Accessibility Features
 
-- [ ] **llms.txt Support**: Add support for llms.txt files to make documentation more accessible to AI assistants
-  - [ ] Add `llms.txt` scraping capability to detect and parse llms.txt files from documentation sites
-  - [ ] Create `dv llms` command to list discovered llms.txt endpoints
-  - [ ] Add `--llms-only` flag to `add` command to specifically target llms.txt files
-  - [ ] Store llms.txt metadata separately for quick AI access
-  - [ ] Add llms.txt content to search results when available
-  - [ ] Support llms.txt format in export functionality
-  - [ ] Document llms.txt integration in CLAUDE.md for AI assistants
+- [x] **llms.txt Support**: Add support for llms.txt files to make documentation more accessible to AI assistants [2025-05-26]
+  - [x] Add `llms.txt` scraping capability to detect and parse llms.txt files from documentation sites
+  - [x] Create `dv llms` command to list discovered llms.txt endpoints
+  - [x] Add `--llms-only` flag to `add` command to specifically target llms.txt files
+  - [x] Store llms.txt metadata separately for quick AI access
+  - [x] Add llms.txt content to search results when available
+  - [x] Support llms.txt format in export functionality
+  - [x] Document llms.txt integration in CLAUDE.md for AI assistants
+
+## End-to-End Testing
+
+- [x] **Comprehensive End-to-End Test Suite**: Create automated testing framework for all features [2025-05-26]
+  - [x] Design test runner framework with proper isolation and reporting
+  - [x] Create test cases for all 60+ commands and their argument combinations
+  - [x] Test all core features: initialization, document management, search, organization
+  - [x] Test package manager integration for all supported platforms
+  - [x] Test freshness tracking and cache management features
+  - [x] Test advanced features: tags, collections, cross-references, version control
+  - [x] Test error handling and edge cases
+  - [x] Create test fixtures and data generators
+  - [x] Add CI/CD integration with GitHub Actions
+  - [x] Create performance benchmarking extension
+  - [x] Support multiple output formats (console, JSON)
+  - [x] Enable parallel test execution for faster runs
+  - [x] Create shell script wrapper for easy test execution
