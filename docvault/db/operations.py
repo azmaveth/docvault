@@ -53,30 +53,63 @@ def add_document(
     content_hash: Optional[str] = None,
     has_llms_txt: bool = False,
     llms_txt_url: Optional[str] = None,
+    doc_type: Optional[str] = None,
+    metadata: Optional[str] = None,
 ) -> int:
     """Add a document to the database, supporting versioning and content hash."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-    INSERT INTO documents 
-    (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """,
-        (
-            url,
-            version,
-            title,
-            str(html_path),
-            str(markdown_path),
-            content_hash,
-            library_id,
-            is_library_doc,
-            datetime.datetime.now(),
-            has_llms_txt,
-            llms_txt_url,
-        ),
-    )
+
+    # Check if the new columns exist
+    cursor.execute("PRAGMA table_info(documents)")
+    columns = {col[1] for col in cursor.fetchall()}
+
+    if "doc_type" in columns and "metadata" in columns:
+        # Use new schema with doc_type and metadata
+        cursor.execute(
+            """
+        INSERT INTO documents 
+        (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url, doc_type, metadata)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                url,
+                version,
+                title,
+                str(html_path),
+                str(markdown_path),
+                content_hash,
+                library_id,
+                is_library_doc,
+                datetime.datetime.now(),
+                has_llms_txt,
+                llms_txt_url,
+                doc_type or "unknown",
+                metadata,
+            ),
+        )
+    else:
+        # Use old schema without doc_type and metadata
+        cursor.execute(
+            """
+        INSERT INTO documents 
+        (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                url,
+                version,
+                title,
+                str(html_path),
+                str(markdown_path),
+                content_hash,
+                library_id,
+                is_library_doc,
+                datetime.datetime.now(),
+                has_llms_txt,
+                llms_txt_url,
+            ),
+        )
     document_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -161,8 +194,6 @@ def delete_document(document_id: int) -> bool:
         raise
     finally:
         conn.close()
-
-    return False
 
 
 def get_document_segments(document_id: int) -> List[Dict[str, Any]]:

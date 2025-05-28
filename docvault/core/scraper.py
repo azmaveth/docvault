@@ -490,107 +490,65 @@ class WebScraper:
             self.visited_urls.add(url)
             return operations.get_document(doc_id)
 
-        # Documentation site detection and handling
-        from urllib.parse import urlparse as _urlparse
-
+        # Use specialized content extractors based on documentation type
         from bs4 import BeautifulSoup
 
-        parsed_url = _urlparse(url)
-        soup = BeautifulSoup(html_content, "html.parser")
-        gen_tag = soup.find("meta", attrs={"name": "generator"})
-        docs_site = (
-            "readthedocs.io" in parsed_url.netloc
-            or "/docs/" in parsed_url.path
-            or (
-                gen_tag
-                and any(x in gen_tag.get("content", "") for x in ["MkDocs", "Sphinx"])
-            )
+        from docvault.core.doc_type_detector import DocTypeDetector
+        from docvault.core.extractors import (
+            GenericExtractor,
+            MkDocsExtractor,
+            OpenAPIExtractor,
+            SphinxExtractor,
         )
-        if docs_site:
-            title = processor.extract_title(html_content) or url
+
+        # Detect documentation type
+        detector = DocTypeDetector()
+        doc_type, confidence = detector.detect(url, html_content)
+        self.logger.info(
+            f"Detected documentation type: {doc_type.value} (confidence: {confidence:.2f}) for {url}"
+        )
+
+        # Select appropriate extractor
+        extractors = {
+            "sphinx": SphinxExtractor(),
+            "mkdocs": MkDocsExtractor(),
+            "openapi": OpenAPIExtractor(),
+            "swagger": OpenAPIExtractor(),  # Both swagger and openapi use the same extractor
+            "readthedocs": SphinxExtractor(),  # ReadTheDocs often uses Sphinx
+            "generic": GenericExtractor(),
+            "unknown": GenericExtractor(),
+        }
+
+        extractor = extractors.get(doc_type.value, GenericExtractor())
+
+        # Extract content using specialized extractor
+        soup = BeautifulSoup(html_content, "html.parser")
+        extraction_result = extractor.extract(soup, url)
+
+        # Get title and content
+        title = (
+            extraction_result.get("metadata", {}).get("title")
+            or processor.extract_title(html_content)
+            or url
+        )
+        extracted_content = extraction_result.get("content", "")
+        extracted_metadata = extraction_result.get("metadata", {})
+
+        # Convert to markdown if not already
+        if doc_type.value in ["sphinx", "mkdocs", "openapi"]:
+            # For documentation sites, use the extracted content
+            markdown_content = extracted_content
+        else:
+            # For generic content, convert HTML to markdown
             markdown_content = processor.html_to_markdown(html_content)
-            html_path = storage.save_html(html_content, url)
-            # For MkDocs/Sphinx sites, save original HTML as markdown per test expectations
-            markdown_path = storage.save_markdown(html_content, url)
-            content_hash = hashlib.sha256(markdown_content.encode("utf-8")).hexdigest()
-            document_id = operations.add_document(
-                url=url,
-                title=title,
-                html_path=html_path,
-                markdown_path=markdown_path,
-                library_id=library_id,
-                is_library_doc=is_library_doc,
-                content_hash=content_hash,
-            )
-            self.stats["pages_scraped"] += 1
-            segments = processor.segment_markdown(markdown_content)
-            for i, segment in enumerate(segments):
-                # Handle both dictionary and tuple formats for backward compatibility
-                if isinstance(segment, dict):
-                    segment_type = segment.get("type", "text")
-                    content = segment.get("content", "")
-                    section_title = segment.get("section_title")
-                    section_level = segment.get("section_level", 0)
-                    section_path = segment.get("section_path")
-                else:
-                    # Legacy tuple format (stype, content)
-                    segment_type, content = segment
-                    section_title = None
-                    section_level = 0
-                    section_path = None
 
-                if len(content.strip()) < 3:
-                    continue
-                embedding = await embeddings.generate_embeddings(content)
-                operations.add_document_segment(
-                    document_id=document_id,
-                    content=content,
-                    embedding=embedding,
-                    segment_type=segment_type,
-                    position=i,
-                    section_title=section_title,
-                    section_level=section_level,
-                    section_path=section_path,
-                )
-                self.stats["segments_created"] += 1
-            # Crawl additional pages with relaxed strict_path
-            if (use_smart_depth and effective_depth > 0) or (
-                not use_smart_depth and effective_depth > 1
-            ):
-                await self._scrape_links(
-                    url,
-                    html_content,
-                    effective_depth - 1 if not use_smart_depth else effective_depth,
-                    is_library_doc,
-                    library_id,
-                    max_links,
-                    strict_path=False,
-                    force_update=False,
-                    sections=sections,
-                    filter_selector=filter_selector,
-                    use_smart_depth=use_smart_depth,
-                )
-            self.visited_urls.add(url)
-            return operations.get_document(document_id)
-
-        # Check if document already exists
-        existing_doc = operations.get_document_by_url(url)
-        if existing_doc and not force_update:
-            self.stats["pages_skipped"] += 1
-            self.logger.debug(f"Document already exists for URL: {url}")
-            self.visited_urls.add(url)
-            return existing_doc
-
-        # Extract title
-        title = processor.extract_title(html_content) or url
-        # Convert to markdown
-        markdown_content = processor.html_to_markdown(html_content)
-        # Save both formats
+        # Save files
         html_path = storage.save_html(html_content, url)
         markdown_path = storage.save_markdown(markdown_content, url)
-        # Add to database
         content_hash = hashlib.sha256(markdown_content.encode("utf-8")).hexdigest()
-        document_id = operations.update_document_by_url(
+
+        # Store document with extracted metadata
+        document_id = operations.add_document(
             url=url,
             title=title,
             html_path=html_path,
@@ -598,10 +556,11 @@ class WebScraper:
             library_id=library_id,
             is_library_doc=is_library_doc,
             content_hash=content_hash,
+            doc_type=doc_type.value,  # Store the detected doc type
+            metadata=json.dumps(extracted_metadata) if extracted_metadata else None,
             has_llms_txt=bool(llms_txt_content),
             llms_txt_url=llms_txt_url,
         )
-        # Update stats
         self.stats["pages_scraped"] += 1
 
         # Process llms.txt if found
@@ -662,19 +621,19 @@ class WebScraper:
             except Exception as e:
                 self.logger.error(f"Error processing llms.txt: {e}")
 
-        # Segment and embed content
+        # Segment the content
         segments = processor.segment_markdown(markdown_content)
         for i, segment in enumerate(segments):
             # Handle both dictionary and tuple formats for backward compatibility
             if isinstance(segment, dict):
-                stype = segment.get("type", "text")
+                segment_type = segment.get("type", "text")
                 content = segment.get("content", "")
                 section_title = segment.get("section_title")
                 section_level = segment.get("section_level", 0)
                 section_path = segment.get("section_path")
             else:
                 # Legacy tuple format (stype, content)
-                stype, content = segment
+                segment_type, content = segment
                 section_title = None
                 section_level = 0
                 section_path = None
@@ -682,11 +641,11 @@ class WebScraper:
             if len(content.strip()) < 3:
                 continue
             embedding = await embeddings.generate_embeddings(content)
-            segment_id = operations.add_document_segment(
+            operations.add_document_segment(
                 document_id=document_id,
                 content=content,
                 embedding=embedding,
-                segment_type=stype,
+                segment_type=segment_type,
                 position=i,
                 section_title=section_title,
                 section_level=section_level,
@@ -694,39 +653,53 @@ class WebScraper:
             )
             self.stats["segments_created"] += 1
 
-            # Extract cross-references and anchors
-            try:
-                from docvault.models import cross_references
+        # Store extracted elements (API docs, code examples, etc.)
+        if "api_elements" in extracted_metadata:
+            for api_elem in extracted_metadata["api_elements"]:
+                # Store as a special segment for API elements
+                api_content = f"# {api_elem['name']}\n\n"
+                if api_elem.get("signature"):
+                    api_content += f"```python\n{api_elem['signature']}\n```\n\n"
+                if api_elem.get("description"):
+                    api_content += f"{api_elem['description']}\n\n"
+                if api_elem.get("parameters"):
+                    api_content += "**Parameters:**\n"
+                    for param in api_elem["parameters"]:
+                        api_content += f"- `{param['name']}` ({param.get('type', 'Any')}): {param.get('description', '')}\n"
+                    api_content += "\n"
+                if api_elem.get("returns"):
+                    api_content += f"**Returns:** {api_elem['returns']}\n\n"
 
-                # Extract and store anchors (identifiers) from this segment
-                anchors = cross_references.extract_anchors_from_segment(
-                    content, segment_id, document_id
+                # Generate embedding and store
+                embedding = await embeddings.generate_embeddings(api_content)
+                operations.add_document_segment(
+                    document_id=document_id,
+                    content=api_content,
+                    embedding=embedding,
+                    segment_type="api",
+                    position=i + 1000,  # Place API elements after regular content
+                    section_title=api_elem["name"],
+                    section_level=2,
                 )
-                for anchor in anchors:
-                    cross_references.store_anchor(**anchor)
+                self.stats["segments_created"] += 1
 
-                # Extract potential references to other parts
-                refs = cross_references.extract_references(content, segment_id)
-                if refs:
-                    cross_references.store_references(refs)
-            except Exception as e:
-                # Don't fail scraping if cross-reference extraction fails
-                self.logger.warning(
-                    f"Failed to extract cross-references for segment {segment_id}: {e}"
-                )
-
-        # After all segments are processed, resolve cross-references
-        try:
-            from docvault.models import cross_references
-
-            resolved = cross_references.resolve_references(document_id)
-            if resolved > 0:
-                self.logger.info(
-                    f"Resolved {resolved} cross-references for document {document_id}"
-                )
-        except Exception as e:
-            self.logger.warning(
-                f"Failed to resolve cross-references for document {document_id}: {e}"
+        # Crawl additional pages for documentation sites
+        if doc_type.value in ["sphinx", "mkdocs"] and (
+            (use_smart_depth and effective_depth > 0)
+            or (not use_smart_depth and effective_depth > 1)
+        ):
+            await self._scrape_links(
+                url,
+                html_content,
+                effective_depth - 1 if not use_smart_depth else effective_depth,
+                is_library_doc,
+                library_id,
+                max_links,
+                strict_path=False,  # Documentation sites often have complex URL structures
+                force_update=False,
+                sections=sections,
+                filter_selector=filter_selector,
+                use_smart_depth=use_smart_depth,
             )
 
         self.visited_urls.add(url)
