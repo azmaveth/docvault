@@ -36,6 +36,7 @@ from docvault.cli.commands import (
 from docvault.cli.credential_commands import credentials as credentials_cmd
 from docvault.cli.freshness_commands import check_document_freshness, freshness_check
 from docvault.cli.llms_commands import llms_commands
+from docvault.cli.performance_commands import performance
 from docvault.cli.quick_add_commands import (
     add_package_manager,
     create_quick_add_command,
@@ -226,6 +227,9 @@ def register_commands(main):
     main.add_command(pin, name="pin")
     main.add_command(cache_stats, name="cache-stats")
     main.add_command(cache_config, name="cache-config")
+
+    # Add performance optimization commands
+    main.add_command(performance, name="performance")
 
     # Add collection command
     main.add_command(collection_cmd, name="collection")

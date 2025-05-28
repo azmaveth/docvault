@@ -218,7 +218,18 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] [Progress] 2025-04-21: Error handling and guidance improvements completed; next: start content extraction improvements.
   - [Progress] 2025-04-21: All vector search improvements completed; proceeding to performance and extraction enhancements.
 
-- [ ] **Performance Optimization**: Optimize document scraping and indexing for faster retrieval
+- [x] **Performance Optimization**: Optimize document scraping and indexing for faster retrieval [COMPLETED - v0.5.3]
+  - [✓] Added comprehensive performance optimization system in branch `feature/performance-optimization`
+  - [✓] Database connection pooling for SQLite with thread safety
+  - [✓] HTTP session pooling for Ollama API requests  
+  - [✓] Batch operations for embeddings and database inserts
+  - [✓] Intelligent caching system with TTL for embeddings
+  - [✓] Performance monitoring and profiling utilities
+  - [✓] Database indexes for frequently queried columns
+  - [✓] CLI commands for performance management (`dv performance status/benchmark/clear-cache/cleanup`)
+  - [✓] Optimized document scraper with async operations and caching
+  - [✓] Comprehensive test coverage for all performance features
+  - **Status**: MERGED INTO MASTER
 - [x] **Content Extraction Improvements**: Enhance scraping to better handle different documentation formats and structures (2025-05-27)
   - [x] Refactor scraper to detect documentation type (Sphinx, MkDocs, OpenAPI)
   - [x] Implement specialized extractors for Sphinx, MkDocs, OpenAPI/Swagger
@@ -353,7 +364,7 @@ Based on analysis of MCP specification site (<https://modelcontextprotocol.io/sp
   - [x] Extract MDX content from compiled JavaScript functions
   - [x] Parse pageProps.mdxSource.compiledSource for actual documentation text
   - [x] Handle mdxExtracts (tableOfContents, codeExamples) for structured content
-  - [x] Add Next.js site detection patterns (scripts containing "next", __NEXT_DATA__ presence)
+  - [x] Add Next.js site detection patterns (scripts containing "next", **__NEXT_DATA__** presence)
   - [x] Create tests using MCP specification site as reference
   - **Complete**: Successfully implemented NextJSExtractor that addresses the major limitation where DocVault only extracted ~5KB from 140KB HTML on Next.js sites. The new extractor detects Next.js sites with 100% confidence, extracts content from compiled MDX sources, combines static navigation with dynamic content, and achieves 1.8x content extraction improvement over the generic extractor. Comprehensive test suite validates functionality using the Model Context Protocol specification site. Branch: `feature/nextjs-documentation-support`
 

@@ -6,10 +6,8 @@ This script creates various test documents and data for comprehensive testing.
 """
 
 import json
-import os
+from datetime import datetime
 from pathlib import Path
-import tempfile
-from datetime import datetime, timedelta
 
 
 def create_html_fixture(title: str, content: str, filename: str):
@@ -25,9 +23,9 @@ def create_html_fixture(title: str, content: str, filename: str):
     {content}
 </body>
 </html>"""
-    
+
     fixture_path = Path(__file__).parent / filename
-    with open(fixture_path, 'w', encoding='utf-8') as f:
+    with open(fixture_path, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"Created: {filename}")
 
@@ -38,9 +36,9 @@ def create_markdown_fixture(title: str, content: str, filename: str):
 
 {content}
 """
-    
+
     fixture_path = Path(__file__).parent / filename
-    with open(fixture_path, 'w', encoding='utf-8') as f:
+    with open(fixture_path, "w", encoding="utf-8") as f:
         f.write(md)
     print(f"Created: {filename}")
 
@@ -48,7 +46,7 @@ def create_markdown_fixture(title: str, content: str, filename: str):
 def create_json_fixture(data: dict, filename: str):
     """Create a JSON test fixture."""
     fixture_path = Path(__file__).parent / filename
-    with open(fixture_path, 'w', encoding='utf-8') as f:
+    with open(fixture_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"Created: {filename}")
 
@@ -56,7 +54,7 @@ def create_json_fixture(data: dict, filename: str):
 def create_llms_txt_fixture(content: str, filename: str):
     """Create an llms.txt test fixture."""
     fixture_path = Path(__file__).parent / filename
-    with open(fixture_path, 'w', encoding='utf-8') as f:
+    with open(fixture_path, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"Created: {filename}")
 
@@ -64,42 +62,40 @@ def create_llms_txt_fixture(content: str, filename: str):
 def create_project_files():
     """Create mock project dependency files."""
     # Python requirements.txt
-    with open(Path(__file__).parent / "requirements.txt", 'w') as f:
-        f.write("""requests==2.31.0
+    with open(Path(__file__).parent / "requirements.txt", "w") as f:
+        f.write(
+            """requests==2.31.0
 django>=4.2,<5.0
 pytest==7.4.0
 numpy
 pandas>=2.0.0
-""")
-    
+"""
+        )
+
     # package.json
     package_json = {
         "name": "test-project",
         "version": "1.0.0",
-        "dependencies": {
-            "express": "^4.18.0",
-            "react": "^18.2.0",
-            "axios": "^1.4.0"
-        },
-        "devDependencies": {
-            "jest": "^29.0.0",
-            "eslint": "^8.0.0"
-        }
+        "dependencies": {"express": "^4.18.0", "react": "^18.2.0", "axios": "^1.4.0"},
+        "devDependencies": {"jest": "^29.0.0", "eslint": "^8.0.0"},
     }
     create_json_fixture(package_json, "package.json")
-    
+
     # Gemfile
-    with open(Path(__file__).parent / "Gemfile", 'w') as f:
-        f.write("""source 'https://rubygems.org'
+    with open(Path(__file__).parent / "Gemfile", "w") as f:
+        f.write(
+            """source 'https://rubygems.org'
 
 gem 'rails', '~> 7.0'
 gem 'puma'
 gem 'sqlite3'
-""")
-    
+"""
+        )
+
     # mix.exs (Elixir)
-    with open(Path(__file__).parent / "mix.exs", 'w') as f:
-        f.write("""defmodule TestProject.MixProject do
+    with open(Path(__file__).parent / "mix.exs", "w") as f:
+        f.write(
+            """defmodule TestProject.MixProject do
   use Mix.Project
 
   def project do
@@ -116,11 +112,13 @@ gem 'sqlite3'
     ]
   end
 end
-""")
-    
+"""
+        )
+
     # go.mod
-    with open(Path(__file__).parent / "go.mod", 'w') as f:
-        f.write("""module example.com/test
+    with open(Path(__file__).parent / "go.mod", "w") as f:
+        f.write(
+            """module example.com/test
 
 go 1.21
 
@@ -128,25 +126,28 @@ require (
     github.com/gin-gonic/gin v1.9.1
     github.com/stretchr/testify v1.8.4
 )
-""")
-    
+"""
+        )
+
     # Cargo.toml (Rust)
-    with open(Path(__file__).parent / "Cargo.toml", 'w') as f:
-        f.write("""[package]
+    with open(Path(__file__).parent / "Cargo.toml", "w") as f:
+        f.write(
+            """[package]
 name = "test-project"
 version = "0.1.0"
 
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
 serde = "1.0"
-""")
-    
+"""
+        )
+
     print("Created project dependency files")
 
 
 def generate_all_fixtures():
     """Generate all test fixtures."""
-    
+
     # HTML fixtures
     create_html_fixture(
         "Python Documentation",
@@ -163,9 +164,9 @@ def generate_all_fixtures():
             <li><code>range()</code> - Generate sequence</li>
         </ul>
         """,
-        "python_docs.html"
+        "python_docs.html",
     )
-    
+
     create_html_fixture(
         "API Reference",
         """
@@ -178,9 +179,9 @@ def generate_all_fixtures():
         <p>Create a new user</p>
         <pre><code>curl -X POST https://api.example.com/users -d '{"name": "John"}'</code></pre>
         """,
-        "api_reference.html"
+        "api_reference.html",
     )
-    
+
     # Markdown fixtures
     create_markdown_fixture(
         "Tutorial: Web Scraping",
@@ -210,23 +211,23 @@ soup = BeautifulSoup(response.text, 'html.parser')
 2. Add delays between requests
 3. Handle errors gracefully
 """,
-        "web_scraping_tutorial.md"
+        "web_scraping_tutorial.md",
     )
-    
+
     # JSON fixtures
     api_response = {
         "status": "success",
         "data": {
             "users": [
                 {"id": 1, "name": "Alice", "email": "alice@example.com"},
-                {"id": 2, "name": "Bob", "email": "bob@example.com"}
+                {"id": 2, "name": "Bob", "email": "bob@example.com"},
             ],
-            "total": 2
+            "total": 2,
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
     create_json_fixture(api_response, "api_response.json")
-    
+
     # llms.txt fixture
     create_llms_txt_fixture(
         """# Python Documentation Summary
@@ -249,12 +250,12 @@ Python is a high-level, interpreted programming language known for its simplicit
 ## Tags
 #python #programming #documentation #tutorial
 """,
-        "python_llms.txt"
+        "python_llms.txt",
     )
-    
+
     # Create project files
     create_project_files()
-    
+
     # Create a complex nested HTML document
     create_html_fixture(
         "Complex Documentation",
@@ -301,9 +302,9 @@ obj = ComplexClass()
 obj.do_something()</code></pre>
         </section>
         """,
-        "complex_docs.html"
+        "complex_docs.html",
     )
-    
+
     print("\nAll fixtures generated successfully!")
 
 
@@ -311,6 +312,6 @@ if __name__ == "__main__":
     # Ensure fixtures directory exists
     fixtures_dir = Path(__file__).parent
     fixtures_dir.mkdir(exist_ok=True)
-    
+
     # Generate all fixtures
     generate_all_fixtures()

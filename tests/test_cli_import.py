@@ -33,7 +33,13 @@ class TestImportCommand:
         """Mock successful document scraping."""
 
         async def mock_scrape(
-            url, depth=1, max_links=10, strict_path=True, force_update=False, sections=None, **kwargs
+            url,
+            depth=1,
+            max_links=10,
+            strict_path=True,
+            force_update=False,
+            sections=None,
+            **kwargs,
         ):
             # Return realistic scraping result as a dictionary
             return {
@@ -84,7 +90,7 @@ class TestImportCommand:
         # Verify the scraper was called with correct depth
         mock_scraper_success.scrape_url.assert_called_once()
         call_kwargs = mock_scraper_success.scrape_url.call_args[1]
-        assert call_kwargs['depth'] == 3
+        assert call_kwargs["depth"] == 3
 
     def test_import_network_error(self, cli_runner):
         """Test handling of network errors."""

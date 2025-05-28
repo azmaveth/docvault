@@ -111,12 +111,6 @@ class TestDocumentCommands:
 
         try:
             # Mock the document retrieval
-            mock_doc = {
-                "id": 1,
-                "title": "Test Document 1",
-                "url": "https://example.com/doc1",
-                "markdown_path": temp_md_path,
-            }
 
             # Skip this test for now as it needs more complex mocking
             pytest.skip("Read command test needs better mocking strategy")

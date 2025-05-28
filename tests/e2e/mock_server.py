@@ -7,23 +7,23 @@ Provides fake documentation endpoints for testing.
 import json
 import threading
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlparse
 
 
 class MockHTTPHandler(BaseHTTPRequestHandler):
     """Handle HTTP requests for mock documentation."""
-    
+
     def log_message(self, format, *args):
         """Suppress server logs during tests."""
         pass
-    
+
     def do_GET(self):
         """Handle GET requests."""
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         query = parse_qs(parsed_path.query)
-        
+
         # Route to appropriate handler
         if path == "/":
             self.send_index()
@@ -45,7 +45,7 @@ class MockHTTPHandler(BaseHTTPRequestHandler):
             self.send_large_document()
         else:
             self.send_404()
-    
+
     def send_index(self):
         """Send index page with links."""
         content = """
@@ -64,10 +64,10 @@ class MockHTTPHandler(BaseHTTPRequestHandler):
         </html>
         """
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_python_docs(self):
         """Send mock Python documentation."""
         content = """
@@ -101,10 +101,10 @@ print(text.lower())  # hello
         </html>
         """
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_javascript_docs(self):
         """Send mock JavaScript documentation."""
         content = """
@@ -135,44 +135,44 @@ console.log(evens); // [2, 4]
         </html>
         """
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_library_info(self, query):
         """Send library information for API endpoints."""
-        lib_name = query.get('name', [''])[0]
-        version = query.get('version', ['latest'])[0]
-        
+        lib_name = query.get("name", [""])[0]
+        version = query.get("version", ["latest"])[0]
+
         libraries = {
-            'requests': {
-                'name': 'requests',
-                'version': '2.31.0' if version == 'latest' else version,
-                'description': 'HTTP library for Python',
-                'docs_url': 'https://docs.python-requests.org/'
+            "requests": {
+                "name": "requests",
+                "version": "2.31.0" if version == "latest" else version,
+                "description": "HTTP library for Python",
+                "docs_url": "https://docs.python-requests.org/",
             },
-            'numpy': {
-                'name': 'numpy',
-                'version': '1.24.0' if version == 'latest' else version,
-                'description': 'Numerical computing library',
-                'docs_url': 'https://numpy.org/doc/stable/'
+            "numpy": {
+                "name": "numpy",
+                "version": "1.24.0" if version == "latest" else version,
+                "description": "Numerical computing library",
+                "docs_url": "https://numpy.org/doc/stable/",
             },
-            'express': {
-                'name': 'express',
-                'version': '4.18.0' if version == 'latest' else version,
-                'description': 'Web framework for Node.js',
-                'docs_url': 'https://expressjs.com/'
-            }
+            "express": {
+                "name": "express",
+                "version": "4.18.0" if version == "latest" else version,
+                "description": "Web framework for Node.js",
+                "docs_url": "https://expressjs.com/",
+            },
         }
-        
+
         if lib_name in libraries:
             self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
+            self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(libraries[lib_name]).encode())
         else:
             self.send_404()
-    
+
     def send_html_page(self):
         """Send a simple HTML page."""
         content = """
@@ -200,10 +200,10 @@ def hello_world():
         </html>
         """
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_markdown_page(self):
         """Send a markdown formatted page."""
         content = """# Markdown Test Document
@@ -228,14 +228,14 @@ def greet(name):
 Visit [DocVault](https://github.com/docvault/docvault) for more information.
 """
         self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_depth_test_page(self, path):
         """Send pages for depth testing."""
-        depth = int(path.split('/')[-1]) if path.split('/')[-1].isdigit() else 0
-        
+        depth = int(path.split("/")[-1]) if path.split("/")[-1].isdigit() else 0
+
         content = f"""
         <!DOCTYPE html>
         <html>
@@ -244,7 +244,7 @@ Visit [DocVault](https://github.com/docvault/docvault) for more information.
             <h1>Page at Depth {depth}</h1>
             <p>This is content at depth level {depth}.</p>
         """
-        
+
         if depth < 3:
             # Add links to deeper pages
             content += f"""
@@ -254,25 +254,25 @@ Visit [DocVault](https://github.com/docvault/docvault) for more information.
                 <li><a href="/depth/{depth + 2}">Go to depth {depth + 2}</a></li>
             </ul>
             """
-        
+
         content += """
         </body>
         </html>
         """
-        
+
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_timeout_response(self):
         """Simulate a slow response for timeout testing."""
         time.sleep(5)  # Sleep for 5 seconds
         self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
         self.wfile.write(b"This response was delayed")
-    
+
     def send_large_document(self):
         """Send a large document for testing."""
         content = "# Large Document\n\n"
@@ -280,47 +280,47 @@ Visit [DocVault](https://github.com/docvault/docvault) for more information.
         for i in range(1000):
             content += f"## Section {i}\n\n"
             content += f"This is paragraph {i}. " * 50 + "\n\n"
-        
+
         self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
         self.wfile.write(content.encode())
-    
+
     def send_404(self):
         """Send 404 Not Found response."""
         self.send_response(404)
-        self.send_header('Content-Type', 'text/plain')
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
         self.wfile.write(b"404 Not Found")
 
 
 class MockServer:
     """Mock HTTP server for testing."""
-    
+
     def __init__(self, port=8888):
         self.port = port
         self.server = None
         self.thread = None
         self.running = False
-    
+
     def start(self):
         """Start the mock server in a separate thread."""
         if self.running:
             return
-        
-        self.server = HTTPServer(('localhost', self.port), MockHTTPHandler)
+
+        self.server = HTTPServer(("localhost", self.port), MockHTTPHandler)
         self.thread = threading.Thread(target=self._run_server)
         self.thread.daemon = True
         self.thread.start()
         self.running = True
-        
+
         # Wait for server to be ready
         time.sleep(0.5)
-    
+
     def _run_server(self):
         """Run the server."""
         self.server.serve_forever()
-    
+
     def stop(self):
         """Stop the mock server."""
         if self.server and self.running:
@@ -328,7 +328,7 @@ class MockServer:
             self.server.server_close()
             self.thread.join(timeout=2)
             self.running = False
-    
+
     def get_url(self, path=""):
         """Get URL for the mock server."""
         return f"http://localhost:{self.port}{path}"
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     server = MockServer()
     print(f"Starting mock server on http://localhost:{server.port}")
     server.start()
-    
+
     try:
         while True:
             time.sleep(1)
