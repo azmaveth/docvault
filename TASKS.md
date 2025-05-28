@@ -151,7 +151,7 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
      - [✓] Section relationships (parent/child/sibling navigation)
      - [✓] Path-based section access (e.g., '1.2.3')
      - [✓] Full test coverage and documentation
-     - **Status**: PENDING MERGE - Ready for review and merge into master branch
+     - **Status**: MERGED INTO MASTER
      - **Splitting Large Documents:**
        - *Recommended approaches:*
          - By Topic: Use structured headings (`h1`, `h2`, `h3`, etc.) to identify topics.
