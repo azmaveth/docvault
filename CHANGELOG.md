@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-05-28
+
+### Added
+
+- **Enhanced MCP Server Tools**: Significantly expanded MCP server capabilities for better LLM integration
+  - `suggest` - AI-powered code suggestions based on documentation (task-based, complementary functions)
+  - `add_tags` - Add tags to documents for better organization
+  - `search_by_tags` - Search documents by tags with AND/OR logic
+  - `check_freshness` - Check document freshness to identify outdated content
+  - `add_from_package_manager` - Quick add packages from PyPI, npm, gem, hex, go, cargo with auto-detection
+  - `get_document_sections` - Get table of contents and section structure
+  - `read_document_section` - Read specific sections using path navigation (e.g., "2.1.3")
+  - Enhanced existing tool descriptions with detailed examples and better documentation
+
+### Enhanced
+
+- **MCP Tool Descriptions**: All MCP tools now have comprehensive descriptions with:
+  - Clear parameter explanations
+  - Usage examples
+  - Return value descriptions
+  - Better error messages
+- **scrape_document**: Now supports `force_update` parameter for re-scraping existing documents
+- **search_documents**: Better metadata filtering and result formatting
+- **read_document**: Added note about using section navigation for large documents
+
+### Technical
+
+- MCP server now exposes 12 powerful tools (up from 5) covering all major DocVault functionality
+- Tools provide structured metadata in responses for better LLM parsing
+- Improved error handling and validation across all MCP tools
+
 ## [0.6.2] - 2025-05-28
 
 ### Fixed
