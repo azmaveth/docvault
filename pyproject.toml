@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docvault"
-version = "0.6.1"
+version = "0.7.0"
 description = "Document fetching and management system with vector search and MCP integration"
 readme = "README.md"
 requires-python = ">=3.12"
