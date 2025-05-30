@@ -379,9 +379,10 @@ def create_server() -> FastMCP:
             suggest("open", complementary="open")
         """
         try:
-            from docvault.core.suggestion_engine import get_suggestions
+            from docvault.core.suggestion_engine import SuggestionEngine
 
-            suggestions = get_suggestions(
+            engine = SuggestionEngine()
+            suggestions = engine.get_suggestions(
                 query=query,
                 limit=limit,
                 task_based=task_based,
@@ -458,7 +459,7 @@ def create_server() -> FastMCP:
             add_tags(10, ["javascript", "frontend", "react"])
         """
         try:
-            from docvault.models.tags import add_tags_to_document
+            from docvault.models.tags import add_tag_to_document
 
             # Validate document exists
             document = operations.get_document(document_id)
@@ -475,8 +476,9 @@ def create_server() -> FastMCP:
                     },
                 )
 
-            # Add tags
-            add_tags_to_document(document_id, tags)
+            # Add tags one by one
+            for tag in tags:
+                add_tag_to_document(document_id, tag)
 
             content_text = (
                 f"Successfully added {len(tags)} tags to document {document_id}:\n"
@@ -592,7 +594,7 @@ def create_server() -> FastMCP:
             check_freshness(stale_only=True)  # Only show outdated docs
         """
         try:
-            from docvault.utils.freshness import FreshnessStatus, get_document_freshness
+            from docvault.utils.freshness import FreshnessLevel, get_freshness_info
 
             if document_id:
                 # Check single document
@@ -610,31 +612,36 @@ def create_server() -> FastMCP:
                         },
                     )
 
-                freshness = get_document_freshness(document)
+                # get_freshness_info returns (level, age_desc, formatted_date)
+                level, age_desc, formatted_date = get_freshness_info(
+                    document["scraped_at"]
+                )
                 status_emoji = {
-                    FreshnessStatus.FRESH: "✅",
-                    FreshnessStatus.STALE: "⚠️",
-                    FreshnessStatus.OUTDATED: "❌",
-                }[freshness.status]
+                    FreshnessLevel.FRESH: "✅",
+                    FreshnessLevel.RECENT: "✅",
+                    FreshnessLevel.STALE: "⚠️",
+                    FreshnessLevel.OUTDATED: "❌",
+                }[level]
 
                 content_text = (
                     f"{status_emoji} Document {document_id}: {document['title']}\n"
                 )
-                content_text += f"Status: {freshness.status.value.upper()}\n"
-                content_text += f"Age: {freshness.age_description}\n"
-                content_text += f"Last updated: {freshness.last_updated}\n"
-                if freshness.update_recommendation:
-                    content_text += (
-                        f"Recommendation: {freshness.update_recommendation}\n"
-                    )
+                content_text += f"Status: {level.value.upper()}\n"
+                content_text += f"Age: {age_desc}\n"
+                content_text += f"Last updated: {formatted_date}\n"
+
+                from docvault.utils.freshness import get_update_suggestion
+
+                recommendation = get_update_suggestion(level)
+                if recommendation:
+                    content_text += f"Recommendation: {recommendation}\n"
 
                 return types.CallToolResult(
                     content=[types.TextContent(type="text", text=content_text)],
                     metadata={
                         "success": True,
                         "document_id": document_id,
-                        "status": freshness.status.value,
-                        "age_days": freshness.age_days,
+                        "status": level.value,
                     },
                 )
             else:
@@ -646,18 +653,18 @@ def create_server() -> FastMCP:
                 results = []
 
                 for doc in documents:
-                    freshness = get_document_freshness(doc)
+                    level, age_desc, _ = get_freshness_info(doc["scraped_at"])
 
-                    if freshness.status == FreshnessStatus.FRESH:
+                    if level in (FreshnessLevel.FRESH, FreshnessLevel.RECENT):
                         fresh_count += 1
                         if not stale_only:
-                            results.append((doc, freshness))
-                    elif freshness.status == FreshnessStatus.STALE:
+                            results.append((doc, level, age_desc))
+                    elif level == FreshnessLevel.STALE:
                         stale_count += 1
-                        results.append((doc, freshness))
+                        results.append((doc, level, age_desc))
                     else:  # OUTDATED
                         outdated_count += 1
-                        results.append((doc, freshness))
+                        results.append((doc, level, age_desc))
 
                 content_text = "Document Freshness Summary:\n"
                 content_text += f"✅ Fresh: {fresh_count}\n"
@@ -669,15 +676,16 @@ def create_server() -> FastMCP:
                 else:
                     content_text += "All Documents:\n\n"
 
-                for doc, freshness in results[:20]:  # Limit output
+                for doc, level, age_desc in results[:20]:  # Limit output
                     status_emoji = {
-                        FreshnessStatus.FRESH: "✅",
-                        FreshnessStatus.STALE: "⚠️",
-                        FreshnessStatus.OUTDATED: "❌",
-                    }[freshness.status]
+                        FreshnessLevel.FRESH: "✅",
+                        FreshnessLevel.RECENT: "✅",
+                        FreshnessLevel.STALE: "⚠️",
+                        FreshnessLevel.OUTDATED: "❌",
+                    }[level]
 
                     content_text += f"{status_emoji} ID {doc['id']}: {doc['title']}\n"
-                    content_text += f"   Age: {freshness.age_description}\n"
+                    content_text += f"   Age: {age_desc}\n"
 
                 if len(results) > 20:
                     content_text += f"\n... and {len(results) - 20} more documents"
