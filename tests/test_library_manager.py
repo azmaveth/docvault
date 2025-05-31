@@ -78,7 +78,6 @@ async def test_search_doc_url(mock_config):
             patch.object(LibraryManager, "search_doc_url", mock_search_doc_url),
             patch.object(manager, "check_url_exists", new=AsyncMock(return_value=True)),
         ):
-
             url = await manager.search_doc_url("fastapi", "latest")
 
             # Check that the URL is correct
@@ -135,13 +134,11 @@ async def test_get_library_docs_latest_version(mock_config, test_db):
         "docvault.db.operations.get_latest_library_version",
         return_value={"id": 2, "version": "7.0.0", "is_available": True},
     ):
-
         # Mock operations.get_library_documents
         with patch(
             "docvault.db.operations.get_library_documents",
             return_value=[{"id": 2, "title": "pytest 7.0.0"}],
         ):
-
             docs = await manager.get_library_docs("pytest", "latest")
 
             # Check that we got docs back for the latest version

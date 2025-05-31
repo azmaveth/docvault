@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Populate the documentation registry with common sources."""
+
 import sys
 from pathlib import Path
 

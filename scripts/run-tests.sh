@@ -76,6 +76,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Ensure dev dependencies are installed
+echo -e "${BLUE}Checking test dependencies...${NC}"
+if ! uv run python -c "import pytest" 2>/dev/null; then
+    echo -e "${YELLOW}Installing dev dependencies...${NC}"
+    uv pip install -e ".[dev]"
+fi
+
 # Define test patterns for different suites
 case $TEST_SUITE in
     all)

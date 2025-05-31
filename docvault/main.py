@@ -82,7 +82,7 @@ def create_env_template():
     from docvault import config as conf
 
     template = f"""# DocVault Configuration
-# Created: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+# Created: {datetime.now().strftime("%Y-%m-%d %H:%M")}
 # You can customize DocVault by modifying this file
 
 # Database Configuration

@@ -490,7 +490,7 @@ class ProjectManager:
 
             # Print progress if verbose
             if verbose > 0:
-                print(f"[{i+1}/{len(unique_deps)}] Importing {dep_name}...")
+                print(f"[{i + 1}/{len(unique_deps)}] Importing {dep_name}...")
 
             try:
                 # Skip empty package names

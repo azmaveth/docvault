@@ -382,9 +382,6 @@ def create_section_segments(
     """
     segments = []
 
-    # Create a mapping of paths to sections for parent lookup
-    path_to_section = {s.path: s for s in sections}
-
     for section in sections:
         segment = {
             "document_id": document_id,

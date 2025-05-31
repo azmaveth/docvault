@@ -270,9 +270,9 @@ def _check_generic_versions(current_url: str, base_url: str) -> Dict[str, Any]:
 
         # Try incrementing patch, minor, and major versions
         test_versions = [
-            f"{major}.{minor}.{int(patch)+1}",
-            f"{major}.{int(minor)+1}.0",
-            f"{int(major)+1}.0.0",
+            f"{major}.{minor}.{int(patch) + 1}",
+            f"{major}.{int(minor) + 1}.0",
+            f"{int(major) + 1}.0.0",
         ]
 
         for test_version in test_versions:

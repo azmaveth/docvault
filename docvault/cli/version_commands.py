@@ -185,14 +185,14 @@ def compare_versions(document_id, old_version, new_version, format):
     if format == "summary":
         # Show a summary of changes
         panel = Panel(
-            f"""[bold]Document:[/] {doc['title']}
-[bold]Old Version:[/] {result['old_version']}
-[bold]New Version:[/] {result['new_version']}
-[bold]Similarity:[/] {result['similarity_score']:.1%}
-[bold]Changes:[/] {result['summary']}
+            f"""[bold]Document:[/] {doc["title"]}
+[bold]Old Version:[/] {result["old_version"]}
+[bold]New Version:[/] {result["new_version"]}
+[bold]Similarity:[/] {result["similarity_score"]:.1%}
+[bold]Changes:[/] {result["summary"]}
 
-[green]Added:[/] {result['added_lines_count']} lines
-[red]Removed:[/] {result['removed_lines_count']} lines""",
+[green]Added:[/] {result["added_lines_count"]} lines
+[red]Removed:[/] {result["removed_lines_count"]} lines""",
             title="Version Comparison",
             border_style="cyan",
         )

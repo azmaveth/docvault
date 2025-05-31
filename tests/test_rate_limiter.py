@@ -22,7 +22,7 @@ class TestRateLimiter:
         # First 5 requests should succeed
         for i in range(5):
             allowed, reason = await limiter.check_rate_limit("example.com")
-            assert allowed, f"Request {i+1} should be allowed"
+            assert allowed, f"Request {i + 1} should be allowed"
             await limiter.record_request("example.com")
 
         # 6th request should fail

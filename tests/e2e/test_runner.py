@@ -280,7 +280,7 @@ class E2ETestRunner:
                 ):
                     if exit_code != test_case.expected_exit_codes[i]:
                         raise Exception(
-                            f"Command {i+1} failed: expected exit code "
+                            f"Command {i + 1} failed: expected exit code "
                             f"{test_case.expected_exit_codes[i]}, got {exit_code}"
                         )
 
@@ -294,7 +294,7 @@ class E2ETestRunner:
                                     f"[yellow]Command output:[/]\n{output}"
                                 )
                             raise Exception(
-                                f"Command {i+1} output missing expected text: {expected}"
+                                f"Command {i + 1} output missing expected text: {expected}"
                             )
 
             # Run validations
@@ -353,7 +353,6 @@ class E2ETestRunner:
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=self.console,
         ) as progress:
-
             task = progress.add_task("Running tests...", total=len(active_tests))
 
             for test_case in active_tests:
@@ -393,7 +392,7 @@ class E2ETestRunner:
         table.add_row("Passed", f"[green]{passed}[/]")
         table.add_row("Failed", f"[red]{failed}[/]" if failed > 0 else "0")
         if total > 0:
-            table.add_row("Success Rate", f"{(passed/total*100):.1f}%")
+            table.add_row("Success Rate", f"{(passed / total * 100):.1f}%")
         else:
             table.add_row("Success Rate", "N/A")
         table.add_row("Total Duration", f"{total_duration:.2f}s")

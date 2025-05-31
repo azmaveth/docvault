@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Apply database migrations."""
+
 import os
 import sqlite3
 from pathlib import Path

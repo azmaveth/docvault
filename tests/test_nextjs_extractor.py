@@ -92,9 +92,9 @@ async def test_nextjs_extractor_vs_generic():
     generic_content = generic_result["content"]
 
     # NextJS extractor should get more content
-    assert len(nextjs_content) > len(
-        generic_content
-    ), f"NextJS: {len(nextjs_content)}, Generic: {len(generic_content)}"
+    assert len(nextjs_content) > len(generic_content), (
+        f"NextJS: {len(nextjs_content)}, Generic: {len(generic_content)}"
+    )
 
     print(f"📊 NextJS extractor: {len(nextjs_content)} chars")
     print(f"📊 Generic extractor: {len(generic_content)} chars")
@@ -154,9 +154,9 @@ def test_content_string_filtering():
 
     for text, expected in test_cases:
         result = extractor._is_content_string(text)
-        assert (
-            result == expected
-        ), f"Failed for '{text}': expected {expected}, got {result}"
+        assert result == expected, (
+            f"Failed for '{text}': expected {expected}, got {result}"
+        )
 
     print("✅ All content filtering tests passed")
 

@@ -25,7 +25,7 @@ source .venv/bin/activate
 
 # Install package in development mode with UV
 echo "Installing DocVault in development mode..."
-uv pip install -e .
+uv pip install -e ".[dev]"
 
 # Set up dv command
 echo ""

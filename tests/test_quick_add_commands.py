@@ -34,7 +34,6 @@ class TestQuickAddCommands:
             patch("docvault.cli.quick_add_commands.find_library") as mock_library,
             patch("docvault.cli.quick_add_commands.add_library_entry") as mock_add,
         ):
-
             # Mock documentation source
             source = MagicMock()
             source.id = 1

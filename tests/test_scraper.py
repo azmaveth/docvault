@@ -111,7 +111,6 @@ async def test_scrape_url(mock_config, mock_html_content, temp_dir):
                 scraper, "_fetch_url", new=AsyncMock(return_value=mock_html_content)
             ),
         ):
-
             # Scrape URL
             doc = await scraper.scrape_url("https://example.com/test")
 
@@ -171,7 +170,6 @@ async def test_scrape_url_with_error(mock_config):
         patch("aiohttp.ClientSession", return_value=MockSessionContextManager()),
         patch.object(scraper, "_fetch_url", new=AsyncMock(return_value=None)),
     ):
-
         try:
             # Scrape URL - this will raise a ValueError which we need to catch
             await scraper.scrape_url("https://example.com/nonexistent")
@@ -319,7 +317,6 @@ async def test_recursive_scrape(mock_config, mock_html_content, temp_dir):
             ),
             patch.object(scraper, "_scrape_links", new=AsyncMock(return_value=None)),
         ):
-
             # Create the test files
             Path(mock_document["html_path"]).parent.mkdir(parents=True, exist_ok=True)
             with open(mock_document["html_path"], "w") as f:

@@ -175,7 +175,6 @@ class TestSectionedStorage:
             patch("docvault.db.operations.add_document_segment") as mock_add_seg,
             patch("docvault.db.operations.get_document") as mock_get_doc,
         ):
-
             # Setup mocks
             mock_fetch.return_value = (test_html, None)
             mock_title.return_value = "Test Docs"
@@ -238,7 +237,6 @@ class TestSectionedStorage:
             patch("docvault.db.operations.add_document_segment") as mock_add_seg,
             patch("docvault.db.operations.get_document") as mock_get_doc,
         ):
-
             # Setup mocks
             mock_fetch.return_value = (test_html, None)
             mock_title.return_value = "Test Docs"

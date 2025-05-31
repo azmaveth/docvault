@@ -34,7 +34,7 @@ async def demo_depth_strategies():
     ]
 
     for strategy in strategies:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Testing {strategy.value.upper()} Strategy")
         print("=" * 60)
 
@@ -52,7 +52,7 @@ async def demo_depth_strategies():
                 print(f"  Suggested Depth: {result.suggested_depth}")
 
     # Demonstrate content analysis
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Content Analysis Demo")
     print("=" * 60)
 
@@ -117,7 +117,7 @@ async def demo_depth_strategies():
 async def demo_cli_usage():
     """Show example CLI commands with smart depth."""
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("CLI Usage Examples")
     print("=" * 60)
 

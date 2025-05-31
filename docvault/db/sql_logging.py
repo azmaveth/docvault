@@ -42,7 +42,7 @@ class QueryLogger:
             # Only log parameter types, not values (for security)
             log_data["param_types"] = [type(p).__name__ for p in params[:5]]
             if len(params) > 5:
-                log_data["param_types"].append(f"...{len(params)-5} more")
+                log_data["param_types"].append(f"...{len(params) - 5} more")
 
         if duration is not None:
             log_data["duration_ms"] = round(duration * 1000, 2)

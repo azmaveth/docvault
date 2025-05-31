@@ -2027,10 +2027,10 @@ def export_cmd(
                     # Add metadata if requested
                     if include_metadata:
                         meta_html = f"""<!-- 
-Document ID: {doc['id']}
-Title: {doc['title']}
-URL: {doc['url']}
-Scraped: {doc['scraped_at']}
+Document ID: {doc["id"]}
+Title: {doc["title"]}
+URL: {doc["url"]}
+Scraped: {doc["scraped_at"]}
 -->
 """
                         content = meta_html + content
@@ -3350,7 +3350,7 @@ def search_text(
                         if pos >= 0:
                             highlighted.append(content[last_pos:pos])
                             highlighted.append(
-                                f"[bold yellow]{content[pos:pos+len(term)]}[/]"
+                                f"[bold yellow]{content[pos : pos + len(term)]}[/]"
                             )
                             last_pos = pos + len(term)
 
@@ -3658,7 +3658,7 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
                     if existing and not force:
                         if verbose:
                             console.print(
-                                f"  Segment {i+1}/{len(segments)} already indexed"
+                                f"  Segment {i + 1}/{len(segments)} already indexed"
                             )
                         continue
 
@@ -3682,7 +3682,7 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
                     indexed_segments += 1
 
                     if verbose:
-                        console.print(f"  Indexed segment {i+1}/{len(segments)}")
+                        console.print(f"  Indexed segment {i + 1}/{len(segments)}")
 
                     # Batch commit
                     if i % batch_size == 0:
@@ -3705,7 +3705,7 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
     )
     console.print("You can now use improved search functionality.")
     if total_segments > 0:
-        console.print(f"Coverage: {indexed_segments/total_segments:.1%}")
+        console.print(f"Coverage: {indexed_segments / total_segments:.1%}")
 
 
 # Add the update_segment_embedding function to operations.py

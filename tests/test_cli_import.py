@@ -96,7 +96,6 @@ class TestImportCommand:
         """Test handling of network errors."""
 
         async def mock_scrape_error(*args, **kwargs):
-
             # Use a simple message in the OSError instead of complex construction
             raise OSError("Cannot connect to host example.com")
 

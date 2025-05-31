@@ -52,7 +52,7 @@ format:
 # Installation targets
 install:
 	@echo "Installing DocVault..."
-	@uv sync
+	@uv pip install -e ".[dev]"
 	@./scripts/install-dv.sh
 	@echo "✅ Installation complete!"
 

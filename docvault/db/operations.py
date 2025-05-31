@@ -558,12 +558,12 @@ def search_segments(
             for i, term in enumerate(search_terms[:3]):
                 # Higher score for matches in title or section title
                 score_cases.append(
-                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(s.section_title) LIKE ?) THEN {10.0 - i*0.5}"
+                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(s.section_title) LIKE ?) THEN {10.0 - i * 0.5}"
                 )
                 score_cases.append(
-                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(d.title) LIKE ?) THEN {8.0 - i*0.5}"
+                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(d.title) LIKE ?) THEN {8.0 - i * 0.5}"
                 )
-                score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i*0.5}")
+                score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i * 0.5}")
 
             # Add default case
             score_cases.append("ELSE 0.5")

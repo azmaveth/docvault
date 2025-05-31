@@ -46,7 +46,6 @@ def check_sqlite_vec():
     except Exception as e:
         # Try to check if it's installed through pip
         try:
-
             print("✅ sqlite-vec package is installed, but extension loading failed")
             print(f"   Error: {e}")
             print("   This could be due to system permissions or configuration")
