@@ -66,7 +66,7 @@ Add to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 # DocVault Configuration
-export BRAVE_API_KEY="your-api-key"
+export BRAVE_API_KEY="your-api-key"  # pragma: allowlist secret
 export EMBEDDING_MODEL="nomic-embed-text"
 export LOG_LEVEL="DEBUG"
 ```
@@ -80,6 +80,8 @@ export LOG_LEVEL="DEBUG"
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DOCVAULT_DB_PATH` | `~/.docvault/docvault.db` | Path to SQLite database file |
+| `USE_CONNECTION_POOL` | `false` | Enable database connection pooling (opt-in) |
+| `DB_POOL_SIZE` | `5` | Connection pool size (when enabled) |
 
 Example:
 ```bash
@@ -88,6 +90,10 @@ DOCVAULT_DB_PATH=/var/lib/docvault/main.db
 
 # Use in-memory database (testing only)
 DOCVAULT_DB_PATH=:memory:
+
+# Enable connection pooling for better performance
+USE_CONNECTION_POOL=true
+DB_POOL_SIZE=10
 ```
 
 #### Storage Paths
@@ -435,6 +441,8 @@ GLOBAL_RATE_LIMIT_PER_MINUTE=1000  # High throughput
 
 # Database optimization
 DOCVAULT_DB_PATH=/ssd/docvault.db  # Use SSD for database
+USE_CONNECTION_POOL=true            # Enable connection pooling
+DB_POOL_SIZE=20                     # Larger pool for high traffic
 ```
 
 ### Security Hardening

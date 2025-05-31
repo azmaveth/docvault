@@ -29,7 +29,7 @@ if (package_dir / ".env").exists():
 
 # Database
 DB_PATH = os.getenv("DOCVAULT_DB_PATH", str(DEFAULT_BASE_DIR / "docvault.db"))
-USE_CONNECTION_POOL = os.getenv("USE_CONNECTION_POOL", "true").lower() == "true"
+USE_CONNECTION_POOL = os.getenv("USE_CONNECTION_POOL", "false").lower() == "true"
 DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
 
 # API Keys

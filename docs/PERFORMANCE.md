@@ -8,16 +8,17 @@ DocVault v0.5.3+ includes comprehensive performance optimizations that significa
 
 - **Document scraping speed** (up to 3x faster)
 - **Embedding generation efficiency** (batch processing + caching)
-- **Database query performance** (connection pooling + indexes)
+- **Database query performance** (optimized indexes + optional connection pooling)
 - **Memory usage** (optimized caching + connection management)
 
 ## Performance Features
 
-### 1. Connection Pooling
+### 1. Connection Pooling (Opt-in)
 
 **Database Connection Pool:**
 - Reuses database connections across operations
-- Configurable pool size (default: 10 connections)
+- **Disabled by default** - enable with `USE_CONNECTION_POOL=true`
+- Configurable pool size (default: 10 connections when enabled)
 - Thread-safe with automatic cleanup
 - Reduces connection overhead by ~70%
 
@@ -128,7 +129,8 @@ dv performance benchmark
 
 **Environment Variables:**
 ```bash
-# Connection pool settings
+# Connection pool settings (opt-in)
+export USE_CONNECTION_POOL=true  # Enable connection pooling
 export DOCVAULT_DB_POOL_SIZE=10
 export DOCVAULT_HTTP_POOL_SIZE=100
 
@@ -171,6 +173,7 @@ export DOCVAULT_SQL_LOGGING=false
 
 **For Large Deployments:**
 ```bash
+export USE_CONNECTION_POOL=true  # Enable connection pooling
 export DOCVAULT_DB_POOL_SIZE=20
 export DOCVAULT_HTTP_POOL_SIZE=200
 export DOCVAULT_EMBEDDING_CACHE_TTL=7200
@@ -178,6 +181,9 @@ export DOCVAULT_EMBEDDING_CACHE_TTL=7200
 
 **For Memory-Constrained Systems:**
 ```bash
+# Connection pooling is off by default - good for low memory
+# If you want to enable it with reduced pool sizes:
+export USE_CONNECTION_POOL=true
 export DOCVAULT_DB_POOL_SIZE=5
 export DOCVAULT_HTTP_POOL_SIZE=50
 export DOCVAULT_EMBEDDING_CACHE_TTL=1800
@@ -280,10 +286,13 @@ print(plan)
 
 The connection pool uses a thread-safe queue with configurable limits:
 
-- **Pool Size**: Maximum number of concurrent connections
+- **Enabled**: Set `USE_CONNECTION_POOL=true` to enable
+- **Pool Size**: Maximum number of concurrent connections (when enabled)
 - **Timeout**: Maximum wait time for available connection
 - **Cleanup**: Automatic connection lifecycle management
 - **Monitoring**: Built-in connection usage statistics
+
+**Note**: Connection pooling is disabled by default to avoid potential issues in some environments. Enable it for production deployments where performance is critical.
 
 ### Batch Processing Pipeline
 
@@ -309,7 +318,7 @@ The connection pool uses a thread-safe queue with configurable limits:
 ### CPU Optimization
 
 - Async/await for I/O operations
-- Connection pooling reduces overhead
+- Connection pooling reduces overhead (when enabled)
 - Batch processing minimizes loops
 - Compiled regex patterns
 
@@ -331,7 +340,7 @@ The connection pool uses a thread-safe queue with configurable limits:
 
 - Strategic indexing
 - Query optimization
-- Connection pooling
+- Connection pooling (when enabled)
 - Batch operations
 
 ## Monitoring and Alerting
@@ -368,6 +377,7 @@ fi
 ### Common Issues
 
 **"Connection pool timeout"**
+- First, ensure connection pooling is enabled: `USE_CONNECTION_POOL=true`
 - Increase pool size: `DOCVAULT_DB_POOL_SIZE=20`
 - Check for connection leaks
 - Monitor connection usage
