@@ -86,6 +86,9 @@ class E2ETestRunner:
         os.environ["URL_ALLOWED_DOMAINS"] = "localhost,127.0.0.1"
         os.environ["DOCVAULT_ALLOW_LOCALHOST"] = "1"  # Special test flag
 
+        # Disable connection pooling for tests (can cause issues in test environment)
+        os.environ["USE_CONNECTION_POOL"] = "false"
+
         # Disable credential requirements for testing
         os.environ["GITHUB_TOKEN"] = "test_token"
         os.environ["DISABLE_CREDENTIAL_CHECK"] = "1"
