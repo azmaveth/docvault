@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated documentation in PERFORMANCE.md and CONFIGURATION.md to reflect this change
   - Helps avoid test environment issues and improves compatibility
 
+### Fixed
+
+- **Test Infrastructure**: Fixed all failing unit tests and improved test reliability
+  - Fixed embeddings tests: corrected vector dimensions (384→768) and mock function signatures
+  - Fixed scraper tests: improved markdown conversion and pagination test assertions
+  - Fixed sections tests: resolved database schema compatibility issues
+  - Fixed migrations: added proper table existence checks before altering columns
+  - Improved backwards compatibility for different database schema versions
+  - All 45 unit tests now pass consistently
+
+- **Makefile Commands**: Fixed and improved development workflow commands
+  - Updated test runner to automatically install dev dependencies when needed
+  - Fixed linting errors throughout codebase
+  - Improved installation targets to include dev dependencies by default
+  - All Makefile commands now work reliably
+
 ## [0.7.0] - 2025-05-28
 
 ### Added
