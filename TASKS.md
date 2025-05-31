@@ -280,13 +280,32 @@ This document outlines tasks for improving DocVault based on AI evaluation and f
   - [x] Added detailed error messages
   - [x] Implemented graceful error recovery
   - [x] Added logging for server errors
+- [x] **Production-Ready Enhancements**: Made MCP server more robust for production use (2025-05-30)
+  - [x] Added database retry logic with exponential backoff for lock errors
+  - [x] Enabled connection pooling with WAL mode for better concurrency
+  - [x] Set more conservative rate limits to prevent overwhelming servers
+  - [x] Added wait mechanism for rate-limited requests (up to 60s)
+  - [x] Fixed read_document_section parameter validation with new read_section tool
+  - [x] Improved error messages with actionable advice
+  - [x] Added force parameter to add_from_package_manager
+  - [x] Fixed SphinxExtractor to return Dict instead of List
+  - [x] Added metadata cleaning to prevent JSON serialization errors
+- [x] **Additional MCP Tools**: Added 7 new tools for better LLM integration (2025-05-30)
+  - [x] suggest - AI-powered code suggestions with task-based and complementary modes
+  - [x] add_tags - Document tagging for organization
+  - [x] search_by_tags - Tag-based document search
+  - [x] check_freshness - Document freshness status checking
+  - [x] add_from_package_manager - Quick package documentation addition
+  - [x] get_document_sections - Document navigation and table of contents
+  - [x] read_document_section - Section-specific reading with workaround for parameter issues
 - [ ] ~~**Authentication**: Add authentication for MCP server~~ (MCP typically relies on system-level security)
 - [ ] **Extended Server Configuration**: Create additional configuration options for the MCP server
-  - [ ] Add rate limiting
+  - [x] Rate limiting implemented with configurable limits
   - [ ] ~~Configure caching behavior~~ (Already caches documents)
   - [ ] ~~Add custom response formatting~~ (MCP has standard response format)
 - [x] **Testing**: Develop comprehensive tests for the MCP server
-  - [Progress] 2025-04-21: Comprehensive tests implemented and passing.
+  - [x] Comprehensive tests implemented and passing
+  - [x] Fixed test compatibility issues with asyncio and new parameter signatures (2025-05-30)
 - [ ] **Deployment Documentation**: Document deployment options for the MCP server
 
 ## Issues Addressed
@@ -365,7 +384,7 @@ Based on analysis of MCP specification site (<https://modelcontextprotocol.io/sp
 - **Content Extraction Gap**: DocVault only extracts ~5KB from 140KB HTML on Next.js sites
 - **Detection Failure**: Sites with 0.00 confidence detection fall back to generic extraction
 - **Client-Side Rendering**: MDX content compiled to JavaScript not accessible via static HTML parsing
-- **Next.js Data Source**: Actual content stored in **__NEXT_DATA__** script as compiled MDX requires JavaScript execution
+- **Next.js Data Source**: Actual content stored in **\_\_NEXT_DATA\_\_** script as compiled MDX requires JavaScript execution
 
 ### High Priority Tasks
 
@@ -374,7 +393,7 @@ Based on analysis of MCP specification site (<https://modelcontextprotocol.io/sp
   - [x] Extract MDX content from compiled JavaScript functions
   - [x] Parse pageProps.mdxSource.compiledSource for actual documentation text
   - [x] Handle mdxExtracts (tableOfContents, codeExamples) for structured content
-  - [x] Add Next.js site detection patterns (scripts containing "next", **__NEXT_DATA__** presence)
+  - [x] Add Next.js site detection patterns (scripts containing "next", **\_\_NEXT_DATA\_\_** presence)
   - [x] Create tests using MCP specification site as reference
   - **Complete**: Successfully implemented NextJSExtractor that addresses the major limitation where DocVault only extracted ~5KB from 140KB HTML on Next.js sites. The new extractor detects Next.js sites with 100% confidence, extracts content from compiled MDX sources, combines static navigation with dynamic content, and achieves 1.8x content extraction improvement over the generic extractor. Comprehensive test suite validates functionality using the Model Context Protocol specification site. Branch: `feature/nextjs-documentation-support`
 
