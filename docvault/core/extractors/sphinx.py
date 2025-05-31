@@ -13,7 +13,7 @@ from .base import BaseExtractor
 class SphinxExtractor(BaseExtractor):
     """Extractor specialized for Sphinx documentation."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> List[Dict[str, Any]]:
+    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """
         Extract content from Sphinx documentation.
 
@@ -22,10 +22,8 @@ class SphinxExtractor(BaseExtractor):
             url: The source URL
 
         Returns:
-            List of content segments
+            Dictionary with 'content' (markdown string) and 'metadata' (dict)
         """
-        segments = []
-
         # Extract metadata
         metadata = self.extract_metadata(soup)
 
@@ -34,24 +32,26 @@ class SphinxExtractor(BaseExtractor):
         if not content_area:
             content_area = soup.body or soup
 
-        # Extract API documentation
-        if self.config.get("extract_api_signatures", True):
-            api_segments = self._extract_api_elements(content_area, metadata)
-            segments.extend(api_segments)
+        # Convert content to markdown
+        content = self._convert_to_markdown(content_area)
 
-        # Extract regular sections
-        sections = self._extract_sphinx_sections(content_area, metadata)
-        segments.extend(sections)
+        # Extract additional structured data for metadata
+        if self.config.get("extract_api_signatures", True):
+            api_elements = self._extract_api_elements(content_area, metadata)
+            if api_elements:
+                metadata["api_elements"] = api_elements
 
         # Extract code examples
         code_examples = self._extract_code_examples(content_area, metadata)
-        segments.extend(code_examples)
+        if code_examples:
+            metadata["code_examples"] = code_examples
 
         # Extract warnings and notes
         admonitions = self._extract_admonitions(content_area, metadata)
-        segments.extend(admonitions)
+        if admonitions:
+            metadata["admonitions"] = admonitions
 
-        return self.segment_content(segments)
+        return {"content": content, "metadata": metadata}
 
     def extract_navigation(self, soup: BeautifulSoup) -> Optional[Dict[str, Any]]:
         """
@@ -380,3 +380,47 @@ class SphinxExtractor(BaseExtractor):
                     }
 
         return None
+
+    def _convert_to_markdown(self, content_area: BeautifulSoup) -> str:
+        """
+        Convert Sphinx HTML content to Markdown.
+
+        Args:
+            content_area: BeautifulSoup element containing the content
+
+        Returns:
+            Markdown formatted string
+        """
+        # Import markdown converter
+        import html2text
+
+        # Remove navigation elements
+        for nav in content_area.select(
+            "div.sphinxsidebar, div.navigation, div.related"
+        ):
+            nav.decompose()
+
+        # Configure html2text
+        h = html2text.HTML2Text()
+        h.ignore_links = False
+        h.ignore_images = False
+        h.body_width = 0  # Don't wrap lines
+
+        # Convert to markdown
+        markdown = h.handle(str(content_area))
+
+        # Clean up excessive whitespace
+        lines = markdown.split("\n")
+        cleaned_lines = []
+        empty_count = 0
+
+        for line in lines:
+            if line.strip():
+                cleaned_lines.append(line)
+                empty_count = 0
+            else:
+                empty_count += 1
+                if empty_count <= 2:  # Allow max 2 consecutive empty lines
+                    cleaned_lines.append(line)
+
+        return "\n".join(cleaned_lines).strip()

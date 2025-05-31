@@ -561,7 +561,11 @@ class WebScraper:
             is_library_doc=is_library_doc,
             content_hash=content_hash,
             doc_type=doc_type.value,  # Store the detected doc type
-            metadata=json.dumps(extracted_metadata) if extracted_metadata else None,
+            metadata=(
+                json.dumps(self._clean_metadata(extracted_metadata))
+                if extracted_metadata
+                else None
+            ),
             has_llms_txt=bool(llms_txt_content),
             llms_txt_url=llms_txt_url,
             force_update=force_update,
@@ -766,6 +770,21 @@ class WebScraper:
 
         rate_limiter = get_rate_limiter()
         resource_monitor = get_resource_monitor()
+
+        # Check if we need to wait due to rate limits
+        wait_time = await rate_limiter.wait_if_needed(domain)
+        if wait_time:
+            if wait_time > 60:  # If wait time is too long, skip
+                self.logger.warning(
+                    f"Rate limit for {domain}: would need to wait {wait_time:.1f}s, skipping"
+                )
+                return (
+                    None,
+                    f"Rate limit exceeded, wait time too long ({wait_time:.1f}s)",
+                )
+            else:
+                self.logger.info(f"Rate limit for {domain}: waiting {wait_time:.1f}s")
+                await asyncio.sleep(wait_time)
 
         # Check if we're allowed to make this request
         allowed, reason = await rate_limiter.check_rate_limit(domain)
@@ -1125,7 +1144,12 @@ class WebScraper:
         return None
 
     async def _process_github_repo_structure(
-        self, owner: str, repo: str, library_id: Optional[int], is_library_doc: bool, force_update: bool = False
+        self,
+        owner: str,
+        repo: str,
+        library_id: Optional[int],
+        is_library_doc: bool,
+        force_update: bool = False,
     ):
         """Fetch and store documentation files from a GitHub repository structure"""
         import aiohttp
@@ -1203,6 +1227,27 @@ class WebScraper:
                         position=i,
                     )
                     self.stats["segments_created"] += 1
+
+    def _clean_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Clean metadata to ensure it's JSON serializable."""
+        if not metadata:
+            return {}
+
+        cleaned = {}
+        for key, value in metadata.items():
+            try:
+                # Try to serialize the value
+                json.dumps(value)
+                cleaned[key] = value
+            except (TypeError, ValueError):
+                # If it fails, try to convert to string
+                if hasattr(value, "__str__"):
+                    cleaned[key] = str(value)
+                else:
+                    # Skip non-serializable values
+                    self.logger.debug(f"Skipping non-serializable metadata key: {key}")
+
+        return cleaned
 
     def _openapi_to_markdown(self, spec: Dict[str, Any]) -> str:
         md = f"# {spec.get('info', {}).get('title', '')}\n\n"

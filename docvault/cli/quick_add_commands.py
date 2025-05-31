@@ -102,11 +102,15 @@ async def quick_add_package(
             docs = await manager.get_library_docs(package_name, version or "latest")
             if docs:
                 console.print("[green]Documentation already available locally[/]")
-                return docs[0] if docs else None
+                # Return a result indicating it already exists
+                result = docs[0] if docs else {}
+                result["already_exists"] = True
+                return result
         except Exception:
             pass
 
-        return None
+        # Return a special result to indicate already exists but no local docs
+        return {"already_exists": True, "has_local_docs": False}
 
     # Try to fetch documentation
     manager = LibraryManager()

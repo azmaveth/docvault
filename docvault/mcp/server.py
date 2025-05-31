@@ -102,10 +102,42 @@ def create_server() -> FastMCP:
             )
         except Exception as e:
             logger.exception(f"Error scraping document: {e}")
+            error_msg = str(e)
+
+            # Provide more helpful error messages for common issues
+            if "rate limit" in error_msg.lower():
+                error_msg = (
+                    f"Rate limit exceeded for this domain. {error_msg}\n"
+                    "Try again later or reduce the scraping depth."
+                )
+            elif "cooldown" in error_msg.lower():
+                # Extract cooldown time if possible
+                import re
+
+                cooldown_match = re.search(r"cooldown for (\d+) seconds", error_msg)
+                if cooldown_match:
+                    seconds = cooldown_match.group(1)
+                    error_msg = (
+                        f"Domain is in cooldown period. Please wait {seconds} seconds.\n"
+                        f"This prevents overwhelming the target server."
+                    )
+            elif "timeout" in error_msg.lower():
+                error_msg = (
+                    "Request timed out. The server may be slow or unresponsive.\n"
+                    "Try again with a single page (depth=1) first."
+                )
+            elif "connection" in error_msg.lower():
+                error_msg = (
+                    "Connection error. Please check:\n"
+                    "- The URL is correct and accessible\n"
+                    "- Your internet connection is stable\n"
+                    "- The target server is online"
+                )
+
             return types.CallToolResult(
                 content=[
                     types.TextContent(
-                        type="text", text=f"Error scraping document: {str(e)}"
+                        type="text", text=f"Error scraping document: {error_msg}"
                     )
                 ],
                 metadata={"success": False, "error": str(e)},
@@ -382,12 +414,18 @@ def create_server() -> FastMCP:
             from docvault.core.suggestion_engine import SuggestionEngine
 
             engine = SuggestionEngine()
-            suggestions = engine.get_suggestions(
-                query=query,
-                limit=limit,
-                task_based=task_based,
-                complementary_to=complementary,
-            )
+
+            # Use the appropriate method based on the request type
+            if complementary:
+                suggestions = engine.get_complementary_functions(
+                    function_name=complementary, limit=limit
+                )
+            elif task_based:
+                suggestions = engine.get_task_based_suggestions(
+                    task_description=query, limit=limit
+                )
+            else:
+                suggestions = engine.get_suggestions(query=query, limit=limit)
 
             if not suggestions:
                 msg = f"No suggestions found for '{query}'"
@@ -408,16 +446,14 @@ def create_server() -> FastMCP:
                 content_text = f"Task-based suggestions for '{query}':\n\n"
 
             for i, suggestion in enumerate(suggestions, 1):
-                content_text += f"{i}. {suggestion['title']}\n"
-                content_text += f"   Type: {suggestion.get('type', 'Unknown')}\n"
-                if suggestion.get("description"):
-                    content_text += f"   Description: {suggestion['description']}\n"
-                if suggestion.get("document_title"):
-                    content_text += f"   From: {suggestion['document_title']}\n"
-                if suggestion.get("relevance_score"):
-                    content_text += (
-                        f"   Relevance: {suggestion['relevance_score']:.2f}\n"
-                    )
+                content_text += f"{i}. {suggestion.title}\n"
+                content_text += f"   Type: {suggestion.type}\n"
+                if suggestion.description:
+                    content_text += f"   Description: {suggestion.description}\n"
+                if hasattr(suggestion, "document_title"):
+                    content_text += f"   From: {suggestion.document_title}\n"
+                if suggestion.relevance_score:
+                    content_text += f"   Relevance: {suggestion.relevance_score:.2f}\n"
                 content_text += "\n"
 
             return types.CallToolResult(
@@ -428,7 +464,17 @@ def create_server() -> FastMCP:
                     "query": query,
                     "task_based": task_based,
                     "complementary": complementary,
-                    "suggestions": suggestions,
+                    "suggestions": [
+                        {
+                            "identifier": s.identifier,
+                            "type": s.type,
+                            "title": s.title,
+                            "description": s.description,
+                            "relevance_score": s.relevance_score,
+                            "reason": s.reason,
+                        }
+                        for s in suggestions
+                    ],
                 },
             )
         except Exception as e:
@@ -524,7 +570,13 @@ def create_server() -> FastMCP:
         try:
             from docvault.models.tags import search_documents_by_tags
 
-            documents = search_documents_by_tags(tags, match_all=match_all, limit=limit)
+            documents = search_documents_by_tags(
+                tags, mode="all" if match_all else "any"
+            )
+
+            # Apply limit
+            if limit and len(documents) > limit:
+                documents = documents[:limit]
 
             if not documents:
                 match_type = "all" if match_all else "any"
@@ -717,6 +769,7 @@ def create_server() -> FastMCP:
         package: str,
         manager: str = "auto",
         version: str = "latest",
+        force: bool = False,
     ) -> types.CallToolResult:
         """Quickly add documentation for a package from various package managers.
 
@@ -725,6 +778,7 @@ def create_server() -> FastMCP:
             manager: Package manager - one of: auto, pypi, npm, gem, hex, go, cargo
                     'auto' will try to detect based on package name patterns
             version: Package version (default: "latest")
+            force: If True, re-fetch documentation even if it already exists
 
         Examples:
             add_from_package_manager("requests")  # Auto-detect Python package
@@ -734,23 +788,9 @@ def create_server() -> FastMCP:
         try:
             # Import the quick add functionality
             from docvault.cli.quick_add_commands import (
-                add_cargo,
-                add_gem,
-                add_go,
-                add_hex,
-                add_npm,
-                add_pypi,
+                get_package_manager_info,
+                quick_add_package,
             )
-
-            # Map managers to their functions
-            manager_map = {
-                "pypi": add_pypi,
-                "npm": add_npm,
-                "gem": add_gem,
-                "hex": add_hex,
-                "go": add_go,
-                "cargo": add_cargo,
-            }
 
             # Auto-detect package manager if needed
             if manager == "auto":
@@ -768,73 +808,102 @@ def create_server() -> FastMCP:
                 else:
                     manager = "pypi"  # Default to Python
 
-            if manager not in manager_map:
-                return types.CallToolResult(
-                    content=[
-                        types.TextContent(
-                            type="text",
-                            text=f"Unknown package manager: {manager}. Supported: {', '.join(manager_map.keys())}",
-                        )
-                    ],
-                    metadata={
-                        "success": False,
-                        "error": f"Unknown package manager: {manager}",
-                    },
-                )
+            # Map manager aliases to actual package manager names
+            pm_name, display_name = get_package_manager_info(manager)
 
-            # Call the appropriate add function
-            add_function = manager_map[manager]
+            if not pm_name:
+                # If not found in aliases, check if it's a direct package manager name
+                valid_managers = [
+                    "pypi",
+                    "npm",
+                    "gem",
+                    "hex",
+                    "go",
+                    "crates",
+                    "packagist",
+                ]
+                if manager in valid_managers:
+                    pm_name = manager
+                    display_name = manager.upper()
+                else:
+                    return types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text",
+                                text=f"Unknown package manager: {manager}. Supported: pypi, npm, gem, hex, go, cargo/crates, composer/packagist",
+                            )
+                        ],
+                        metadata={
+                            "success": False,
+                            "error": f"Unknown package manager: {manager}",
+                        },
+                    )
 
-            # Run the async function if it's a coroutine
-            import asyncio
-            import inspect
-
-            if inspect.iscoroutinefunction(add_function):
-                result = await add_function(
-                    package, version, force=False, format="json"
-                )
-            else:
-                # Run sync function in executor
-                loop = asyncio.get_event_loop()
-                result = await loop.run_in_executor(
-                    None, add_function, package, version, False, "json"
-                )
+            # Call the quick_add_package function
+            result = await quick_add_package(pm_name, package, version, force=force)
 
             # Parse the result
-            if result and isinstance(result, dict) and result.get("success"):
-                doc_info = result.get("document", {})
-                content_text = (
-                    f"Successfully added documentation for {package} from {manager}:\n"
-                )
-                content_text += f"Title: {doc_info.get('title', 'Unknown')}\n"
-                content_text += f"Version: {doc_info.get('version', version)}\n"
-                content_text += f"Document ID: {doc_info.get('id', 'Unknown')}\n"
-                content_text += f"URL: {doc_info.get('url', 'Unknown')}\n"
+            if result:
+                # Check if it already exists
+                if result.get("already_exists"):
+                    if result.get("has_local_docs", True):
+                        content_text = (
+                            f"Documentation for {package} already exists in DocVault:\n"
+                        )
+                        content_text += f"Title: {result.get('title', 'Unknown')}\n"
+                        content_text += f"Version: {result.get('version', version)}\n"
+                        content_text += f"Document ID: {result.get('id', 'Unknown')}\n"
+                        content_text += f"URL: {result.get('url', 'Unknown')}\n"
+                        content_text += (
+                            "\nUse force=True to re-fetch the documentation."
+                        )
+                    else:
+                        content_text = (
+                            f"Package {package} is registered but documentation is not available locally.\n"
+                            f"The documentation may have been deleted or the URL may be invalid."
+                        )
 
-                return types.CallToolResult(
-                    content=[types.TextContent(type="text", text=content_text)],
-                    metadata={
-                        "success": True,
-                        "package": package,
-                        "manager": manager,
-                        "version": version,
-                        "document": doc_info,
-                    },
-                )
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=content_text)],
+                        metadata={
+                            "success": False,
+                            "package": package,
+                            "manager": pm_name,
+                            "version": version,
+                            "already_exists": True,
+                            "has_local_docs": result.get("has_local_docs", True),
+                            "document": (
+                                result if result.get("has_local_docs", True) else None
+                            ),
+                        },
+                    )
+                else:
+                    # Successfully added new documentation
+                    content_text = f"Successfully added documentation for {package} from {display_name or pm_name}:\n"
+                    content_text += f"Title: {result.get('title', 'Unknown')}\n"
+                    content_text += f"Version: {version}\n"
+                    content_text += f"Document ID: {result.get('id', 'Unknown')}\n"
+                    content_text += f"URL: {result.get('url', 'Unknown')}\n"
+
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=content_text)],
+                        metadata={
+                            "success": True,
+                            "package": package,
+                            "manager": pm_name,
+                            "version": version,
+                            "document": result,
+                        },
+                    )
             else:
-                error_msg = (
-                    result.get("error", "Failed to add package documentation")
-                    if result
-                    else "Failed to add package documentation"
-                )
                 return types.CallToolResult(
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Failed to add {package} from {manager}: {error_msg}",
+                            text=f"Failed to add {package} from {display_name or pm_name}: Documentation not found",
                         )
                     ],
-                    metadata={"success": False, "error": error_msg},
+                    metadata={"success": False, "error": "Documentation not found"},
                 )
 
         except Exception as e:
@@ -865,7 +934,7 @@ def create_server() -> FastMCP:
             get_document_sections(10, max_depth=2)  # Only H1 and H2
         """
         try:
-            from docvault.core.section_navigator import SectionNavigator
+            from docvault.core.section_navigator import SectionNavigator, SectionNode
 
             # Validate document exists
             document = operations.get_document(document_id)
@@ -884,7 +953,29 @@ def create_server() -> FastMCP:
 
             # Get section navigator
             navigator = SectionNavigator(document_id)
-            toc = navigator.get_table_of_contents(max_depth=max_depth)
+            toc = navigator.get_table_of_contents()
+
+            # Apply max_depth filtering
+            def filter_by_depth(sections, current_depth=1):
+                filtered = []
+                for section in sections:
+                    if current_depth <= max_depth:
+                        filtered_section = SectionNode(
+                            id=section.id,
+                            section_title=section.section_title,
+                            section_level=section.section_level,
+                            section_path=section.section_path,
+                            parent_segment_id=section.parent_segment_id,
+                            content_preview=section.content_preview,
+                        )
+                        if section.children and current_depth < max_depth:
+                            filtered_section.children = filter_by_depth(
+                                section.children, current_depth + 1
+                            )
+                        filtered.append(filtered_section)
+                return filtered
+
+            toc = filter_by_depth(toc)
 
             if not toc:
                 return types.CallToolResult(
@@ -903,9 +994,9 @@ def create_server() -> FastMCP:
                 text = ""
                 for section in sections:
                     prefix = "  " * indent + "- "
-                    text += f"{prefix}{section['title']} (path: {section['path']})\n"
-                    if section.get("children"):
-                        text += format_toc(section["children"], indent + 1)
+                    text += f"{prefix}{section.section_title} (path: {section.section_path})\n"
+                    if section.children:
+                        text += format_toc(section.children, indent + 1)
                 return text
 
             content_text += format_toc(toc)
@@ -914,12 +1005,23 @@ def create_server() -> FastMCP:
             def count_sections(sections):
                 count = len(sections)
                 for s in sections:
-                    if s.get("children"):
-                        count += count_sections(s["children"])
+                    if s.children:
+                        count += count_sections(s.children)
                 return count
 
             total_sections = count_sections(toc)
             content_text += f"\nTotal sections: {total_sections}"
+
+            # Convert SectionNode objects to dictionaries for metadata
+            def section_to_dict(section):
+                return {
+                    "id": section.id,
+                    "title": section.section_title,
+                    "level": section.section_level,
+                    "path": section.section_path,
+                    "preview": section.content_preview,
+                    "children": [section_to_dict(child) for child in section.children],
+                }
 
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=content_text)],
@@ -928,7 +1030,7 @@ def create_server() -> FastMCP:
                     "document_id": document_id,
                     "section_count": total_sections,
                     "max_depth": max_depth,
-                    "table_of_contents": toc,
+                    "table_of_contents": [section_to_dict(section) for section in toc],
                 },
             )
         except Exception as e:
@@ -945,20 +1047,23 @@ def create_server() -> FastMCP:
     @server.tool()
     async def read_document_section(
         document_id: int,
-        section_path: str,
+        section_path: str = None,
+        section_id: int = None,
         include_subsections: bool = False,
     ) -> types.CallToolResult:
-        """Read a specific section from a document using its path.
+        """Read a specific section from a document using its path or ID.
 
         Args:
             document_id: The ID of the document
-            section_path: The section path (e.g., "1.2.3" for nested sections)
+            section_path: The section path (e.g., "1.2.3" for nested sections) - use quotes!
+            section_id: Alternative - the section ID (from get_document_sections)
             include_subsections: If True, include all subsections
 
         Examples:
-            read_document_section(5, "2")  # Read section 2
-            read_document_section(5, "2.1")  # Read subsection 2.1
-            read_document_section(5, "2", include_subsections=True)  # Read section 2 and all subsections
+            read_document_section(5, section_path="2")  # Read section 2
+            read_document_section(5, section_path="2.1")  # Read subsection 2.1
+            read_document_section(5, section_id=123)  # Read section by ID
+            read_document_section(5, section_path="2", include_subsections=True)  # With subsections
         """
         try:
             from docvault.core.section_navigator import SectionNavigator
@@ -978,24 +1083,66 @@ def create_server() -> FastMCP:
                     },
                 )
 
-            # Get section navigator
-            navigator = SectionNavigator(document_id)
-
-            # Navigate to section
-            section = navigator.navigate_to_section(section_path)
-            if not section:
+            # Validate input
+            if not section_path and not section_id:
                 return types.CallToolResult(
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Section not found: {section_path} in document {document_id}",
+                            text="Error: Either section_path or section_id must be provided",
                         )
                     ],
                     metadata={
                         "success": False,
-                        "error": f"Section not found: {section_path}",
+                        "error": "Missing section_path or section_id parameter",
                     },
                 )
+
+            # Get section navigator
+            navigator = SectionNavigator(document_id)
+
+            # Navigate to section by ID or path
+            if section_id:
+                # Get section by ID
+                from docvault.db.operations import get_document_segment
+
+                section_data = get_document_segment(section_id)
+                if not section_data or section_data.get("document_id") != document_id:
+                    return types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text",
+                                text=f"Section not found: ID {section_id} in document {document_id}",
+                            )
+                        ],
+                        metadata={
+                            "success": False,
+                            "error": f"Section not found: ID {section_id}",
+                        },
+                    )
+                section_path = section_data.get("section_path", "")
+                section = section_data
+            else:
+                # Convert numeric strings if needed (workaround for MCP parameter issue)
+                if section_path and section_path.replace(".", "").isdigit():
+                    # It's a numeric path, ensure it's treated as string
+                    section_path = str(section_path)
+
+                # Navigate to section by path
+                section = navigator.navigate_to_section(section_path)
+                if not section:
+                    return types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text",
+                                text=f"Section not found: {section_path} in document {document_id}",
+                            )
+                        ],
+                        metadata={
+                            "success": False,
+                            "error": f"Section not found: {section_path}",
+                        },
+                    )
 
             # Get section content
             if include_subsections:
@@ -1026,6 +1173,115 @@ def create_server() -> FastMCP:
                 content=[
                     types.TextContent(
                         type="text", text=f"Error reading document section: {str(e)}"
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    # Alternative section reading tool that uses a prefix to force string handling
+    @server.tool()
+    async def read_section(
+        document_id: int,
+        section: str,
+        include_subsections: bool = False,
+    ) -> types.CallToolResult:
+        """Read a document section. Prefix numeric paths with 's' (e.g., 's1.2' for section 1.2).
+
+        Args:
+            document_id: The ID of the document
+            section: Section identifier - either numeric ID or path with 's' prefix
+            include_subsections: If True, include all subsections
+
+        Examples:
+            read_section(5, "s2")  # Read section 2
+            read_section(5, "s2.1")  # Read section 2.1
+            read_section(5, "163")  # Read by section ID if numeric
+            read_section(5, "installation")  # Read by section title/slug
+        """
+        try:
+            from docvault.core.section_navigator import SectionNavigator
+
+            # Validate document exists
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            navigator = SectionNavigator(document_id)
+
+            # Determine if it's a section ID, path, or title
+            if section.startswith("s") and section[1:].replace(".", "").isdigit():
+                # It's a path with 's' prefix
+                section_path = section[1:]  # Remove 's' prefix
+                section_obj = navigator.navigate_to_section(section_path)
+            elif section.isdigit():
+                # It's a section ID
+                from docvault.db.operations import get_document_segment
+
+                section_obj = get_document_segment(int(section))
+                if section_obj and section_obj.get("document_id") == document_id:
+                    section_path = section_obj.get("section_path", "")
+                else:
+                    section_obj = None
+            else:
+                # Try as a path or title
+                section_obj = navigator.navigate_to_section(section)
+                section_path = section
+
+            if not section_obj:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"Section not found: {section} in document {document_id}",
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Section not found: {section}",
+                    },
+                )
+
+            # Get section content
+            if include_subsections and hasattr(navigator, "get_section_with_children"):
+                sections = navigator.get_section_with_children(section_path or section)
+                content_text = (
+                    f"Section {section} and subsections from '{document['title']}':\n\n"
+                )
+
+                for s in sections:
+                    content_text += f"{'#' * s.get('section_level', 1)} {s.get('section_title', 'Section')}\n\n"
+                    content_text += s.get("content", "") + "\n\n"
+            else:
+                content_text = f"Section {section} from '{document['title']}':\n\n"
+                content_text += f"{'#' * section_obj.get('section_level', 1)} {section_obj.get('section_title', 'Section')}\n\n"
+                content_text += section_obj.get("content", "")
+
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=content_text)],
+                metadata={
+                    "success": True,
+                    "document_id": document_id,
+                    "section": section,
+                    "section_title": section_obj.get("section_title", ""),
+                },
+            )
+
+        except Exception as e:
+            logger.exception(f"Error reading section: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text=f"Error reading section: {str(e)}"
                     )
                 ],
                 metadata={"success": False, "error": str(e)},

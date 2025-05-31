@@ -48,6 +48,52 @@ class RateLimiter:
         self._lock = asyncio.Lock()
         self._semaphore = asyncio.Semaphore(self.config.max_concurrent_requests)
 
+    async def wait_if_needed(self, domain: str) -> Optional[float]:
+        """
+        Calculate wait time if rate limited.
+
+        Returns:
+            None if no wait needed, or wait time in seconds
+        """
+        async with self._lock:
+            now = time.time()
+
+            # Check cooldown first
+            if domain in self._cooldowns and self._cooldowns[domain] > now:
+                return self._cooldowns[domain] - now
+
+            # Check burst
+            if self._burst_tracker.get(domain, 0) >= self.config.burst_size:
+                # Need to wait for burst window to reset
+                domain_requests = self._domain_requests[domain]
+                if domain_requests:
+                    oldest_in_minute = now - 60
+                    requests_in_minute = [
+                        t for t in domain_requests if t > oldest_in_minute
+                    ]
+                    if requests_in_minute:
+                        # Wait until the oldest request in the minute window expires
+                        wait_time = 60 - (now - requests_in_minute[0]) + 1
+                        return wait_time
+
+            # Check per-minute rate
+            minute_ago = now - 60
+            recent_requests = sum(
+                1 for req_time in self._domain_requests[domain] if req_time > minute_ago
+            )
+            if recent_requests >= self.config.requests_per_minute:
+                # Find when we can make the next request
+                domain_requests = list(self._domain_requests[domain])
+                domain_requests.sort()
+                # Find the oldest request in the last minute
+                for req_time in domain_requests:
+                    if req_time > minute_ago:
+                        # Wait until this request is older than 1 minute
+                        wait_time = 60 - (now - req_time) + 0.1
+                        return wait_time
+
+            return None
+
     async def check_rate_limit(self, domain: str) -> tuple[bool, Optional[str]]:
         """Check if a request to the domain is allowed.
 

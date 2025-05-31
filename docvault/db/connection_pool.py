@@ -31,6 +31,11 @@ class ConnectionPool:
         conn = sqlite3.connect(config.DB_PATH, check_same_thread=False)
         conn.row_factory = sqlite3.Row
 
+        # Enable WAL mode for better concurrency
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")  # 5 second timeout for locks
+        conn.execute("PRAGMA synchronous=NORMAL")  # Better performance with WAL
+
         # Enable loading extensions if sqlite-vec is available
         try:
             import sqlite_vec
@@ -110,7 +115,10 @@ def get_pool() -> ConnectionPool:
     if _pool is None:
         with _pool_lock:
             if _pool is None:
-                _pool = ConnectionPool(max_connections=10)
+                from docvault import config
+
+                pool_size = getattr(config, "DB_POOL_SIZE", 5)
+                _pool = ConnectionPool(max_connections=pool_size)
     return _pool
 
 

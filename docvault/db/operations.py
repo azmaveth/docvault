@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from docvault import config
 from docvault.db.query_builder import build_document_filter
 from docvault.db.sql_logging import enable_query_logging
+from docvault.utils.db_retry import retry_on_lock
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -18,6 +19,22 @@ def adapt_datetime(dt):
 
 def get_connection():
     """Get a connection to the SQLite database"""
+    # Try to use connection pool first
+    use_pool = getattr(config, "USE_CONNECTION_POOL", True)
+
+    if use_pool:
+        try:
+            from docvault.db.connection_pool import get_pool
+
+            pool = get_pool()
+            # Get connection from pool - this returns a context manager
+            # but we need to return the actual connection for compatibility
+            conn = pool.get_connection()
+            return conn
+        except Exception as e:
+            logger.debug(f"Connection pool not available, using direct connection: {e}")
+
+    # Fallback to direct connection
     # Register the datetime adapter
     sqlite3.register_adapter(datetime.datetime, adapt_datetime)
 
@@ -42,6 +59,7 @@ def get_connection():
     return conn
 
 
+@retry_on_lock(max_attempts=3, delay=0.2)
 def add_document(
     url: str,
     title: str,
@@ -210,6 +228,27 @@ def delete_document(document_id: int) -> bool:
         conn.close()
 
 
+def get_document_segment(segment_id: int) -> Optional[Dict[str, Any]]:
+    """Get a single document segment by ID"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT * FROM document_segments 
+        WHERE id = ?
+        """,
+        (segment_id,),
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return dict(row)
+    return None
+
+
 def get_document_segments(document_id: int) -> List[Dict[str, Any]]:
     """Get all segments for a document.
 
@@ -266,6 +305,7 @@ def get_document_by_url(url: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+@retry_on_lock(max_attempts=3, delay=0.2)
 def add_document_segment(
     document_id: int,
     content: str,
@@ -731,6 +771,7 @@ def list_documents(
     return [dict(row) for row in rows]
 
 
+@retry_on_lock(max_attempts=3, delay=0.2)
 def add_library(name: str, version: str, doc_url: str) -> int:
     """Add a library to the database"""
     conn = get_connection()

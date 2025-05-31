@@ -29,6 +29,8 @@ if (package_dir / ".env").exists():
 
 # Database
 DB_PATH = os.getenv("DOCVAULT_DB_PATH", str(DEFAULT_BASE_DIR / "docvault.db"))
+USE_CONNECTION_POOL = os.getenv("USE_CONNECTION_POOL", "true").lower() == "true"
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
 
 # API Keys
 BRAVE_API_KEY = os.getenv("BRAVE_API_KEY", "")
@@ -88,22 +90,30 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))  # seconds
 MAX_RESPONSE_SIZE = int(
     os.getenv("MAX_RESPONSE_SIZE", str(10 * 1024 * 1024))
 )  # 10MB default
-MAX_SCRAPING_DEPTH = int(os.getenv("MAX_SCRAPING_DEPTH", "5"))
-MAX_PAGES_PER_DOMAIN = int(os.getenv("MAX_PAGES_PER_DOMAIN", "100"))
+MAX_SCRAPING_DEPTH = int(
+    os.getenv("MAX_SCRAPING_DEPTH", "3")
+)  # More conservative default
+MAX_PAGES_PER_DOMAIN = int(os.getenv("MAX_PAGES_PER_DOMAIN", "50"))  # Reduced from 100
 
 # Proxy settings
 HTTP_PROXY = os.getenv("HTTP_PROXY", "")
 HTTPS_PROXY = os.getenv("HTTPS_PROXY", "")
 NO_PROXY = os.getenv("NO_PROXY", "")
 
-# Rate limiting settings
-RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
-RATE_LIMIT_PER_HOUR = int(os.getenv("RATE_LIMIT_PER_HOUR", "1000"))
-RATE_LIMIT_BURST_SIZE = int(os.getenv("RATE_LIMIT_BURST_SIZE", "10"))
-GLOBAL_RATE_LIMIT_PER_MINUTE = int(os.getenv("GLOBAL_RATE_LIMIT_PER_MINUTE", "300"))
-GLOBAL_RATE_LIMIT_PER_HOUR = int(os.getenv("GLOBAL_RATE_LIMIT_PER_HOUR", "5000"))
+# Rate limiting settings - more conservative defaults
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))  # Reduced from 60
+RATE_LIMIT_PER_HOUR = int(os.getenv("RATE_LIMIT_PER_HOUR", "500"))  # Reduced from 1000
+RATE_LIMIT_BURST_SIZE = int(os.getenv("RATE_LIMIT_BURST_SIZE", "5"))  # Reduced from 10
+GLOBAL_RATE_LIMIT_PER_MINUTE = int(
+    os.getenv("GLOBAL_RATE_LIMIT_PER_MINUTE", "150")
+)  # Reduced from 300
+GLOBAL_RATE_LIMIT_PER_HOUR = int(
+    os.getenv("GLOBAL_RATE_LIMIT_PER_HOUR", "2500")
+)  # Reduced from 5000
 
-# Resource limits
-MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "10"))
+# Resource limits - more conservative
+MAX_CONCURRENT_REQUESTS = int(
+    os.getenv("MAX_CONCURRENT_REQUESTS", "5")
+)  # Reduced from 10
 MAX_MEMORY_MB = int(os.getenv("MAX_MEMORY_MB", "1024"))
 MAX_PROCESSING_TIME_SECONDS = int(os.getenv("MAX_PROCESSING_TIME_SECONDS", "300"))
