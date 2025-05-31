@@ -39,8 +39,7 @@ def test_batch_search_no_args(runner):
     assert "Missing argument" in result.output or "Error" in result.output
 
 
-@pytest.mark.asyncio
-async def test_batch_search_multiple_libraries(runner, mock_library_manager):
+def test_batch_search_multiple_libraries(runner, mock_library_manager):
     """Test batch search with multiple libraries."""
     # Mock the library manager
     mock_manager_instance = AsyncMock()
@@ -138,7 +137,17 @@ def test_batch_search_json_output(runner, mock_library_manager):
     assert result.exit_code == 0
 
     # Parse JSON output
-    json_output = json.loads(result.output)
+    # Split output by lines and find the JSON part
+    lines = result.output.strip().split("\n")
+    json_str = ""
+    in_json = False
+    for line in lines:
+        if line.strip().startswith("{"):
+            in_json = True
+        if in_json:
+            json_str += line + "\n"
+
+    json_output = json.loads(json_str)
     assert "total" in json_output
     assert json_output["total"] == 2
     assert "successful" in json_output

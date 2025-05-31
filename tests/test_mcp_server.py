@@ -34,7 +34,8 @@ def mock_search():
             }
         ]
     )
-    with patch("docvault.mcp.server.search", search_mock):
+    # Patch the search function where it's imported
+    with patch("docvault.core.embeddings.search", search_mock):
         yield search_mock
 
 
@@ -138,7 +139,12 @@ async def test_scrape_document_tool(mock_get_scraper):
 
     # Check that the scraper was called with the correct parameters
     mock_get_scraper.scrape_url.assert_called_once_with(
-        "https://example.com/doc", depth=2
+        "https://example.com/doc",
+        depth=2,
+        sections=None,
+        filter_selector=None,
+        depth_strategy=None,
+        force_update=False,
     )
 
     # Check the result
@@ -165,7 +171,9 @@ async def test_search_documents_tool(mock_search):
     result = await tool_handler(query="test query", limit=10)
 
     # Check that the search function was called with the correct parameters
-    mock_search.assert_called_once_with("test query", limit=10)
+    mock_search.assert_called_once_with(
+        query="test query", limit=10, text_only=False, min_score=0.0, doc_filter=None
+    )
 
     # Check the result
     assert isinstance(result, types.ToolResult)
@@ -289,7 +297,9 @@ async def test_search_documents_error_handling():
     server = create_server()
 
     # Mock the search function to raise an exception
-    with patch("docvault.mcp.server.search", side_effect=Exception("Search error")):
+    with patch(
+        "docvault.core.embeddings.search", side_effect=Exception("Search error")
+    ):
         # Get the search_documents tool handler
         tool_handler = server._tool_manager._tools.get("search_documents").fn
         assert tool_handler is not None
