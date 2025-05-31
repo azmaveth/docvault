@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Connection Pooling**: Changed database connection pooling to be opt-in instead of enabled by default
+  - Set `USE_CONNECTION_POOL=false` as the default to avoid potential issues in some environments
+  - Users can enable it with `USE_CONNECTION_POOL=true` for production deployments
+  - Updated documentation in PERFORMANCE.md and CONFIGURATION.md to reflect this change
+  - Helps avoid test environment issues and improves compatibility
+
 ## [0.7.0] - 2025-05-28
 
 ### Added
