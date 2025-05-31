@@ -35,7 +35,8 @@ class TestCacheCommands:
             doc_id = add_document(
                 url=f"https://example.com/doc{i}",
                 title=f"Test Document {i}",
-                content=f"Content {i}",
+                html_path=f"/tmp/test{i}.html",
+                markdown_path=f"/tmp/test{i}.md",
                 version="1.0",
             )
             doc_ids.append(doc_id)
@@ -43,7 +44,7 @@ class TestCacheCommands:
         # Update last_checked times
         import sqlite3
 
-        conn = sqlite3.connect(test_db)
+        conn = test_db
         cursor = conn.cursor()
 
         now = datetime.now(timezone.utc)

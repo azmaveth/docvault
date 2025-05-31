@@ -48,7 +48,8 @@ class TestCollectionsModel:
         doc_id = add_document(
             url="https://example.com/doc1",
             title="Test Doc",
-            content="Test content",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
@@ -71,7 +72,8 @@ class TestCollectionsModel:
             doc_id = add_document(
                 url=f"https://example.com/doc{i}",
                 title=f"Doc {i}",
-                content=f"Content {i}",
+                html_path="/tmp/test.html",
+                markdown_path="/tmp/test.md",
                 version="1.0",
             )
             doc_ids.append(doc_id)
@@ -89,7 +91,8 @@ class TestCollectionsModel:
         doc_id = add_document(
             url="https://example.com/shared",
             title="Shared Doc",
-            content="Shared content",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
@@ -123,12 +126,9 @@ class TestCollectionCommands:
                 "Test Collection",
                 "--description",
                 "A test collection",
-                "--tags",
-                "python",
-                "test",
             ],
         )
-
+        
         assert result.exit_code == 0
         assert "Created collection 'Test Collection'" in result.output
 
@@ -151,7 +151,8 @@ class TestCollectionCommands:
         doc_id = add_document(
             url="https://example.com/doc",
             title="Test Document",
-            content="Content",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
         collections.add_document_to_collection(coll_id, doc_id)
@@ -170,7 +171,8 @@ class TestCollectionCommands:
         doc_id = add_document(
             url="https://example.com/doc",
             title="Test Doc",
-            content="Content",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
@@ -212,13 +214,15 @@ class TestCollectionSearch:
         doc1_id = add_document(
             url="https://example.com/in-collection",
             title="In Collection",
-            content="This document is in the collection",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
         doc2_id = add_document(
             url="https://example.com/not-in-collection",
             title="Not In Collection",
-            content="This document is not in the collection",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 

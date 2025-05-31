@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
+from tests.utils import mock_app_initialization  # Import the fixture
 
 
 class TestConfigInitCommands:

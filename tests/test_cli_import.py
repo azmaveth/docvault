@@ -7,7 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import create_test_document_in_db
+from tests.utils import create_test_document_in_db, mock_app_initialization  # Import the fixture
 
 
 class TestImportCommand:

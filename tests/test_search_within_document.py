@@ -22,14 +22,16 @@ class TestSearchWithinDocument:
         doc1_id = add_document(
             url="https://example.com/doc1",
             title="Python Tutorial",
-            content="Learn Python programming with functions and classes",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
         doc2_id = add_document(
             url="https://example.com/doc2",
             title="JavaScript Guide",
-            content="JavaScript functions and async programming",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
@@ -242,7 +244,8 @@ class TestSearchWithinDocumentIntegration:
         doc_id = add_document(
             url="https://example.com/python-guide",
             title="Complete Python Guide",
-            content="Python programming guide with examples",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="2.0",
         )
 

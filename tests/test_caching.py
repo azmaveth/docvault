@@ -89,21 +89,24 @@ class TestCacheManager:
         doc1_id = add_document(
             url="https://example.com/doc1",
             title="Fresh Document",
-            content="Test content 1",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
         doc2_id = add_document(
             url="https://example.com/doc2",
             title="Stale Document",
-            content="Test content 2",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
         doc3_id = add_document(
             url="https://example.com/doc3",
             title="Outdated Document",
-            content="Test content 3",
+            html_path="/tmp/test.html",
+            markdown_path="/tmp/test.md",
             version="1.0",
         )
 
