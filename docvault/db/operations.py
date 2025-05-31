@@ -120,8 +120,8 @@ def add_document(
                 metadata,
             ),
         )
-    else:
-        # Use old schema without doc_type and metadata
+    elif "has_llms_txt" in columns and "llms_txt_url" in columns:
+        # Use intermediate schema with llms_txt columns but without doc_type/metadata
         cursor.execute(
             """
         INSERT INTO documents 
@@ -140,6 +140,26 @@ def add_document(
                 datetime.datetime.now(),
                 has_llms_txt,
                 llms_txt_url,
+            ),
+        )
+    else:
+        # Use basic schema without newer columns
+        cursor.execute(
+            """
+        INSERT INTO documents 
+        (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                url,
+                version,
+                title,
+                str(html_path),
+                str(markdown_path),
+                content_hash,
+                library_id,
+                is_library_doc,
+                datetime.datetime.now(),
             ),
         )
     document_id = cursor.lastrowid

@@ -255,6 +255,25 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     """
     )
 
+    # Check if libraries table exists first
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='libraries'"
+    )
+    if not cursor.fetchone():
+        # Create libraries table if it doesn't exist
+        cursor.execute(
+            """
+            CREATE TABLE libraries (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                version TEXT NOT NULL,
+                doc_url TEXT NOT NULL,
+                last_checked TIMESTAMP,
+                UNIQUE(name, version)
+            )
+            """
+        )
+
     # Check if columns already exist before adding them
     cursor.execute("PRAGMA table_info(libraries)")
     columns = {row[1] for row in cursor.fetchall()}
