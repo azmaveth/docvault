@@ -23,7 +23,7 @@ def mock_library_manager():
         yield mock
 
 
-def test_batch_search_help(runner):
+def test_batch_search_help(runner, mock_app_initialization):
     """Test batch search command help."""
     result = runner.invoke(cli, ["search", "batch", "--help"])
     assert result.exit_code == 0
@@ -32,14 +32,16 @@ def test_batch_search_help(runner):
     assert "--timeout" in result.output
 
 
-def test_batch_search_no_args(runner):
+def test_batch_search_no_args(runner, mock_app_initialization):
     """Test batch search with no arguments."""
     result = runner.invoke(cli, ["search", "batch"])
     assert result.exit_code != 0
     assert "Missing argument" in result.output or "Error" in result.output
 
 
-def test_batch_search_multiple_libraries(runner, mock_library_manager):
+def test_batch_search_multiple_libraries(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search with multiple libraries."""
     # Mock the library manager
     mock_manager_instance = AsyncMock()
@@ -83,7 +85,9 @@ def test_batch_search_multiple_libraries(runner, mock_library_manager):
     assert "numpy" in result.output
 
 
-def test_batch_search_with_versions(runner, mock_library_manager):
+def test_batch_search_with_versions(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search with versioned libraries."""
     mock_manager_instance = AsyncMock()
     mock_library_manager.return_value = mock_manager_instance
@@ -113,7 +117,9 @@ def test_batch_search_with_versions(runner, mock_library_manager):
     assert "flask@2.0" in result.output
 
 
-def test_batch_search_json_output(runner, mock_library_manager):
+def test_batch_search_json_output(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search with JSON output."""
     mock_manager_instance = AsyncMock()
     mock_library_manager.return_value = mock_manager_instance
@@ -158,7 +164,9 @@ def test_batch_search_json_output(runner, mock_library_manager):
     assert len(json_output["results"]) == 2
 
 
-def test_batch_search_with_failures(runner, mock_library_manager):
+def test_batch_search_with_failures(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search handling failures gracefully."""
     mock_manager_instance = AsyncMock()
     mock_library_manager.return_value = mock_manager_instance
@@ -178,7 +186,7 @@ def test_batch_search_with_failures(runner, mock_library_manager):
     assert "not found" in result.output.lower()
 
 
-def test_batch_search_timeout(runner, mock_library_manager):
+def test_batch_search_timeout(runner, mock_library_manager, mock_app_initialization):
     """Test batch search timeout handling."""
     import asyncio
 
@@ -198,7 +206,9 @@ def test_batch_search_timeout(runner, mock_library_manager):
     assert "timed out" in result.output.lower()
 
 
-def test_batch_search_concurrent_limit(runner, mock_library_manager):
+def test_batch_search_concurrent_limit(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search respects concurrent limit."""
     mock_manager_instance = AsyncMock()
     mock_library_manager.return_value = mock_manager_instance
@@ -241,7 +251,9 @@ def test_batch_search_concurrent_limit(runner, mock_library_manager):
     assert "lib5" in result.output
 
 
-def test_batch_search_default_version(runner, mock_library_manager):
+def test_batch_search_default_version(
+    runner, mock_library_manager, mock_app_initialization
+):
     """Test batch search with default version flag."""
     mock_manager_instance = AsyncMock()
     mock_library_manager.return_value = mock_manager_instance

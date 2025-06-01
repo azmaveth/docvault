@@ -56,7 +56,15 @@ class BaseExtractor(ABC):
             name = meta.get("name") or meta.get("property")
             content = meta.get("content")
             if name and content:
-                metadata[f"meta_{name}"] = content
+                # Normalize common metadata fields
+                if name == "description":
+                    metadata["description"] = content
+                elif name == "keywords":
+                    metadata["keywords"] = content
+                elif name == "author":
+                    metadata["author"] = content
+                else:
+                    metadata[f"meta_{name}"] = content
 
         # Extract version if present
         version_selectors = [
@@ -305,3 +313,31 @@ class BaseExtractor(ABC):
                 final_chunks.extend(sub_chunks)
 
         return final_chunks
+
+    def _clean_content(self, element) -> str:
+        """Clean and convert HTML content to text."""
+        if not element:
+            return ""
+
+        # Clone to avoid modifying original
+        element = element.__copy__()
+
+        # Remove script and style tags
+        for tag in element(["script", "style"]):
+            tag.decompose()
+
+        # Remove navigation elements
+        for nav in element.select("nav, aside, .sidebar, .navigation"):
+            nav.decompose()
+
+        # Convert to text
+        text = element.get_text(separator="\n")
+
+        # Clean up whitespace
+        lines = []
+        for line in text.split("\n"):
+            line = line.strip()
+            if line:
+                lines.append(line)
+
+        return "\n\n".join(lines)

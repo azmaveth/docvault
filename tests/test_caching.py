@@ -2,7 +2,6 @@
 Test document caching and staleness tracking functionality.
 """
 
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -111,7 +110,7 @@ class TestCacheManager:
         )
 
         # Update last_checked times
-        conn = sqlite3.connect(test_db)
+        conn = test_db  # test_db is already a connection
         cursor = conn.cursor()
 
         now = datetime.now(timezone.utc)
@@ -208,14 +207,15 @@ class TestCacheManager:
         doc1_id, _, _ = setup_cache_db
         manager = CacheManager()
 
-        # Set an etag on the document
-        conn = sqlite3.connect(setup_cache_db[0].__class__.test_db)
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE documents SET etag = ? WHERE id = ?", ("old-etag", doc1_id)
-        )
-        conn.commit()
-        conn.close()
+        # Set an etag on the document using operations module
+        from docvault.db.connection_pool import get_connection
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE documents SET etag = ? WHERE id = ?", ("old-etag", doc1_id)
+            )
+            conn.commit()
 
         with patch("aiohttp.ClientSession.head") as mock_head:
             # Mock response with new ETag

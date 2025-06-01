@@ -391,18 +391,4 @@ async def test_list_documents_empty():
         assert result.metadata["document_count"] == 0
 
 
-# Test transport functions
-@pytest.mark.skip("Integration test - requires running server")
-def test_stdio_transport():
-    """Test the stdio transport"""
-    # This is an integration test that would require actually running the server
-    # and communicating with it via stdin/stdout, which is beyond the scope of unit tests
-    pass
-
-
-@pytest.mark.skip("Integration test - requires running server")
-def test_sse_transport():
-    """Test the SSE transport"""
-    # This is an integration test that would require starting a web server
-    # and making HTTP requests to it, which is beyond the scope of unit tests
-    pass
+# Transport function tests removed - these were integration tests requiring a running server

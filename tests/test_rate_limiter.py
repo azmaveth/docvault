@@ -123,26 +123,37 @@ class TestRateLimiter:
         )
         limiter = RateLimiter(config)
 
-        # Trigger burst protection
+        # Make initial requests
         for _ in range(8):  # 80% of rate limit
-            await limiter.check_rate_limit("cooldown.com")
-            await limiter.record_request("cooldown.com")
-
-        # This should trigger cooldown
-        await limiter.check_rate_limit("cooldown.com")
-        await limiter.record_request("cooldown.com")
-
-        # Should be in cooldown
-        allowed, reason = await limiter.check_rate_limit("cooldown.com")
-        if not allowed and "cooldown" in reason:
-            assert "cooldown" in reason
-
-            # Wait for cooldown to expire
-            await asyncio.sleep(0.6)
-
-            # Should work again
             allowed, _ = await limiter.check_rate_limit("cooldown.com")
             assert allowed
+            await limiter.record_request("cooldown.com")
+
+        # This puts us above 80%, increments burst counter to 1
+        allowed, _ = await limiter.check_rate_limit("cooldown.com")
+        assert allowed
+        await limiter.record_request("cooldown.com")
+
+        # Now burst counter is at limit (1), next request should fail
+        allowed, reason = await limiter.check_rate_limit("cooldown.com")
+        assert not allowed
+        assert "Burst limit exceeded" in reason
+
+        # The domain should be in cooldown, not just burst-limited
+        allowed, reason = await limiter.check_rate_limit("cooldown.com")
+        assert not allowed
+        assert "is in cooldown" in reason
+
+        # Wait for cooldown to expire
+        await asyncio.sleep(0.6)
+
+        # After cooldown expires, the burst tracker should still be at limit
+        # But we should not be in cooldown anymore
+        allowed, reason = await limiter.check_rate_limit("cooldown.com")
+        assert not allowed
+        # Should be burst limit, not cooldown
+        assert "is in cooldown" not in reason
+        assert "Burst limit exceeded" in reason
 
 
 class TestResourceMonitor:
@@ -214,9 +225,15 @@ class TestRateLimiterIntegration:
         # Mock the rate limiter to always deny
         with patch("docvault.utils.rate_limiter.get_rate_limiter") as mock_get_limiter:
             mock_limiter = Mock()
-            mock_limiter.check_rate_limit = asyncio.coroutine(
-                lambda domain: (False, "Rate limit exceeded")
-            )
+
+            async def mock_check_rate_limit(domain):
+                return (False, "Rate limit exceeded")
+
+            async def mock_wait_if_needed(domain):
+                return None  # No wait needed
+
+            mock_limiter.check_rate_limit = mock_check_rate_limit
+            mock_limiter.wait_if_needed = mock_wait_if_needed
             mock_get_limiter.return_value = mock_limiter
 
             scraper = WebScraper()
@@ -235,11 +252,19 @@ class TestRateLimiterIntegration:
             "docvault.utils.rate_limiter.get_resource_monitor"
         ) as mock_get_monitor:
             mock_monitor = Mock()
-            mock_monitor.check_memory_usage = asyncio.coroutine(
-                lambda: (False, "Memory limit exceeded")
-            )
-            mock_monitor.start_operation = asyncio.coroutine(lambda op_id: None)
-            mock_monitor.end_operation = asyncio.coroutine(lambda op_id: None)
+
+            async def mock_check_memory_usage():
+                return (False, "Memory limit exceeded")
+
+            async def mock_start_operation(op_id):
+                return None
+
+            async def mock_end_operation(op_id):
+                return None
+
+            mock_monitor.check_memory_usage = mock_check_memory_usage
+            mock_monitor.start_operation = mock_start_operation
+            mock_monitor.end_operation = mock_end_operation
             mock_get_monitor.return_value = mock_monitor
 
             scraper = WebScraper()

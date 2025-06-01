@@ -42,7 +42,6 @@ class TestCacheCommands:
             doc_ids.append(doc_id)
 
         # Update last_checked times
-        import sqlite3
 
         conn = test_db
         cursor = conn.cursor()
@@ -139,7 +138,7 @@ class TestCacheCommands:
     @patch("docvault.cli.cache_commands.asyncio.run")
     @patch("docvault.cli.cache_commands.get_scraper")
     def test_update_command_single_doc(
-        self, mock_get_scraper, mock_asyncio_run, setup_docs
+        self, mock_get_scraper, mock_asyncio_run, setup_docs, mock_app_initialization
     ):
         """Test updating a single document."""
         doc_id = setup_docs[1]  # Stale document

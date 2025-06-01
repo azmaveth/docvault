@@ -1,14 +1,11 @@
 """Improved tests for document management CLI commands."""
 
-import tempfile
-from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import mock_app_initialization  # Import the fixture
 
 
 class TestDocumentCommands:
@@ -61,8 +58,11 @@ class TestDocumentCommands:
 
     def test_list_documents(self, cli_runner, mock_documents):
         """Test listing all documents."""
-        with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+        with (
+            patch("docvault.db.operations.list_documents", return_value=mock_documents),
+            patch(
+                "docvault.models.tags.get_document_tags", return_value=[]
+            ),  # Mock tags as empty
         ):
             result = cli_runner.invoke(cli, ["list"])
 
@@ -77,8 +77,14 @@ class TestDocumentCommands:
 
     def test_list_with_filter(self, cli_runner, mock_documents):
         """Test listing with filter."""
-        with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents[1:2]
+        with (
+            patch(
+                "docvault.db.operations.list_documents",
+                return_value=mock_documents[1:2],
+            ),
+            patch(
+                "docvault.models.tags.get_document_tags", return_value=[]
+            ),  # Mock tags as empty
         ):
             result = cli_runner.invoke(cli, ["list", "--filter", "Document 2"])
 
@@ -92,8 +98,13 @@ class TestDocumentCommands:
     def test_list_with_limit(self, cli_runner, mock_documents):
         """Test listing with simulated limit (via mock)."""
         # The list command doesn't have a --limit flag, so we simulate it by returning fewer documents
-        with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents[:2]
+        with (
+            patch(
+                "docvault.db.operations.list_documents", return_value=mock_documents[:2]
+            ),
+            patch(
+                "docvault.models.tags.get_document_tags", return_value=[]
+            ),  # Mock tags as empty
         ):
             result = cli_runner.invoke(cli, ["list"])
 
@@ -105,18 +116,44 @@ class TestDocumentCommands:
 
     def test_read_document(self, cli_runner):
         """Test reading a document."""
-        # Create a document with markdown content
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            f.write("# Test Document\n\nThis is the content.")
-            temp_md_path = f.name
+        # This test uses mocks to be consistent with other tests in this class
+        # For real database tests, see test_cli.py::test_read_command
+        from unittest.mock import mock_open
 
-        try:
-            # Mock the document retrieval
+        mock_doc = {
+            "id": 1,
+            "title": "Test Document",
+            "url": "https://example.com/doc1",
+            "html_path": "/tmp/test.html",
+            "markdown_path": "/tmp/test.md",
+            "version": "1.0",
+            "scraped_at": "2024-01-01 00:00:00",
+        }
 
-            # Skip this test for now as it needs more complex mocking
-            pytest.skip("Read command test needs better mocking strategy")
-        finally:
-            Path(temp_md_path).unlink(missing_ok=True)
+        mock_content = "# Test Document\n\nThis is the content."
+
+        with (
+            patch("docvault.db.operations.get_document", return_value=mock_doc),
+            patch("builtins.open", mock_open(read_data=mock_content)),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("docvault.core.caching.get_cache_manager") as mock_cache_manager,
+            patch(
+                "docvault.db.operations_llms.get_llms_txt_metadata", return_value=None
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
+        ):
+            mock_cache_instance = Mock()
+            mock_cache_instance.update_staleness_status.return_value = "FRESH"
+            mock_cache_manager.return_value = mock_cache_instance
+
+            result = cli_runner.invoke(cli, ["read", "1"])
+
+            assert result.exit_code == 0
+            assert "Test Document" in result.output
+            assert "This is the content" in result.output
 
     def test_read_nonexistent_document(self, cli_runner):
         """Test reading non-existent document."""
@@ -169,7 +206,18 @@ class TestDocumentCommands:
         """Test removing multiple documents."""
         doc_ids = "1,2"
 
-        with patch("docvault.db.operations.delete_document", return_value=True):
+        mock_doc = {
+            "id": 1,
+            "title": "Test Document",
+            "url": "https://example.com",
+            "html_path": None,
+            "markdown_path": None,
+        }
+
+        with (
+            patch("docvault.db.operations.get_document", return_value=mock_doc),
+            patch("docvault.db.operations.delete_document", return_value=True),
+        ):
             result = cli_runner.invoke(cli, ["remove", doc_ids, "--force"])
 
             assert result.exit_code == 0
@@ -177,7 +225,18 @@ class TestDocumentCommands:
 
     def test_remove_range(self, cli_runner):
         """Test removing a range of documents."""
-        with patch("docvault.db.operations.delete_document", return_value=True):
+        mock_doc = {
+            "id": 1,
+            "title": "Test Document",
+            "url": "https://example.com",
+            "html_path": None,
+            "markdown_path": None,
+        }
+
+        with (
+            patch("docvault.db.operations.get_document", return_value=mock_doc),
+            patch("docvault.db.operations.delete_document", return_value=True),
+        ):
             result = cli_runner.invoke(cli, ["remove", "1-3", "--force"])
 
             assert result.exit_code == 0

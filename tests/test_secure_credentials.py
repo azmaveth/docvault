@@ -15,20 +15,33 @@ from docvault.utils.secure_credentials import (
 )
 
 
+@pytest.fixture
+def temp_config_dir():
+    """Create a temporary directory for test credentials."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+
+
+@pytest.fixture
+def credential_manager(temp_config_dir):
+    """Create a credential manager with temporary storage."""
+    key_file = temp_config_dir / ".test_key"
+    credentials_file = temp_config_dir / ".test_credentials"
+
+    # Ensure clean state
+    if key_file.exists():
+        key_file.unlink()
+    if credentials_file.exists():
+        credentials_file.unlink()
+
+    manager = SecureCredentialManager(key_file=key_file)
+    # Override the credentials file path to use the temp directory
+    manager.credentials_file = credentials_file
+    return manager
+
+
 class TestSecureCredentialManager:
     """Test secure credential storage and retrieval."""
-
-    @pytest.fixture
-    def temp_config_dir(self):
-        """Create a temporary directory for test credentials."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir)
-
-    @pytest.fixture
-    def credential_manager(self, temp_config_dir):
-        """Create a credential manager with temporary storage."""
-        key_file = temp_config_dir / ".test_key"
-        return SecureCredentialManager(key_file=key_file)
 
     def test_store_and_retrieve_credential(self, credential_manager):
         """Test basic store and retrieve functionality."""
@@ -88,6 +101,8 @@ class TestSecureCredentialManager:
     def test_credential_encryption(self, temp_config_dir):
         """Test that credentials are actually encrypted on disk."""
         manager = SecureCredentialManager(key_file=temp_config_dir / ".key")
+        # Set credentials file to temp directory
+        manager.credentials_file = temp_config_dir / ".test_credentials_encrypt"
 
         # Store a credential with a known value
         secret_value = "super_secret_password_123"  # pragma: allowlist secret
@@ -119,21 +134,29 @@ class TestSecureCredentialManager:
         # Store a credential
         credential_manager.store_credential("key1", "value1", "cat1")
 
-        # Mock _save_credentials to fail during rotation
+        # Track calls to _save_credentials
+        save_calls = []
         original_save = credential_manager._save_credentials
 
         def failing_save(creds):
-            # Fail when trying to save with new key
-            if hasattr(failing_save, "called"):
+            save_calls.append(creds)
+            # Let the first call succeed (during key rotation)
+            # but fail on any subsequent call
+            if len(save_calls) == 1:
+                # This is the call during rotation
                 raise Exception("Simulated save failure")
-            failing_save.called = True
-            original_save(creds)
+            return original_save(creds)
+
+        # Clear any existing cipher to ensure fresh state
+        credential_manager._cipher = None
 
         monkeypatch.setattr(credential_manager, "_save_credentials", failing_save)
 
         # Attempt rotation (should fail and recover)
-        with pytest.raises(CredentialError):
+        with pytest.raises(CredentialError) as exc_info:
             credential_manager.rotate_key()
+
+        assert "Key rotation failed" in str(exc_info.value)
 
         # Verify original credentials are still accessible
         assert credential_manager.get_credential("key1", "cat1") == "value1"

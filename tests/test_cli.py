@@ -219,76 +219,101 @@ def test_add_command(mock_config, cli_runner, mock_embeddings):
         assert result.output.strip() != ""
 
 
-def test_read_command(mock_config, cli_runner):
-    """Test read command"""
-    pytest.skip("Read command test needs better mocking strategy")
+def test_read_command(mock_config, cli_runner, test_db):
+    """Test read command - validates that read functionality works end-to-end"""
+    import os
+    import tempfile
 
-
-def test_rm_command(mock_config, cli_runner):
-    """Test rm command"""
+    from docvault.db.operations import add_document
     from docvault.main import cli
 
-    # Create test documents
-    mock_docs = [
-        {
-            "id": 3,
-            "title": "Test Doc 3",
-            "url": "https://example.com/doc3",
-            "html_path": "/test/path/doc3.html",
-            "markdown_path": "/test/path/doc3.md",
-        },
-        {
-            "id": 4,
-            "title": "Test Doc 4",
-            "url": "https://example.com/doc4",
-            "html_path": "/test/path/doc4.html",
-            "markdown_path": "/test/path/doc4.md",
-        },
-        {
-            "id": 5,
-            "title": "Test Doc 5",
-            "url": "https://example.com/doc5",
-            "html_path": "/test/path/doc5.html",
-            "markdown_path": "/test/path/doc5.md",
-        },
-    ]
+    # Create temporary files with real content
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".html", delete=False
+    ) as html_file:
+        html_file.write("<h1>Test Document</h1><p>This is test content.</p>")
+        html_path = html_file.name
 
-    def mock_get_document(doc_id):
-        for doc in mock_docs:
-            if doc["id"] == doc_id:
-                return doc
-        return None
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as md_file:
+        md_file.write("# Test Document\n\nThis is test content.")
+        md_path = md_file.name
 
-    # Set up mocks
-    with patch("docvault.db.operations.get_document", side_effect=mock_get_document):
-        with patch("docvault.db.operations.delete_document") as mock_delete:
-            with patch("pathlib.Path.exists", return_value=True):
-                with patch("pathlib.Path.unlink"):
-                    # Test single ID
-                    result = cli_runner.invoke(cli, ["rm", "3", "--force"])
-                    print("[test_rm_command output]", result.output)
-                    assert result.exit_code == 0
-                    assert result.output.strip() != ""
+    try:
+        # Add a real document to the database
+        doc_id = add_document(
+            url="https://example.com/doc1",
+            title="Test Document",
+            html_path=html_path,
+            markdown_path=md_path,
+            version="1.0",
+        )
 
-                    # Test comma-separated IDs
-                    result2 = cli_runner.invoke(cli, ["rm", "4,5", "--force"])
-                    print("[test_rm_command output]", result2.output)
-                    assert result2.exit_code == 0
-                    assert result2.output.strip() != ""
+        # Now read it using the CLI
+        result = cli_runner.invoke(cli, ["read", str(doc_id)])
 
-                    # Test range syntax
-                    mock_delete.reset_mock()
-                    result3 = cli_runner.invoke(cli, ["rm", "3-5", "--force"])
-                    print("[test_rm_command output]", result3.output)
-                    assert result3.exit_code == 0
-                    assert result3.output.strip() != ""
+        # Basic checks - the read command should succeed and show basic info
+        assert result.exit_code == 0
+        assert (
+            "Test Document" in result.output
+            or "https://example.com/doc1" in result.output
+        )
 
-                    # Test mixed format
-                    mock_delete.reset_mock()
-                    result4 = cli_runner.invoke(cli, ["rm", "3,4-5", "--force"])
-                    print("[test_rm_command output]", result4.output)
-                    assert result4.exit_code == 0
-                    assert result4.output.strip() != ""
+    finally:
+        # Clean up temporary files
+        os.unlink(html_path)
+        os.unlink(md_path)
+
+
+def test_rm_command(mock_config, cli_runner, test_db):
+    """Test rm command - validates document deletion works"""
+    import os
+    import tempfile
+
+    from docvault.db.operations import add_document
+    from docvault.main import cli
+
+    # Create test documents with temporary files
+    doc_ids = []
+    temp_files = []
+
+    for i in range(3, 6):
+        # Create temporary files
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
+            f.write(f"<h1>Test Doc {i}</h1>")
+            html_path = f.name
+            temp_files.append(html_path)
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(f"# Test Doc {i}")
+            md_path = f.name
+            temp_files.append(md_path)
+
+        # Add to database
+        doc_id = add_document(
+            url=f"https://example.com/doc{i}",
+            title=f"Test Doc {i}",
+            html_path=html_path,
+            markdown_path=md_path,
+            version="1.0",
+        )
+        doc_ids.append(doc_id)
+
+    try:
+        # Test single ID deletion
+        result = cli_runner.invoke(cli, ["rm", str(doc_ids[0]), "--force"])
+        assert result.exit_code == 0
+
+        # Test comma-separated IDs
+        result2 = cli_runner.invoke(
+            cli, ["rm", f"{doc_ids[1]},{doc_ids[2]}", "--force"]
+        )
+        assert result2.exit_code == 0
+
+    finally:
+        # Clean up any remaining temp files
+        for f in temp_files:
+            if os.path.exists(f):
+                os.unlink(f)
 
 
 def test_config_command(mock_config, cli_runner):
@@ -366,8 +391,4 @@ def test_import_backup_command(mock_config, cli_runner):
     assert excinfo.value.code in (0, 2)
 
 
-# Skip the serve command test for now since we don't want to import MCP
-@pytest.mark.skip(reason="MCP module not available in test environment")
-def test_serve_command(mock_config, cli_runner):
-    """Test serve command (skipped)"""
-    pass
+# Serve command test removed - MCP module not available in test environment

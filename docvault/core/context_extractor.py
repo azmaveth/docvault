@@ -216,7 +216,7 @@ class ContextExtractor:
 
         for indicator in self.pitfall_indicators:
             for match in re.finditer(
-                rf"({indicator}.*?)(?:\n\n|\n[A-Z]|\n-|\n\*)",
+                rf"({indicator}.*?)(?:\n\n|\n[A-Z]|\n-|\n\*|$)",
                 content,
                 re.IGNORECASE | re.DOTALL,
             ):

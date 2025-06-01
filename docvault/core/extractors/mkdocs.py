@@ -12,7 +12,7 @@ class MkDocsExtractor(BaseExtractor):
 
     def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract content from MkDocs documentation."""
-        metadata = self._extract_metadata(soup)
+        metadata = self.extract_metadata(soup)
 
         # Extract navigation structure
         nav_structure = self._extract_navigation(soup)
@@ -77,17 +77,22 @@ class MkDocsExtractor(BaseExtractor):
         """Parse navigation tree recursively."""
         items = []
 
-        for item in nav_element.find_all(["li", "a"], recursive=False):
+        # Find the ul element first
+        ul_element = nav_element.find("ul")
+        if ul_element:
+            nav_element = ul_element
+
+        for item in nav_element.find_all(["li"], recursive=False):
             nav_item = {}
 
             # Get link and text
-            link = item.find("a") if item.name == "li" else item
+            link = item.find("a")
             if link:
                 nav_item["title"] = link.get_text(strip=True)
                 nav_item["url"] = link.get("href", "")
 
             # Check for sub-navigation
-            sub_nav = item.find(["ul", "nav"]) if item.name == "li" else None
+            sub_nav = item.find(["ul", "nav"])
             if sub_nav:
                 nav_item["children"] = self._parse_nav_tree(sub_nav)
 

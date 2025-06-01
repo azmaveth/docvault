@@ -102,9 +102,18 @@ class SphinxExtractor(BaseExtractor):
                 # Get the API type
                 api_type = selector.split(".")[-1]
 
-                # Extract name
+                # Extract name (try to get full name including prefix)
+                prefix_elem = sig_elem.select_one("span.sig-prename")
                 name_elem = sig_elem.select_one("span.sig-name, code.descname")
-                name = name_elem.get_text(strip=True) if name_elem else "Unknown"
+
+                if prefix_elem and name_elem:
+                    name = prefix_elem.get_text(strip=True) + name_elem.get_text(
+                        strip=True
+                    )
+                elif name_elem:
+                    name = name_elem.get_text(strip=True)
+                else:
+                    name = "Unknown"
 
                 # Extract full signature
                 signature = self._clean_signature(sig_elem.get_text(strip=True))
@@ -121,18 +130,22 @@ class SphinxExtractor(BaseExtractor):
                     self._extract_return_info(desc_elem) if desc_elem else None
                 )
 
-                segments.append(
-                    {
-                        "type": "api",
-                        "api_type": api_type,
-                        "name": name,
-                        "signature": signature,
-                        "description": self.clean_text(description),
-                        "parameters": params,
-                        "return_info": return_info,
-                        "metadata": metadata,
-                    }
-                )
+                segment = {
+                    "type": "api",
+                    "api_type": api_type,
+                    "name": name,
+                    "signature": signature,
+                    "description": self.clean_text(description),
+                    "parameters": params,
+                    "metadata": metadata,
+                }
+
+                # Add return information
+                if return_info:
+                    segment["return_info"] = return_info
+                    segment["returns"] = return_info.get("description", "")
+
+                segments.append(segment)
 
         return segments
 
@@ -317,6 +330,9 @@ class SphinxExtractor(BaseExtractor):
         """Clean API signature text."""
         # Remove extra whitespace
         signature = " ".join(signature.split())
+
+        # Ensure proper spacing around commas
+        signature = re.sub(r"\s*,\s*", ", ", signature)
 
         # Remove permalink symbols
         signature = re.sub(r"¶\s*$", "", signature)

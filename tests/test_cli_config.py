@@ -8,7 +8,6 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import mock_app_initialization  # Import the fixture
 
 
 class TestConfigInitCommands:
@@ -26,8 +25,15 @@ class TestConfigInitCommands:
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
 
-        # Mock the default base directory
-        with patch("docvault.config.DEFAULT_BASE_DIR", self.temp_dir):
+        # Create the .docvault directory
+        docvault_dir = self.temp_path / ".docvault"
+        docvault_dir.mkdir(exist_ok=True)
+
+        # Mock the default base directory and DB_PATH
+        with (
+            patch("docvault.config.DEFAULT_BASE_DIR", self.temp_dir),
+            patch("docvault.config.DB_PATH", str(docvault_dir / "docvault.db")),
+        ):
             yield
 
         # Cleanup

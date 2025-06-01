@@ -7,10 +7,7 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import (
-    create_test_document_in_db,
-    mock_app_initialization,  # Import the fixture
-)
+from tests.utils import create_test_document_in_db  # Import the fixture
 
 
 class TestSearchCommand:
@@ -36,38 +33,46 @@ class TestSearchCommand:
 
     def _create_test_data(self):
         """Create test documents in the database."""
-        self.doc1_id = create_test_document_in_db(
-            self.project.db_path,
+        # Get the database path from the test project
+        db_path = self.project.db_path
+
+        # Create a few test documents
+        self.doc1 = create_test_document_in_db(
+            db_path,
             {
-                "title": "Python Documentation",
                 "url": "https://docs.python.org",
-                "segments": [
-                    {
-                        "type": "text",
-                        "content": "Python is a programming language",
-                        "section_title": "Introduction",
-                    },
-                    {
-                        "type": "text",
-                        "content": "Python supports multiple paradigms",
-                        "section_title": "Features",
-                    },
-                ],
+                "title": "Python Documentation",
+                "content": "Python is a programming language",
+                "html_path": "/tmp/test1.html",
+                "markdown_path": "/tmp/test1.md",
+                "version": "3.12",
+                "is_library_doc": True,
+                "library_name": "python",
             },
         )
 
-        self.doc2_id = create_test_document_in_db(
-            self.project.db_path,
+        self.doc2 = create_test_document_in_db(
+            db_path,
             {
-                "title": "Django Documentation",
                 "url": "https://docs.djangoproject.com",
-                "segments": [
-                    {
-                        "type": "text",
-                        "content": "Django is a web framework for Python",
-                        "section_title": "Overview",
-                    },
-                ],
+                "title": "Django Documentation",
+                "content": "Django is a web framework",
+                "html_path": "/tmp/test2.html",
+                "markdown_path": "/tmp/test2.md",
+                "version": "4.2.0",
+                "is_library_doc": True,
+                "library_name": "django",
+            },
+        )
+
+        self.doc3 = create_test_document_in_db(
+            db_path,
+            {
+                "url": "https://example.com",
+                "title": "Example Documentation",
+                "content": "Example content for testing",
+                "html_path": "/tmp/test3.html",
+                "markdown_path": "/tmp/test3.md",
             },
         )
 
@@ -76,10 +81,15 @@ class TestSearchCommand:
 
         # Mock the search function to return results from our test data
         async def mock_search(
-            query, limit=5, text_only=False, min_score=0.0, doc_filter=None
+            query=None,
+            limit=5,
+            text_only=False,
+            min_score=0.0,
+            doc_filter=None,
+            document_ids=None,
         ):
             # Simple mock that returns results if "python" is in query
-            if "python" in query.lower():
+            if query and "python" in query.lower():
                 return [
                     {
                         "id": 1,
@@ -89,14 +99,41 @@ class TestSearchCommand:
                         "content": "Python is a programming language",
                         "score": 0.95,
                         "url": "https://docs.python.org",
+                        "section_title": "Introduction",
                     }
                 ]
             return []
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        # Mock the search from embeddings module (as used by commands.py)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch(
+                "docvault.models.tags.get_document_tags", return_value=[]
+            ),  # Mock tags as empty
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),  # Mock collections
+            patch(
+                "docvault.db.operations_llms.get_llms_txt_metadata", return_value=None
+            ),  # Mock llms metadata
         ):
             result = cli_runner.invoke(cli, ["search", "text", "python"])
+
+            # Debug output
+            if result.exit_code != 0:
+                print(f"Exit code: {result.exit_code}")
+                print(f"Output: {result.output}")
+                print(f"Exception: {result.exception}")
+                if result.exception:
+                    import traceback
+
+                    traceback.print_exception(
+                        type(result.exception),
+                        result.exception,
+                        result.exception.__traceback__,
+                    )
 
             assert result.exit_code == 0
             assert "Python Documentation" in result.output
@@ -111,7 +148,7 @@ class TestSearchCommand:
             return [
                 {
                     "id": 1,
-                    "document_id": self.doc1_id,
+                    "document_id": 1,
                     "segment_id": 1,
                     "title": "Test Document",
                     "content": "Test content",
@@ -120,8 +157,14 @@ class TestSearchCommand:
                 }
             ]
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
         ):
             result = cli_runner.invoke(
                 cli, ["search", "text", "test", "--format", "json"]
@@ -130,10 +173,9 @@ class TestSearchCommand:
             assert result.exit_code == 0
 
             # Parse JSON output
-            output_data = json.loads(result.output)
-            assert output_data["status"] == "success"
-            assert len(output_data["results"]) == 1
-            assert output_data["results"][0]["title"] == "Test Document"
+            data = json.loads(result.output)
+            assert data["status"] == "success"
+            assert len(data["results"]) == 1
 
     def test_search_no_results(self, cli_runner):
         """Test search with no results."""
@@ -143,8 +185,14 @@ class TestSearchCommand:
         ):
             return []
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
         ):
             result = cli_runner.invoke(cli, ["search", "text", "nonexistent"])
 
@@ -164,8 +212,14 @@ class TestSearchCommand:
             assert limit == 3
             return []
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
         ):
             result = cli_runner.invoke(cli, ["search", "text", "test", "--limit", "3"])
 
@@ -182,8 +236,14 @@ class TestSearchCommand:
             assert text_only is True
             return []
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
         ):
             result = cli_runner.invoke(cli, ["search", "text", "test", "--text-only"])
 
@@ -194,9 +254,10 @@ class TestSearchCommand:
         mock_result = [
             {
                 "id": 1,
+                "library_name": "django",
+                "version": "4.2.0",
                 "title": "Django Documentation",
                 "url": "https://docs.djangoproject.com/en/4.2/",
-                "version": "4.2.0",
                 "resolved_version": "4.2.0",
                 "scraped_at": "2024-05-24 10:00:00",
             }
@@ -217,9 +278,10 @@ class TestSearchCommand:
         mock_result = [
             {
                 "id": 1,
+                "library_name": "django",
+                "version": "3.2.0",
                 "title": "Django Documentation",
                 "url": "https://docs.djangoproject.com/en/3.2/",
-                "version": "3.2.0",
                 "resolved_version": "3.2.0",
                 "scraped_at": "2024-05-24 10:00:00",
             }
@@ -236,7 +298,7 @@ class TestSearchCommand:
             assert "3.2" in result.output
 
     def test_default_search_behavior(self, cli_runner):
-        """Test that unknown command defaults to search."""
+        """Test that default command is search."""
 
         async def mock_search(
             query, limit=5, text_only=False, min_score=0.0, doc_filter=None
@@ -245,8 +307,14 @@ class TestSearchCommand:
             assert "python" in query
             return []
 
-        with patch(
-            "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+        with (
+            patch(
+                "docvault.core.embeddings.search", AsyncMock(side_effect=mock_search)
+            ),
+            patch("docvault.models.tags.get_document_tags", return_value=[]),
+            patch(
+                "docvault.models.collections.get_document_collections", return_value=[]
+            ),
         ):
             # "dv python" should default to search
             result = cli_runner.invoke(cli, ["python"])

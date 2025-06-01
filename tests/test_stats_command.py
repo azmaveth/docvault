@@ -9,7 +9,6 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import mock_app_initialization  # Import the fixture
 
 
 @pytest.fixture
@@ -47,7 +46,7 @@ def temp_db():
                 yield db_path, storage_path
 
 
-def test_stats_command_help(runner):
+def test_stats_command_help(runner, mock_app_initialization):
     """Test stats command help output."""
     result = runner.invoke(cli, ["stats", "--help"])
     assert result.exit_code == 0

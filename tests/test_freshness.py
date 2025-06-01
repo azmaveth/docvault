@@ -4,7 +4,12 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from click.testing import CliRunner
 
+from docvault.cli.freshness_commands import (
+    check_document_freshness,
+    freshness_check,
+)
 from docvault.utils.freshness import (
     FreshnessLevel,
     calculate_age,
@@ -16,6 +21,12 @@ from docvault.utils.freshness import (
     parse_timestamp,
     should_suggest_update,
 )
+
+
+@pytest.fixture
+def runner():
+    """Create a CliRunner instance."""
+    return CliRunner()
 
 
 class TestFreshnessUtilities:
@@ -195,12 +206,15 @@ class TestFreshnessCommands:
             },
         ]
 
-    def test_freshness_check_command_all(self, runner, mock_documents):
+    def test_freshness_check_command_all(
+        self, runner, mock_documents, mock_app_initialization
+    ):
         """Test freshness check command with all documents."""
         with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+            "docvault.cli.freshness_commands.db_list_documents",
+            return_value=mock_documents,
         ):
-            result = runner.invoke(["freshness"])
+            result = runner.invoke(freshness_check)
 
             assert result.exit_code == 0
             assert "Document Freshness Report" in result.output
@@ -210,13 +224,16 @@ class TestFreshnessCommands:
             assert "Outdated Document" in result.output
             assert "Summary" in result.output
 
-    def test_freshness_check_command_filtered(self, runner, mock_documents):
+    def test_freshness_check_command_filtered(
+        self, runner, mock_documents, mock_app_initialization
+    ):
         """Test freshness check with filter."""
         with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+            "docvault.cli.freshness_commands.db_list_documents",
+            return_value=mock_documents,
         ):
             # Filter for stale documents
-            result = runner.invoke(["freshness", "--filter", "stale"])
+            result = runner.invoke(freshness_check, ["--filter", "stale"])
 
             assert result.exit_code == 0
             assert "Stale Document" in result.output
@@ -224,12 +241,15 @@ class TestFreshnessCommands:
             assert "Recent Document" not in result.output
             assert "Outdated Document" not in result.output
 
-    def test_freshness_check_command_json(self, runner, mock_documents):
+    def test_freshness_check_command_json(
+        self, runner, mock_documents, mock_app_initialization
+    ):
         """Test freshness check with JSON output."""
         with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+            "docvault.cli.freshness_commands.db_list_documents",
+            return_value=mock_documents,
         ):
-            result = runner.invoke(["freshness", "--format", "json"])
+            result = runner.invoke(freshness_check, ["--format", "json"])
 
             assert result.exit_code == 0
             # Check for JSON structure
@@ -238,12 +258,15 @@ class TestFreshnessCommands:
             assert '"freshness_level"' in result.output
             assert '"needs_update"' in result.output
 
-    def test_freshness_check_command_list(self, runner, mock_documents):
+    def test_freshness_check_command_list(
+        self, runner, mock_documents, mock_app_initialization
+    ):
         """Test freshness check with list format."""
         with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+            "docvault.cli.freshness_commands.db_list_documents",
+            return_value=mock_documents,
         ):
-            result = runner.invoke(["freshness", "--format", "list"])
+            result = runner.invoke(freshness_check, ["--format", "list"])
 
             assert result.exit_code == 0
             # Check for icon indicators
@@ -252,19 +275,22 @@ class TestFreshnessCommands:
             assert "!" in result.output  # Stale
             assert "✗" in result.output  # Outdated
 
-    def test_freshness_check_suggest_updates(self, runner, mock_documents):
+    def test_freshness_check_suggest_updates(
+        self, runner, mock_documents, mock_app_initialization
+    ):
         """Test freshness check with update suggestions only."""
         with patch(
-            "docvault.db.operations.list_documents", return_value=mock_documents
+            "docvault.cli.freshness_commands.db_list_documents",
+            return_value=mock_documents,
         ):
-            result = runner.invoke(["freshness", "--suggest-updates"])
+            result = runner.invoke(freshness_check, ["--suggest-updates"])
 
             assert result.exit_code == 0
             # Should only show outdated document (>90 days)
             assert "Outdated Document" in result.output
             assert "Fresh Document" not in result.output
 
-    def test_check_document_freshness_command(self, runner):
+    def test_check_document_freshness_command(self, runner, mock_app_initialization):
         """Test individual document freshness check."""
         mock_doc = {
             "id": 1,
@@ -276,7 +302,7 @@ class TestFreshnessCommands:
         }
 
         with patch("docvault.db.operations.get_document", return_value=mock_doc):
-            result = runner.invoke(["check-freshness", "1"])
+            result = runner.invoke(check_document_freshness, ["1"])
 
             assert result.exit_code == 0
             assert "Test Document" in result.output
@@ -284,10 +310,10 @@ class TestFreshnessCommands:
             assert "Stale" in result.output
             assert "Consider updating" in result.output
 
-    def test_check_document_freshness_not_found(self, runner):
+    def test_check_document_freshness_not_found(self, runner, mock_app_initialization):
         """Test freshness check for non-existent document."""
         with patch("docvault.db.operations.get_document", return_value=None):
-            result = runner.invoke(["check-freshness", "999"])
+            result = runner.invoke(check_document_freshness, ["999"])
 
             assert result.exit_code == 1
             assert "Document not found" in result.output

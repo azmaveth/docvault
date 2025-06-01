@@ -178,9 +178,9 @@ class TestLLMsDatabaseOperations:
         monkeypatch.setattr("docvault.config.DB_PATH", str(db_path))
 
         # Initialize database
-        from docvault.db.schema import init_db
+        from docvault.db.schema import initialize_database
 
-        init_db()
+        initialize_database()
 
         # Apply migrations
         from docvault.db.migrations import migrate_schema
@@ -312,9 +312,7 @@ class TestLLMsScraperIntegration:
         mock_add_metadata = Mock()
         mock_add_resource = Mock()
 
-        monkeypatch.setattr(
-            "docvault.db.operations.update_document_by_url", mock_add_doc
-        )
+        monkeypatch.setattr("docvault.db.operations.add_document", mock_add_doc)
         monkeypatch.setattr(
             "docvault.db.operations.add_document_segment", mock_add_segment
         )
@@ -324,6 +322,17 @@ class TestLLMsScraperIntegration:
         monkeypatch.setattr(
             "docvault.db.operations_llms.add_llms_txt_resource", mock_add_resource
         )
+
+        # Mock additional database operations
+        mock_get_doc = Mock(
+            return_value={
+                "id": 1,
+                "title": "Test Document",
+                "url": "https://example.com",
+                "version": "latest",
+            }
+        )
+        monkeypatch.setattr("docvault.db.operations.get_document", mock_get_doc)
 
         # Mock embeddings
         async def mock_embeddings(text):
@@ -335,7 +344,7 @@ class TestLLMsScraperIntegration:
 
         # Run scraper
         scraper = WebScraper()
-        await scraper.scrape("https://example.com", depth=1)
+        await scraper.scrape_url("https://example.com", depth=1)
 
         # Verify llms.txt was detected
         assert mock_add_doc.called

@@ -115,6 +115,22 @@ class LoggingConsole:
         """Print exception traceback."""
         self.console.print_exception(**kwargs)
 
+    def __getattr__(self, name):
+        """Forward missing attributes to the underlying Rich console."""
+        return getattr(self.console, name)
+
+    def __enter__(self):
+        """Context manager entry."""
+        if hasattr(self.console, "__enter__"):
+            return self.console.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        if hasattr(self.console, "__exit__"):
+            return self.console.__exit__(exc_type, exc_val, exc_tb)
+        return None
+
 
 # Global console instance with logging
 console = LoggingConsole()

@@ -169,6 +169,7 @@ class TestSectionedStorage:
             patch("docvault.core.processor.html_to_markdown") as mock_markdown,
             patch("docvault.core.storage.save_html") as mock_save_html,
             patch("docvault.core.storage.save_markdown") as mock_save_md,
+            patch("docvault.db.operations.add_document") as mock_add_doc,
             patch("docvault.db.operations.update_document_by_url") as mock_update,
             patch("docvault.core.processor.segment_markdown") as mock_segment,
             patch("docvault.core.embeddings.generate_embeddings") as mock_embed,
@@ -183,6 +184,7 @@ class TestSectionedStorage:
             )
             mock_save_html.return_value = "/path/test.html"
             mock_save_md.return_value = "/path/test.md"
+            mock_add_doc.return_value = 1  # Return document ID
             mock_update.return_value = 1
             mock_segment.return_value = [
                 {"type": "h1", "content": "Getting Started\nStart here."},
@@ -231,6 +233,7 @@ class TestSectionedStorage:
             patch("docvault.core.processor.html_to_markdown") as mock_markdown,
             patch("docvault.core.storage.save_html") as mock_save_html,
             patch("docvault.core.storage.save_markdown") as mock_save_md,
+            patch("docvault.db.operations.add_document") as mock_add_doc,
             patch("docvault.db.operations.update_document_by_url") as mock_update,
             patch("docvault.core.processor.segment_markdown") as mock_segment,
             patch("docvault.core.embeddings.generate_embeddings") as mock_embed,
@@ -243,6 +246,7 @@ class TestSectionedStorage:
             mock_markdown.return_value = "# Main Documentation\nMain content here."
             mock_save_html.return_value = "/path/test.html"
             mock_save_md.return_value = "/path/test.md"
+            mock_add_doc.return_value = 1  # Return document ID
             mock_update.return_value = 1
             mock_segment.return_value = [
                 {"type": "h1", "content": "Main Documentation\nMain content here."}

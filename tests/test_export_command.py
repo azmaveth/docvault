@@ -255,11 +255,15 @@ class TestExportCommand:
             assert "documents not found: [99]" in result.output
             assert "Successfully exported 2 files" in result.output
 
-    def test_export_no_documents(self):
+    def test_export_no_documents(self, mock_app_initialization):
         """Test exporting when no documents exist."""
+        from unittest.mock import patch
+
         runner = CliRunner()
 
-        result = runner.invoke(export_cmd, ["all"])
+        # Mock list_documents to return empty list
+        with patch("docvault.db.operations.list_documents", return_value=[]):
+            result = runner.invoke(export_cmd, ["all"])
 
         assert result.exit_code == 1
         assert "No documents found in vault" in result.output

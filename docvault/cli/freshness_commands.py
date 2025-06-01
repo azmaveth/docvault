@@ -201,7 +201,8 @@ def freshness_check(
     default=90,
     help="Days threshold for update suggestions (default: 90)",
 )
-def check_document_freshness(document_id: int, threshold: int):
+@click.pass_context
+def check_document_freshness(ctx, document_id: int, threshold: int):
     """Check the freshness status of a specific document.
 
     Examples:
@@ -213,7 +214,7 @@ def check_document_freshness(document_id: int, threshold: int):
     doc = get_document(document_id)
     if not doc:
         console.print(f"❌ Document not found: {document_id}", style="bold red")
-        return 1
+        ctx.exit(1)
 
     # Get freshness info
     freshness_level, formatted_age, icon = get_freshness_info(doc["scraped_at"])

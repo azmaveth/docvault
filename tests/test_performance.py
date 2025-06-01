@@ -6,7 +6,7 @@ import asyncio
 import os
 import tempfile
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -50,12 +50,13 @@ class TestEmbeddingsOptimized:
         mock_response.json = AsyncMock(
             return_value={"embedding": [0.1, 0.2, 0.3] * 128}
         )
+        mock_response.text = AsyncMock(return_value="Success")
 
         with patch(
             "docvault.core.embeddings_optimized.get_session"
         ) as mock_get_session:
             mock_session = AsyncMock()
-            mock_session.post.return_value.__aenter__.return_value = mock_response
+            mock_session.post.return_value = mock_response
             mock_get_session.return_value = mock_session
 
             # First call should generate embedding
@@ -84,12 +85,13 @@ class TestEmbeddingsOptimized:
         mock_response.json = AsyncMock(
             return_value={"embedding": [0.1, 0.2, 0.3] * 128}
         )
+        mock_response.text = AsyncMock(return_value="Success")
 
         with patch(
             "docvault.core.embeddings_optimized.get_session"
         ) as mock_get_session:
             mock_session = AsyncMock()
-            mock_session.post.return_value.__aenter__.return_value = mock_response
+            mock_session.post.return_value = mock_response
             mock_get_session.return_value = mock_session
 
             start_time = time.time()
@@ -165,6 +167,11 @@ class TestPerformanceMonitoring:
 
 class TestConnectionPool:
     """Test database connection pool."""
+
+    @pytest.fixture(autouse=True)
+    def setup_test_db(self, test_db):
+        """Use test database for connection pool tests."""
+        yield
 
     def test_connection_pool_creation(self):
         """Test connection pool can be created and used."""
@@ -253,10 +260,17 @@ class TestBatchOperations:
         # Cleanup
         os.unlink(db_path)
 
-    def test_batch_insert_segments(self, temp_db):
+    @patch("docvault.db.batch_operations.get_connection")
+    def test_batch_insert_segments(self, mock_get_connection, temp_db):
         """Test batch segment insertion."""
-        # This test would need to mock the connection pool
-        # For now, just test that the function exists and has correct signature
+        # Mock the connection
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.lastrowid = 1
+        mock_get_connection.return_value.__enter__.return_value = mock_conn
+
+        # Test that the function exists and has correct signature
         assert callable(batch_insert_segments)
 
         # Test with empty segments
@@ -264,6 +278,19 @@ class TestBatchOperations:
         result = batch_insert_segments(1, segments)
         assert isinstance(result, list)
         assert len(result) == 0
+
+        # Test with actual segments
+        segments = [
+            {
+                "content": "Test content",
+                "section_title": "Test Section",
+                "segment_type": "text",
+                "metadata": {},
+            }
+        ]
+        result = batch_insert_segments(1, segments)
+        assert len(result) == 1
+        assert result[0] == 1
 
 
 class TestPerformanceIndexes:
@@ -323,29 +350,4 @@ class TestIntegrationPerformance:
         assert "valid_entries" in stats
 
 
-@pytest.mark.benchmark
-class TestPerformanceBenchmarks:
-    """Benchmark tests for performance comparison."""
-
-    def test_embedding_generation_benchmark(self, benchmark):
-        """Benchmark embedding generation."""
-
-        async def generate_test_embedding():
-            # Mock the embedding generation
-            import numpy as np
-
-            return np.random.rand(384).astype(np.float32).tobytes()
-
-        # This would require pytest-benchmark
-        # result = benchmark(asyncio.run, generate_test_embedding())
-        pass
-
-    def test_database_query_benchmark(self, benchmark):
-        """Benchmark database queries with and without indexes."""
-        # This would test query performance
-        pass
-
-    def test_batch_processing_benchmark(self, benchmark):
-        """Benchmark batch vs individual processing."""
-        # This would compare batch operations to individual operations
-        pass
+# Performance benchmarks removed - these were placeholders requiring pytest-benchmark

@@ -512,11 +512,24 @@ class TestSectionCLI:
         assert "Using pip" in result.output
         assert "From source" in result.output
 
-    def test_invalid_document_id(self):
+    def test_invalid_document_id(self, mock_app_initialization):
         """Test commands with invalid document ID."""
+        from unittest.mock import MagicMock, patch
+
         runner = CliRunner()
 
-        result = runner.invoke(sections, ["toc", "99999"])
+        # Mock database operations
+        with (
+            patch("docvault.db.operations.get_document", return_value=None),
+            patch("docvault.db.operations.get_connection") as mock_get_conn,
+        ):
+            # Mock the connection context manager
+            mock_conn = MagicMock()
+            mock_get_conn.return_value.__enter__.return_value = mock_conn
+            mock_get_conn.return_value.__exit__.return_value = None
+
+            result = runner.invoke(sections, ["toc", "99999"])
+
         assert result.exit_code == 0
         assert "Document 99999 not found" in result.output
 

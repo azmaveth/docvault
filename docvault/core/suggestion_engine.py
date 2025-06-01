@@ -1,5 +1,6 @@
 """Suggestion engine for recommending related functions, classes, and modules."""
 
+import asyncio
 import logging
 import re
 import sqlite3
@@ -9,6 +10,7 @@ from typing import List, Optional, Tuple
 
 from docvault import config
 from docvault.core.context_extractor import ContextExtractor
+from docvault.core.embeddings import search as search_docs
 
 logger = logging.getLogger(__name__)
 
@@ -239,10 +241,6 @@ class SuggestionEngine:
 
         try:
             # Use existing search functionality to find related content
-            import asyncio
-
-            from docvault.core.embeddings import search as search_docs
-
             results = asyncio.run(search_docs(query, limit=limit * 2))
 
             for result in results:

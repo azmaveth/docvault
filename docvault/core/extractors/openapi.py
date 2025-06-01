@@ -13,7 +13,7 @@ class OpenAPIExtractor(BaseExtractor):
 
     def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
         """Extract content from OpenAPI/Swagger documentation."""
-        metadata = self._extract_metadata(soup)
+        metadata = self.extract_metadata(soup)
 
         # Extract API specification
         api_spec = self._extract_api_spec(soup)
