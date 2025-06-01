@@ -27,32 +27,32 @@ from tests.e2e.mock_server import MockServer
 
 
 @dataclass
-class TestCase:
+class E2ETestCase:
     """Definition of a test case."""
 
     name: str
     description: str
-    commands: List[List[str]]  # Multiple commands to run in sequence
-    validations: List[Dict[str, Any]] = field(default_factory=list)
-    expected_exit_codes: List[int] = field(default_factory=list)
-    expected_outputs: List[List[str]] = field(default_factory=list)
+    commands: list[list[str]]  # Multiple commands to run in sequence
+    validations: list[dict[str, Any]] = field(default_factory=list)
+    expected_exit_codes: list[int] = field(default_factory=list)
+    expected_outputs: list[list[str]] = field(default_factory=list)
     skip: bool = False
     skip_reason: str = ""
-    cleanup_commands: List[List[str]] = field(default_factory=list)
-    mock_routes: Dict[str, str] = field(default_factory=dict)  # Custom mock responses
+    cleanup_commands: list[list[str]] = field(default_factory=list)
+    mock_routes: dict[str, str] = field(default_factory=dict)  # Custom mock responses
 
 
 @dataclass
-class TestResult:
+class E2ETestResult:
     """Result of a test execution."""
 
     test_name: str
     success: bool
     duration: float
-    error_message: Optional[str] = None
-    outputs: List[str] = field(default_factory=list)
-    exit_codes: List[int] = field(default_factory=list)
-    validation_results: Dict[str, bool] = field(default_factory=dict)
+    error_message: str | None = None
+    outputs: list[str] = field(default_factory=list)
+    exit_codes: list[int] = field(default_factory=list)
+    validation_results: dict[str, bool] = field(default_factory=dict)
 
 
 class E2ETestRunner:
@@ -125,7 +125,7 @@ class E2ETestRunner:
         ]:
             os.environ.pop(key, None)
 
-    def run_command(self, command: List[str]) -> Tuple[int, str, str]:
+    def run_command(self, command: list[str]) -> tuple[int, str, str]:
         """Run a command and return exit code, stdout, stderr."""
         # Replace mock URLs in commands
         command = [self._replace_mock_url(arg) for arg in command]
@@ -164,7 +164,7 @@ class E2ETestRunner:
 
         return arg
 
-    def validate_database(self, validation: Dict[str, Any]) -> Dict[str, bool]:
+    def validate_database(self, validation: dict[str, Any]) -> dict[str, bool]:
         """Validate database state."""
         results = {}
 
@@ -219,7 +219,7 @@ class E2ETestRunner:
 
         return results
 
-    def validate_storage(self, validation: Dict[str, Any]) -> Dict[str, bool]:
+    def validate_storage(self, validation: dict[str, Any]) -> dict[str, bool]:
         """Validate storage state."""
         results = {}
 
@@ -253,7 +253,7 @@ class E2ETestRunner:
 
         return results
 
-    def run_test(self, test_case: TestCase) -> TestResult:
+    def run_test(self, test_case: E2ETestCase) -> E2ETestResult:
         """Run a single test case."""
         start_time = time.time()
         outputs = []
@@ -317,7 +317,7 @@ class E2ETestRunner:
 
             duration = time.time() - start_time
 
-            return TestResult(
+            return E2ETestResult(
                 test_name=test_case.name,
                 success=all_passed,
                 duration=duration,
@@ -329,7 +329,7 @@ class E2ETestRunner:
 
         except Exception as e:
             duration = time.time() - start_time
-            return TestResult(
+            return E2ETestResult(
                 test_name=test_case.name,
                 success=False,
                 duration=duration,
@@ -339,7 +339,7 @@ class E2ETestRunner:
                 validation_results=validation_results,
             )
 
-    def run_tests(self, test_cases: List[TestCase]) -> List[TestResult]:
+    def run_tests(self, test_cases: list[E2ETestCase]) -> list[E2ETestResult]:
         """Run all test cases."""
         results = []
 
@@ -376,7 +376,7 @@ class E2ETestRunner:
 
         return results
 
-    def print_summary(self, results: List[TestResult]):
+    def print_summary(self, results: list[E2ETestResult]):
         """Print test summary."""
         total = len(results)
         passed = sum(1 for r in results if r.success)

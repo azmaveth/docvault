@@ -56,3 +56,18 @@ asyncio_mode = "auto"
 [tool.isort]
 profile = "black"
 line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = [
+    "F401",  # Unused imports (needed for pytest fixtures)
+    "F811",  # Redefinition of unused variable (common in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["F401", "F811"]  # Allow unused imports in tests (fixtures)
+"tests/test_*.py" = ["F401", "F811"]  # Allow unused imports in tests (fixtures)

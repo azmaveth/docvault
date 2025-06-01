@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.cli.commands import export_cmd
+from tests.utils import mock_app_initialization
 
 
 class TestExportCommand:

@@ -7,8 +7,10 @@ import pytest
 from click.testing import CliRunner
 
 from docvault.main import cli
-from tests.utils import (  # Import the fixtures
+from tests.utils import (
     create_test_document_in_db,
+    mock_app_initialization,
+    temp_project,
 )
 
 
@@ -142,7 +144,7 @@ class TestImportCommand:
         """Test handling of timeout errors."""
 
         async def mock_scrape_timeout(*args, **kwargs):
-            raise asyncio.TimeoutError("Request timed out")
+            raise TimeoutError("Request timed out")
 
         with patch("docvault.core.scraper.get_scraper") as mock_get:
             scraper = MagicMock()

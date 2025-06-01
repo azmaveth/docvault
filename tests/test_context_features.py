@@ -10,6 +10,7 @@ from docvault.core.context_extractor import (
     ContextExtractor,
 )
 from docvault.core.suggestion_engine import Suggestion, SuggestionEngine
+from tests.utils import mock_app_initialization
 
 
 @pytest.fixture

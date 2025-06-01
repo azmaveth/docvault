@@ -2,25 +2,25 @@
 Comprehensive test definitions for all DocVault commands.
 """
 
-from tests.e2e.test_runner import TestCase
+from tests.e2e.test_runner import E2ETestCase
 
 # Test cases for basic commands
 BASIC_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="help_command",
         description="Test help command shows all available commands",
         commands=[["dv", "--help"]],
         expected_exit_codes=[0],
         expected_outputs=[["Commands:", "add", "list", "search", "read"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="version_command",
         description="Test version command shows version info",
         commands=[["dv", "--version"]],
         expected_exit_codes=[0],
         expected_outputs=[["DocVault version"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="init_command",
         description="Test database initialization",
         commands=[["dv", "init", "--force"]],
@@ -32,7 +32,7 @@ BASIC_TESTS = [
 
 # Test cases for document management
 DOCUMENT_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="add_single_document",
         description="Test adding a single document",
         commands=[["dv", "add", "MOCK_HTML"]],
@@ -47,7 +47,7 @@ DOCUMENT_TESTS = [
             {"type": "storage", "has_markdown_files": 1, "has_html_files": 1},
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="add_with_depth",
         description="Test adding documents with depth parameter",
         commands=[["dv", "add", "MOCK_DEPTH", "--depth", "2"]],
@@ -61,7 +61,7 @@ DOCUMENT_TESTS = [
             }
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="add_with_sections",
         description="Test adding document with section filtering",
         commands=[["dv", "add", "MOCK_PYTHON_DOCS", "--sections", "string-methods"]],
@@ -75,7 +75,7 @@ DOCUMENT_TESTS = [
             }
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="list_documents",
         description="Test listing documents",
         commands=[
@@ -91,7 +91,7 @@ DOCUMENT_TESTS = [
         ],
         validations=[{"type": "database", "document_count": 2}],
     ),
-    TestCase(
+    E2ETestCase(
         name="read_document",
         description="Test reading a document",
         commands=[["dv", "add", "MOCK_MARKDOWN"], ["dv", "read", "1"]],
@@ -101,7 +101,7 @@ DOCUMENT_TESTS = [
             ["Markdown Test Document", "Easy to read", "Hello, {name}!"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="read_with_format",
         description="Test reading document in different formats",
         commands=[["dv", "add", "MOCK_HTML"], ["dv", "read", "1", "--format", "json"]],
@@ -111,7 +111,7 @@ DOCUMENT_TESTS = [
             ['"title":', '"content":', '"url":'],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="remove_document",
         description="Test removing a document",
         commands=[["dv", "add", "MOCK_HTML"], ["dv", "rm", "1", "--force"]],
@@ -122,7 +122,7 @@ DOCUMENT_TESTS = [
         ],
         validations=[{"type": "database", "document_count": 0}],
     ),
-    TestCase(
+    E2ETestCase(
         name="remove_multiple",
         description="Test removing multiple documents",
         commands=[
@@ -144,7 +144,7 @@ DOCUMENT_TESTS = [
 
 # Test cases for search functionality
 SEARCH_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="search_text_basic",
         description="Test basic text search",
         commands=[
@@ -159,7 +159,7 @@ SEARCH_TESTS = [
             ["JavaScript Array Methods", "Found"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="search_with_limit",
         description="Test search with result limit",
         commands=[
@@ -174,14 +174,14 @@ SEARCH_TESTS = [
             ["Found 1 result"],  # Should limit to 1 result
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="search_library",
         description="Test library search",
         commands=[["dv", "search", "lib", "requests"]],
         expected_exit_codes=[0],
         expected_outputs=[["Error fetching documentation"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="search_batch",
         description="Test batch library search",
         commands=[["dv", "search", "batch", "requests", "numpy", "express"]],
@@ -192,7 +192,7 @@ SEARCH_TESTS = [
 
 # Test cases for organization features
 ORGANIZATION_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="tag_add",
         description="Test adding tags to documents",
         commands=[
@@ -206,7 +206,7 @@ ORGANIZATION_TESTS = [
         ],
         validations=[{"type": "database", "has_tags": ["python", "documentation"]}],
     ),
-    TestCase(
+    E2ETestCase(
         name="tag_list",
         description="Test listing tags",
         commands=[
@@ -221,7 +221,7 @@ ORGANIZATION_TESTS = [
             ["Document Tags", "python", "tutorial"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="tag_search",
         description="Test searching by tag",
         commands=[
@@ -240,7 +240,7 @@ ORGANIZATION_TESTS = [
             ["python"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="collection_create",
         description="Test creating collections",
         commands=[
@@ -269,7 +269,7 @@ ORGANIZATION_TESTS = [
 
 # Test cases for advanced features
 ADVANCED_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="export_document",
         description="Test exporting documents",
         commands=[
@@ -280,7 +280,7 @@ ADVANCED_TESTS = [
         expected_outputs=[["Successfully imported"], ["Exported", "exported_doc.md"]],
         validations=[],  # File is exported to test_dir, not storage_path
     ),
-    TestCase(
+    E2ETestCase(
         name="backup_restore",
         description="Test backup and restore functionality",
         commands=[
@@ -308,7 +308,7 @@ ADVANCED_TESTS = [
         skip=True,
         skip_reason="Backup/restore has issues in test environment",
     ),
-    TestCase(
+    E2ETestCase(
         name="freshness_check",
         description="Test document freshness checking",
         commands=[["dv", "add", "MOCK_HTML"], ["dv", "freshness"]],
@@ -318,7 +318,7 @@ ADVANCED_TESTS = [
             ["Document Freshness Report", "Fresh"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="suggest_command",
         description="Test suggestion feature",
         commands=[
@@ -333,7 +333,7 @@ ADVANCED_TESTS = [
             ["Suggestions for", "arrays"],
         ],
     ),
-    TestCase(
+    E2ETestCase(
         name="context_extraction",
         description="Test context extraction features",
         commands=[["dv", "add", "MOCK_PYTHON_DOCS"], ["dv", "read", "1", "--context"]],
@@ -347,21 +347,21 @@ ADVANCED_TESTS = [
 
 # Test cases for error handling
 ERROR_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="invalid_url",
         description="Test handling of invalid URLs",
         commands=[["dv", "add", "not-a-valid-url"]],
         expected_exit_codes=[1],
         expected_outputs=[["Invalid URL", "Error"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="nonexistent_document",
         description="Test reading nonexistent document",
         commands=[["dv", "read", "999"]],
         expected_exit_codes=[0],
         expected_outputs=[["Document not found"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="network_timeout",
         description="Test handling network timeouts",
         commands=[["dv", "add", "MOCK_TIMEOUT", "--timeout", "2"]],
@@ -370,7 +370,7 @@ ERROR_TESTS = [
         skip=True,
         skip_reason="--timeout option not available in dv add command",
     ),
-    TestCase(
+    E2ETestCase(
         name="duplicate_tags",
         description="Test handling duplicate tags",
         commands=[
@@ -389,14 +389,14 @@ ERROR_TESTS = [
 
 # Test cases for configuration and settings
 CONFIG_TESTS = [
-    TestCase(
+    E2ETestCase(
         name="config_display",
         description="Test configuration display",
         commands=[["dv", "config"]],
         expected_exit_codes=[0],
         expected_outputs=[["Current Configuration", "Database"]],
     ),
-    TestCase(
+    E2ETestCase(
         name="stats_command",
         description="Test statistics display",
         commands=[

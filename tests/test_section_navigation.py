@@ -16,6 +16,7 @@ from docvault.core.section_splitter import (
     SectionSplitter,
 )
 from docvault.db.operations import add_document, add_document_segment, get_connection
+from tests.utils import mock_app_initialization
 
 
 class TestSectionNavigator:

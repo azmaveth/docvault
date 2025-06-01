@@ -3,7 +3,7 @@ Test cache management CLI commands.
 """
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +18,7 @@ from docvault.cli.cache_commands import (
 )
 from docvault.db.migrations.add_caching_fields_0006 import upgrade as add_cache_fields
 from docvault.db.operations import add_document
+from tests.utils import mock_app_initialization
 
 
 class TestCacheCommands:
@@ -46,7 +47,7 @@ class TestCacheCommands:
         conn = test_db
         cursor = conn.cursor()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # Fresh document
         cursor.execute(
             "UPDATE documents SET last_checked = ?, staleness_status = ? WHERE id = ?",

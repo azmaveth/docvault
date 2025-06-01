@@ -21,6 +21,7 @@ from docvault.utils.freshness import (
     parse_timestamp,
     should_suggest_update,
 )
+from tests.utils import mock_app_initialization
 
 
 @pytest.fixture
