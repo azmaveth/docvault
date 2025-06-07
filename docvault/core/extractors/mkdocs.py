@@ -1,6 +1,6 @@
 """MkDocs documentation extractor."""
 
-from typing import Any, List
+from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 

@@ -2,7 +2,7 @@
 Database operations for llms.txt support.
 """
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from .operations import get_connection
 

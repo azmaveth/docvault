@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sqlite3
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from docvault import config
 from docvault.db.query_builder import build_document_filter

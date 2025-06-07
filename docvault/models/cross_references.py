@@ -3,7 +3,7 @@
 import logging
 import re
 import sqlite3
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from docvault import config
 

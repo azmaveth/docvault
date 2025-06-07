@@ -10,7 +10,7 @@ sets with optional ordering and project-specific context.
 import json
 import logging
 import sqlite3
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from docvault.db.operations import get_connection
 

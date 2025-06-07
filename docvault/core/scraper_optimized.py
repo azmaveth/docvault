@@ -4,7 +4,7 @@ Optimized document scraper with performance improvements.
 
 import asyncio
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import aiohttp
 

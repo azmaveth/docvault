@@ -5,7 +5,7 @@ import logging
 import re
 import sqlite3
 from datetime import datetime, timedelta
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import requests
 from bs4 import BeautifulSoup

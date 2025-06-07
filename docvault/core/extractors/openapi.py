@@ -1,7 +1,7 @@
 """OpenAPI/Swagger documentation extractor."""
 
 import re
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from bs4 import BeautifulSoup, Tag
 
