@@ -162,7 +162,8 @@ def find_lib(query, version, source_id, limit):
             click.echo(f"{lib.name} {lib.version}")
             if lib.description:
                 click.echo(
-                    f"  {lib.description[:100]}{'...' if len(lib.description) > 100 else ''}"
+                    f"  {lib.description[:100]}"
+                    f"{'...' if len(lib.description) > 100 else ''}"
                 )
             click.echo(f"  Documentation: {lib.doc_url}")
             if lib.latest_version and lib.latest_version != lib.version:
