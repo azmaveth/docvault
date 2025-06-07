@@ -461,11 +461,13 @@ def _scrape(
 
             console.print(table)
             console.print(
-                f"✅ Imported: [bold green]{document['title']}[/] (ID: {document['id']})"
+                f"✅ Imported: [bold green]{document['title']}[/] "
+                f"(ID: {document['id']})"
             )
         else:
             console.print(
-                "❌ Failed to scrape document. The page might not contain any indexable content.",
+                "❌ Failed to scrape document. The page might not contain "
+                "any indexable content.",
                 style="bold red",
             )
             console.print(
@@ -491,7 +493,8 @@ def _scrape(
 @click.option(
     "--depth",
     default="1",
-    help="Scraping depth: number (1=single page) or strategy (auto/conservative/aggressive)",
+    help="Scraping depth: number (1=single page) or strategy "
+    "(auto/conservative/aggressive)",
 )
 @click.option(
     "--max-links",
@@ -622,7 +625,8 @@ def import_cmd(
                         "Access forbidden (403). You might need authentication."
                     )
                     console.warning(
-                        "Some documentation sites require authentication or have rate limiting."
+                        "Some documentation sites require authentication or have "
+                        "rate limiting."
                     )
                 elif "401" in error_str or "Unauthorized" in error_str:
                     console.error("Authentication required (401).")
@@ -710,7 +714,8 @@ def import_cmd(
                 )
                 console.print(table)
                 console.print(
-                    f"✅ Imported: [bold green]{document['title']}[/] (ID: {document['id']})"
+                    f"✅ Imported: [bold green]{document['title']}[/] "
+                f"(ID: {document['id']})"
                 )
 
                 # Provide helpful next steps
@@ -731,7 +736,8 @@ def import_cmd(
                     json.dumps(
                         {
                             "status": "error",
-                            "error": "Failed to import document. The page might not contain any indexable content.",
+                            "error": "Failed to import document. The page might not "
+                            "contain any indexable content.",
                         },
                         indent=2,
                     )
@@ -742,18 +748,23 @@ def import_cmd(
 
                 root = Element("import_result")
                 root.set("status", "error")
-                root.text = "Failed to import document. The page might not contain any indexable content."
+                root.text = (
+                    "Failed to import document. The page might not contain "
+                    "any indexable content."
+                )
 
                 rough_string = tostring(root, encoding="unicode")
                 reparsed = minidom.parseString(rough_string)
                 print(reparsed.toprettyxml(indent="  "))
             else:
                 console.print(
-                    "❌ Failed to import document. The page might not contain any indexable content.",
+                    "❌ Failed to import document. The page might not contain "
+                    "any indexable content.",
                     style="bold red",
                 )
                 console.print(
-                    "  Try checking the URL in a web browser to verify it's accessible.",
+                    "  Try checking the URL in a web browser to verify it's "
+                    "accessible.",
                     style="yellow",
                 )
 
@@ -1146,7 +1157,8 @@ def list_cmd(filter, verbose, format):
 @click.option(
     "--context",
     is_flag=True,
-    help="Show contextual information including usage examples, best practices, and pitfalls",
+    help="Show contextual information including usage examples, best practices, "
+    "and pitfalls",
 )
 @validate_doc_id
 def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, context):
@@ -1287,7 +1299,8 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 if suggestion:
                     console.print(f"\n💡 {suggestion}", style="yellow")
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to refresh this document"
+                        f"   Run [cyan]dv update {document_id}[/] to refresh this "
+                        "document"
                     )
                 console.print()
 
@@ -1296,17 +1309,21 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
 
                 if staleness_status == StalenessStatus.STALE:
                     console.print(
-                        "⚠️  [yellow]This document was last updated more than 7 days ago[/]"
+                        "⚠️  [yellow]This document was last updated more than 7 "
+                        "days ago[/]"
                     )
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                        f"   Run [cyan]dv update {document_id}[/] to check for "
+                        "updates\n"
                     )
                 elif staleness_status == StalenessStatus.OUTDATED:
                     console.print(
-                        "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                        "❌ [red]This document is outdated (last updated more "
+                        "than 30 days ago)[/]"
                     )
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                        f"   Run [cyan]dv update {document_id}[/] to check for "
+                        "updates\n"
                     )
 
                 console.print(formatted_summary)
@@ -1447,7 +1464,8 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 if suggestion:
                     console.print(f"\n💡 {suggestion}", style="yellow")
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to refresh this document"
+                        f"   Run [cyan]dv update {document_id}[/] to refresh this "
+                        "document"
                     )
                 console.print()
 
@@ -1456,17 +1474,21 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
 
                 if staleness_status == StalenessStatus.STALE:
                     console.print(
-                        "⚠️  [yellow]This document was last updated more than 7 days ago[/]"
+                        "⚠️  [yellow]This document was last updated more than 7 "
+                        "days ago[/]"
                     )
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                        f"   Run [cyan]dv update {document_id}[/] to check for "
+                        "updates\n"
                     )
                 elif staleness_status == StalenessStatus.OUTDATED:
                     console.print(
-                        "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                        "❌ [red]This document is outdated (last updated more "
+                        "than 30 days ago)[/]"
                     )
                     console.print(
-                        f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
+                        f"   Run [cyan]dv update {document_id}[/] to check for "
+                        "updates\n"
                     )
 
             console.print(content)

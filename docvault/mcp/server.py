@@ -501,7 +501,8 @@ def create_server() -> FastMCP:
                     )
                 except Exception as e:
                     logger.warning(
-                        f"Advanced chunking failed, falling back to character chunking: {e}"
+                        f"Advanced chunking failed, falling back to character "
+                        f"chunking: {e}"
                     )
                     # Fall back to simple character chunking
                     total_length = len(content)
@@ -512,7 +513,10 @@ def create_server() -> FastMCP:
                             content=[
                                 types.TextContent(
                                     type="text",
-                                    text=f"Invalid chunk number {chunk_number}. Document has {total_chunks} chunks.",
+                                    text=(
+                                        f"Invalid chunk number {chunk_number}. "
+                                        f"Document has {total_chunks} chunks."
+                                    ),
                                 )
                             ],
                             metadata={
@@ -592,7 +596,10 @@ def create_server() -> FastMCP:
     async def lookup_library_docs_tool(
         library_name: str, version: str = "latest"
     ) -> types.CallToolResult:
-        """Lookup and fetch documentation for a specific library and version if not already available"""
+        """Lookup and fetch documentation for a specific library and version.
+        
+        If documentation is not already available, attempts to fetch it.
+        """
         try:
             documents = await lookup_library_docs(library_name, version)
 
