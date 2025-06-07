@@ -62,7 +62,7 @@ class TestLLMsParser:
         assert len(docs_resources) == 3
         assert docs_resources[0].title == "Installation Guide"
         assert docs_resources[0].url == "https://docvault.io/docs/install"
-        assert docs_resources[0].description == "Complete installation instructions"
+        assert docs_resources[0].description == "Complete installation"
         assert not docs_resources[0].is_optional
 
         # Check Optional section

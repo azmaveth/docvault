@@ -615,7 +615,7 @@ def search_segments(
                 + " END) AS score"
                 + """
                     ,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_pathORDER BY
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY
                         (CASE
                 """
                 + "\n".join(order_score_cases)

@@ -55,6 +55,7 @@ def test_default_to_search_text_on_unknown_args(cli_runner):
     assert (
         "Search Results" in result.output
         or "No matching documents found" in result.output
+        or ("Found" in result.output and "results for" in result.output)
     )
 
 
@@ -69,6 +70,7 @@ def test_default_to_search_text_on_single_unknown_arg(cli_runner):
     assert (
         "Search Results" in result.output
         or "No matching documents found" in result.output
+        or ("Found" in result.output and "results for" in result.output)
     )
 
 

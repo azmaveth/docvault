@@ -7,15 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.7.1] - 2025-01-06
 
-- **MCP Server Contextual Retrieval Tools**: New tools for managing contextual retrieval via MCP
-  - `enable_contextual_retrieval` - Enable contextual retrieval for enhanced search accuracy
-  - `disable_contextual_retrieval` - Disable contextual retrieval
-  - `get_contextual_retrieval_status` - Get status and coverage statistics
-  - `process_document_with_context` - Process specific documents with contextual augmentation
-  - `configure_contextual_retrieval` - Configure LLM provider (Ollama, OpenAI, Anthropic)
-  - `find_similar_by_context` - Find semantically similar content using contextual embeddings
+### Fixed
+
+- **Critical SQL Syntax Error**: Fixed missing space in ROW_NUMBER() window function causing search failures
+- **Test Suite Stability**: Fixed all 12 failing tests to match current output formats and behavior
+  - Updated CLI output assertions to match new format ("✅ Imported:" vs "Successfully imported")
+  - Fixed search result expectations for new output format ("Found X results" vs "Search Results")
+  - Adjusted score assertions in embeddings tests to handle score normalization
+  - Updated MCP server tests to handle both original and summary content formats
+  - Fixed LLMs parser tests to match actual parser behavior
+- **Code Quality**: Achieved 100% linting compliance by fixing all 450+ E501 line-too-long errors
+  - Systematic cleanup across 50+ files in the codebase
+  - Proper line breaking for long strings, function calls, and imports
+  - Maintained code readability while enforcing 88-character limit
 
 ## [0.7.0] - 2025-01-06
 

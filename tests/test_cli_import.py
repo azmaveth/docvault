@@ -81,7 +81,7 @@ class TestImportCommand:
         result = cli_runner.invoke(cli, ["add", "https://example.com"])
 
         assert result.exit_code == 0
-        assert "Successfully imported" in result.output
+        assert "✅ Imported:" in result.output
         assert "Test Document" in result.output
 
     def test_import_with_depth(self, cli_runner, mock_scraper_success):
@@ -89,7 +89,7 @@ class TestImportCommand:
         result = cli_runner.invoke(cli, ["add", "https://example.com", "--depth", "3"])
 
         assert result.exit_code == 0
-        assert "Successfully imported" in result.output
+        assert "✅ Imported:" in result.output
 
         # Verify the scraper was called with correct depth
         mock_scraper_success.scrape_url.assert_called_once()
@@ -134,7 +134,7 @@ class TestImportCommand:
         result = cli_runner.invoke(cli, ["add", "https://example.com", "--update"])
 
         assert result.exit_code == 0
-        assert "Successfully imported" in result.output
+        assert "✅ Imported:" in result.output
 
         # Verify force_update was passed
         call_kwargs = mock_scraper_success.scrape_url.call_args[1]
@@ -165,6 +165,6 @@ class TestImportCommand:
 
         assert result.exit_code == 0
         # In quiet mode, output should still show results but no progress messages
-        assert "Successfully imported" in result.output
+        assert "✅ Imported:" in result.output
         # Should not have the initial "Importing" message
         assert "🌐 Importing" not in result.output
