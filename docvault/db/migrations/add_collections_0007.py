@@ -56,28 +56,28 @@ def upgrade(conn=None):
         # Create indexes for efficient queries
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_collection_documents_collection 
+            CREATE INDEX IF NOT EXISTS idx_collection_documents_collection
             ON collection_documents(collection_id, position)
         """
         )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_collection_documents_document 
+            CREATE INDEX IF NOT EXISTS idx_collection_documents_document
             ON collection_documents(document_id)
         """
         )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_collections_name 
+            CREATE INDEX IF NOT EXISTS idx_collections_name
             ON collections(name)
         """
         )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_collections_active 
+            CREATE INDEX IF NOT EXISTS idx_collections_active
             ON collections(is_active)
         """
         )

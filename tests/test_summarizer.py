@@ -33,7 +33,7 @@ class DataValidator:
 
 def process_data(data, format='json'):
     '''Process data in the specified format.
-    
+
     :param data: The data to process
     :param format: The format to use (json, xml, csv)
     :return: Processed data
@@ -42,7 +42,7 @@ def process_data(data, format='json'):
 
 def validate_input(value, rules):
     '''Validate input against a set of rules.
-    
+
     :param value: The value to validate
     :param rules: List of validation rules
     :return: True if valid, False otherwise

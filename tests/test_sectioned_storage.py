@@ -22,25 +22,25 @@ class TestSectionedStorage:
         <body>
             <h1>Introduction</h1>
             <p>This is the introduction content.</p>
-            
+
             <h2>Installation</h2>
             <p>To install the package, run:</p>
             <code>pip install example</code>
-            
+
             <h2>API Reference</h2>
             <p>This section covers the API.</p>
-            
+
             <h3>Classes</h3>
             <p>Available classes in the package.</p>
-            
+
             <h2>Examples</h2>
             <p>Usage examples.</p>
-            
+
             <div class="documentation">
                 <h2>Advanced Topics</h2>
                 <p>Advanced documentation content.</p>
             </div>
-            
+
             <div id="api-docs">
                 <h3>API Details</h3>
                 <p>Detailed API documentation.</p>

@@ -67,11 +67,11 @@ async def demo_depth_strategies():
     <pre><code>
     def process_data(input: str, options: dict) -> dict:
         '''Process input data with given options.
-        
+
         Args:
             input: The input string to process
             options: Configuration options
-            
+
         Returns:
             Processed data as dictionary
         '''

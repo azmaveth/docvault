@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from docvault import config
 from docvault.db.query_builder import build_document_filter
@@ -100,7 +100,7 @@ def add_document(
         # Use new schema with doc_type and metadata
         cursor.execute(
             """
-        INSERT INTO documents 
+        INSERT INTO documents
         (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url, doc_type, metadata)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -124,7 +124,7 @@ def add_document(
         # Use intermediate schema with llms_txt columns but without doc_type/metadata
         cursor.execute(
             """
-        INSERT INTO documents 
+        INSERT INTO documents
         (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -146,7 +146,7 @@ def add_document(
         # Use basic schema without newer columns
         cursor.execute(
             """
-        INSERT INTO documents 
+        INSERT INTO documents
         (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -255,7 +255,7 @@ def get_document_segment(segment_id: int) -> dict[str, Any] | None:
 
     cursor.execute(
         """
-        SELECT * FROM document_segments 
+        SELECT * FROM document_segments
         WHERE id = ?
         """,
         (segment_id,),
@@ -379,8 +379,8 @@ def add_document_segment(
         # Insert the segment
         cursor.execute(
             """
-            INSERT INTO document_segments 
-            (document_id, content, embedding, segment_type, position, 
+            INSERT INTO document_segments
+            (document_id, content, embedding, segment_type, position,
              section_title, section_level, section_path, parent_segment_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -463,24 +463,24 @@ def search_segments(
             # Build vector search query - use static base query with additional conditions
             base_query = """
             WITH vector_matches AS (
-                SELECT 
+                SELECT
                     rowid,
                     distance
-                FROM document_segments_vec 
+                FROM document_segments_vec
                 WHERE embedding MATCH ?
                 ORDER BY distance
                 LIMIT ?
             ),
             ranked_segments AS (
-                SELECT 
-                    s.id, 
-                    s.document_id, 
-                    s.content, 
+                SELECT
+                    s.id,
+                    s.document_id,
+                    s.content,
                     s.section_title,
                     s.section_path,
                     s.section_level,
                     s.parent_segment_id,
-                    d.title, 
+                    d.title,
                     d.url,
                     d.version,
                     d.updated_at,
@@ -504,7 +504,7 @@ def search_segments(
 
             base_query += """
             )
-            SELECT * FROM ranked_segments 
+            SELECT * FROM ranked_segments
             WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
             LIMIT ?
@@ -554,23 +554,23 @@ def search_segments(
             # Construct the query dynamically based on number of terms
             base_query = """
             WITH ranked_segments AS (
-                SELECT 
-                    s.id, 
-                    s.document_id, 
-                    s.content, 
+                SELECT
+                    s.id,
+                    s.document_id,
+                    s.content,
                     s.section_title,
                     s.section_path,
                     s.section_level,
                     s.parent_segment_id,
-                    s.segment_type, 
-                    d.title, 
+                    s.segment_type,
+                    d.title,
                     d.url,
                     d.version,
                     d.updated_at,
                     d.is_library_doc,
                     d.library_id,
                     l.name as library_name,
-                    (CASE 
+                    (CASE
             """
 
             # Score for exact matches
@@ -598,8 +598,8 @@ def search_segments(
                 + " END) AS score"
                 + """
                     ,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY 
-                        (CASE 
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY
+                        (CASE
                 """
                 + "\n".join(order_score_cases)
                 + """
@@ -631,7 +631,7 @@ def search_segments(
                 )
                 GROUP BY s.document_id, s.section_path
             )
-            SELECT * FROM ranked_segments 
+            SELECT * FROM ranked_segments
             WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
             LIMIT ?
@@ -679,16 +679,16 @@ def search_segments(
             # Build query for no text search
             query = """
             WITH ranked_segments AS (
-                SELECT 
-                    s.id, 
-                    s.document_id, 
-                    s.content, 
+                SELECT
+                    s.id,
+                    s.document_id,
+                    s.content,
                     s.section_title,
                     s.section_path,
                     s.section_level,
                     s.parent_segment_id,
-                    s.segment_type, 
-                    d.title, 
+                    s.segment_type,
+                    d.title,
                     d.url,
                     d.version,
                     d.updated_at,
@@ -709,7 +709,7 @@ def search_segments(
 
             query += """
             )
-            SELECT * FROM ranked_segments 
+            SELECT * FROM ranked_segments
             WHERE rn = 1 AND score >= ?
             ORDER BY RANDOM()
             LIMIT ?
@@ -799,7 +799,7 @@ def add_library(name: str, version: str, doc_url: str) -> int:
 
     cursor.execute(
         """
-    INSERT OR REPLACE INTO libraries 
+    INSERT OR REPLACE INTO libraries
     (name, version, doc_url, last_checked, is_available)
     VALUES (?, ?, ?, ?, ?)
     """,
@@ -820,7 +820,7 @@ def get_library(name: str, version: str) -> dict[str, Any] | None:
 
     cursor.execute(
         """
-    SELECT * FROM libraries 
+    SELECT * FROM libraries
     WHERE name = ? AND version = ?
     """,
         (name, version),
@@ -841,7 +841,7 @@ def get_library_documents(library_id: int) -> list[dict[str, Any]]:
 
     cursor.execute(
         """
-    SELECT * FROM documents 
+    SELECT * FROM documents
     WHERE library_id = ?
     """,
         (library_id,),
@@ -861,12 +861,12 @@ def get_latest_library_version(name: str) -> dict[str, Any] | None:
     # First try to find an explicitly 'latest' version
     cursor.execute(
         """
-    SELECT * FROM libraries 
+    SELECT * FROM libraries
     WHERE name = ? AND version != 'latest' AND is_available = 1
-    ORDER BY 
-        CASE 
+    ORDER BY
+        CASE
             WHEN version = 'stable' THEN 0
-            WHEN version GLOB '[0-9]*.[0-9]*.[0-9]*' THEN 1 
+            WHEN version GLOB '[0-9]*.[0-9]*.[0-9]*' THEN 1
             WHEN version GLOB '[0-9]*.[0-9]*' THEN 2
             ELSE 3
         END,

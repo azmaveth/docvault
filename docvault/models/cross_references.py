@@ -3,7 +3,7 @@
 import logging
 import re
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from docvault import config
 
@@ -114,8 +114,8 @@ def store_references(references: list[dict[str, Any]]) -> int:
             try:
                 cursor.execute(
                     """
-                    INSERT INTO cross_references 
-                    (source_segment_id, reference_type, reference_text, 
+                    INSERT INTO cross_references
+                    (source_segment_id, reference_type, reference_text,
                      reference_context, confidence)
                     VALUES (?, ?, ?, ?, ?)
                 """,
@@ -170,7 +170,7 @@ def store_anchor(
         cursor.execute(
             """
             INSERT OR REPLACE INTO document_anchors
-            (document_id, segment_id, anchor_type, anchor_name, 
+            (document_id, segment_id, anchor_type, anchor_name,
              anchor_signature, anchor_path)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
@@ -288,9 +288,9 @@ def resolve_references(document_id: int) -> int:
                 """
                 SELECT da.segment_id, da.document_id
                 FROM document_anchors da
-                WHERE da.anchor_name = ? 
+                WHERE da.anchor_name = ?
                 AND (da.anchor_type = ? OR ? = 'link')
-                ORDER BY 
+                ORDER BY
                     CASE WHEN da.document_id = ? THEN 0 ELSE 1 END,
                     da.id DESC
                 LIMIT 1
@@ -332,7 +332,7 @@ def get_references_from_segment(segment_id: int) -> list[dict[str, Any]]:
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 cr.*,
                 ds.section_title as target_section,
                 d.title as target_document_title,
@@ -366,7 +366,7 @@ def get_references_to_segment(segment_id: int) -> list[dict[str, Any]]:
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 cr.*,
                 ds.section_title as source_section,
                 d.title as source_document_title,
@@ -417,7 +417,7 @@ def build_reference_graph(document_id: int) -> dict[str, Any]:
             SELECT cr.*
             FROM cross_references cr
             JOIN document_segments ds ON cr.source_segment_id = ds.id
-            WHERE ds.document_id = ? 
+            WHERE ds.document_id = ?
             AND cr.target_document_id = ?
         """,
             (document_id, document_id),

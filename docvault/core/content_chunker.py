@@ -277,7 +277,7 @@ class ContentChunker:
             # Get all sections ordered by path
             cursor = conn.execute(
                 """
-                SELECT id, section_title, section_path, content, 
+                SELECT id, section_title, section_path, content,
                        LENGTH(content) as content_length
                 FROM document_segments
                 WHERE document_id = ?
@@ -461,7 +461,7 @@ class ContentChunker:
                 boundaries = self._find_semantic_boundaries(
                     section_chunk.content, respect_code_blocks
                 )
-                sub_chunks = self._create_semantic_chunks(
+                self._create_semantic_chunks(
                     section_chunk.content, boundaries, chunk_size
                 )
 

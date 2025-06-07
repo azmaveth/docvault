@@ -240,7 +240,7 @@ class VectorSummarizer:
                 return []
 
             query_sql = f"""
-                SELECT 
+                SELECT
                     id,
                     section_title,
                     section_path,

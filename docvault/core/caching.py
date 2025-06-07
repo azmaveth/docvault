@@ -78,8 +78,8 @@ class CacheManager:
             # Get document info
             cursor.execute(
                 """
-                SELECT last_checked, is_pinned 
-                FROM documents 
+                SELECT last_checked, is_pinned
+                FROM documents
                 WHERE id = ?
             """,
                 (document_id,),
@@ -106,8 +106,8 @@ class CacheManager:
             # Update status in database
             cursor.execute(
                 """
-                UPDATE documents 
-                SET staleness_status = ? 
+                UPDATE documents
+                SET staleness_status = ?
                 WHERE id = ?
             """,
                 (status.value, document_id),
@@ -124,9 +124,9 @@ class CacheManager:
             cursor = conn.cursor()
 
             query = """
-                SELECT id, url, title, version, last_checked, 
+                SELECT id, url, title, version, last_checked,
                        staleness_status, is_pinned
-                FROM documents 
+                FROM documents
                 WHERE is_pinned = FALSE
             """
             params = []
@@ -175,8 +175,8 @@ class CacheManager:
             # Get document info
             cursor.execute(
                 """
-                SELECT url, etag, content_hash, server_last_modified 
-                FROM documents 
+                SELECT url, etag, content_hash, server_last_modified
+                FROM documents
                 WHERE id = ?
             """,
                 (document_id,),
@@ -243,8 +243,8 @@ class CacheManager:
             now = datetime.now(UTC)
             cursor.execute(
                 """
-                UPDATE documents 
-                SET last_checked = ?, staleness_status = ? 
+                UPDATE documents
+                SET last_checked = ?, staleness_status = ?
                 WHERE id = ?
             """,
                 (now.isoformat(), StalenessStatus.FRESH.value, document_id),
@@ -295,8 +295,8 @@ class CacheManager:
 
             cursor.execute(
                 """
-                UPDATE documents 
-                SET is_pinned = ? 
+                UPDATE documents
+                SET is_pinned = ?
                 WHERE id = ?
             """,
                 (pinned, document_id),
@@ -312,9 +312,9 @@ class CacheManager:
             # Count documents by staleness
             cursor.execute(
                 """
-                SELECT staleness_status, COUNT(*) 
-                FROM documents 
-                WHERE is_pinned = FALSE 
+                SELECT staleness_status, COUNT(*)
+                FROM documents
+                WHERE is_pinned = FALSE
                 GROUP BY staleness_status
             """
             )
@@ -328,8 +328,8 @@ class CacheManager:
             # Get average age
             cursor.execute(
                 """
-                SELECT AVG(julianday('now') - julianday(last_checked)) 
-                FROM documents 
+                SELECT AVG(julianday('now') - julianday(last_checked))
+                FROM documents
                 WHERE last_checked IS NOT NULL
             """
             )

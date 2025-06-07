@@ -15,7 +15,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     if "doc_type" not in columns:
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN doc_type TEXT DEFAULT 'unknown'
         """
         )
@@ -24,7 +24,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     if "metadata" not in columns:
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN metadata TEXT
         """
         )

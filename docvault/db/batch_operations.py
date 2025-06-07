@@ -3,7 +3,7 @@ Batch database operations for improved performance.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from docvault.db.connection_pool import get_connection
 
@@ -60,7 +60,7 @@ def batch_insert_segments(
                 # Insert segments batch
                 cursor.executemany(
                     """
-                    INSERT INTO document_segments 
+                    INSERT INTO document_segments
                     (document_id, content, section_title, segment_type, section_path, parent_id)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """,
@@ -210,7 +210,7 @@ def batch_search_segments(
 
         # Build optimized search query
         base_query = """
-        SELECT 
+        SELECT
             ds.id,
             ds.document_id,
             ds.content,
@@ -223,7 +223,7 @@ def batch_search_segments(
         FROM document_segments ds
         JOIN documents d ON ds.document_id = d.id
         JOIN (
-            SELECT 
+            SELECT
                 segment_id,
                 distance
             FROM document_segments_vec

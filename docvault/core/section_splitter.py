@@ -135,7 +135,7 @@ class SectionSplitter:
                     if next_level <= level:
                         break
 
-                if isinstance(current, (Tag, NavigableString)):
+                if isinstance(current, Tag | NavigableString):
                     text = (
                         current.get_text(strip=True)
                         if hasattr(current, "get_text")

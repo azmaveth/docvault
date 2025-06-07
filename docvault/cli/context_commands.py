@@ -28,8 +28,8 @@ def enable_contextual_retrieval():
     with operations.get_connection() as conn:
         conn.execute(
             """
-            UPDATE config 
-            SET value = 'true' 
+            UPDATE config
+            SET value = 'true'
             WHERE key = 'contextual_retrieval_enabled'
         """
         )
@@ -45,8 +45,8 @@ def disable_contextual_retrieval():
     with operations.get_connection() as conn:
         conn.execute(
             """
-            UPDATE config 
-            SET value = 'false' 
+            UPDATE config
+            SET value = 'false'
             WHERE key = 'contextual_retrieval_enabled'
         """
         )
@@ -62,7 +62,7 @@ def show_status():
         # Get config status
         cursor = conn.execute(
             """
-            SELECT value FROM config 
+            SELECT value FROM config
             WHERE key = 'contextual_retrieval_enabled'
         """
         )
@@ -72,7 +72,7 @@ def show_status():
         # Get provider info
         cursor = conn.execute(
             """
-            SELECT key, value FROM config 
+            SELECT key, value FROM config
             WHERE key IN ('context_llm_provider', 'context_llm_model')
         """
         )
@@ -81,7 +81,7 @@ def show_status():
         # Get statistics
         cursor = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(DISTINCT document_id) as docs_with_context,
                 COUNT(*) as segments_with_context,
                 COUNT(DISTINCT context_model) as models_used
@@ -94,7 +94,7 @@ def show_status():
         # Get total counts
         cursor = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(DISTINCT d.id) as total_docs,
                 COUNT(*) as total_segments
             FROM documents d
@@ -326,7 +326,7 @@ def configure(
         if provider:
             conn.execute(
                 """
-                UPDATE config SET value = ? 
+                UPDATE config SET value = ?
                 WHERE key = 'context_llm_provider'
             """,
                 (provider,),
@@ -336,7 +336,7 @@ def configure(
         if model:
             conn.execute(
                 """
-                UPDATE config SET value = ? 
+                UPDATE config SET value = ?
                 WHERE key = 'context_llm_model'
             """,
                 (model,),
@@ -346,7 +346,7 @@ def configure(
         if batch_size:
             conn.execute(
                 """
-                UPDATE config SET value = ? 
+                UPDATE config SET value = ?
                 WHERE key = 'context_batch_size'
             """,
                 (str(batch_size),),
@@ -356,7 +356,7 @@ def configure(
         if max_tokens:
             conn.execute(
                 """
-                UPDATE config SET value = ? 
+                UPDATE config SET value = ?
                 WHERE key = 'context_max_tokens'
             """,
                 (str(max_tokens),),

@@ -94,35 +94,35 @@ def migrate(conn: sqlite3.Connection):
         # Create indexes for efficient queries
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_versions_base 
+            CREATE INDEX IF NOT EXISTS idx_document_versions_base
             ON document_versions(base_document_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_versions_version 
+            CREATE INDEX IF NOT EXISTS idx_document_versions_version
             ON document_versions(version_string)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_update_checks_document 
+            CREATE INDEX IF NOT EXISTS idx_update_checks_document
             ON update_checks(document_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_update_checks_needs_update 
+            CREATE INDEX IF NOT EXISTS idx_update_checks_needs_update
             ON update_checks(needs_update)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_version_comparisons_document 
+            CREATE INDEX IF NOT EXISTS idx_version_comparisons_document
             ON version_comparisons(document_id)
         """
         )

@@ -2,7 +2,7 @@
 # Tool definitions are now handled by FastMCP decorators in server.py
 
 # Tool definitions for DocVault MCP server
-from typing import Any, Dict
+from typing import Any
 
 import mcp.types as types
 

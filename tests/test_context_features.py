@@ -198,7 +198,7 @@ class TestSuggestionEngine:
         assert suggestion.title
         assert suggestion.type in ["function", "class", "module", "concept"]
         assert suggestion.reason
-        assert isinstance(suggestion.relevance_score, (int, float))
+        assert isinstance(suggestion.relevance_score, int | float)
 
     def test_get_task_based_suggestions(self, suggestion_engine):
         """Test getting task-based suggestions."""

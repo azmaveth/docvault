@@ -6,7 +6,7 @@ This module provides search functions that use contextual embeddings when availa
 
 import logging
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from docvault import config
 from docvault.db.operations import get_connection
@@ -46,7 +46,7 @@ def search_segments_contextual(
     if use_contextual:
         cursor.execute(
             """
-            SELECT value FROM config 
+            SELECT value FROM config
             WHERE key = 'contextual_retrieval_enabled'
         """
         )
@@ -68,13 +68,13 @@ def search_segments_contextual(
             # Build contextual vector search query
             base_query = """
             WITH contextual_matches AS (
-                SELECT 
+                SELECT
                     s.id,
                     COALESCE(
                         vec_distance_L2(s.context_embedding, ?),
                         vec_distance_L2(v.embedding, ?)
                     ) as distance,
-                    CASE 
+                    CASE
                         WHEN s.context_embedding IS NOT NULL THEN 1
                         ELSE 0
                     END as is_contextual
@@ -83,17 +83,17 @@ def search_segments_contextual(
                 WHERE (s.context_embedding IS NOT NULL OR v.embedding IS NOT NULL)
             ),
             ranked_segments AS (
-                SELECT 
-                    s.id, 
-                    s.document_id, 
-                    s.content, 
+                SELECT
+                    s.id,
+                    s.document_id,
+                    s.content,
                     s.section_title,
                     s.section_path,
                     s.section_level,
                     s.parent_segment_id,
                     s.context_description,
                     s.context_metadata,
-                    d.title, 
+                    d.title,
                     d.url,
                     d.version,
                     d.updated_at,
@@ -116,7 +116,7 @@ def search_segments_contextual(
 
             base_query += """
             )
-            SELECT * FROM ranked_segments 
+            SELECT * FROM ranked_segments
             WHERE rn = 1 AND score >= ?
             ORDER BY is_contextual DESC, score DESC
             LIMIT ?
@@ -155,26 +155,26 @@ def search_segments_contextual(
 
             base_query = """
             WITH vector_matches AS (
-                SELECT 
+                SELECT
                     rowid,
                     distance
-                FROM document_segments_vec 
+                FROM document_segments_vec
                 WHERE embedding MATCH ?
                 ORDER BY distance
                 LIMIT ?
             ),
             ranked_segments AS (
-                SELECT 
-                    s.id, 
-                    s.document_id, 
-                    s.content, 
+                SELECT
+                    s.id,
+                    s.document_id,
+                    s.content,
                     s.section_title,
                     s.section_path,
                     s.section_level,
                     s.parent_segment_id,
                     s.context_description,
                     s.context_metadata,
-                    d.title, 
+                    d.title,
                     d.url,
                     d.version,
                     d.updated_at,
@@ -196,7 +196,7 @@ def search_segments_contextual(
 
             base_query += """
             )
-            SELECT * FROM ranked_segments 
+            SELECT * FROM ranked_segments
             WHERE rn = 1 AND score >= ?
             ORDER BY score DESC
             LIMIT ?
@@ -249,8 +249,8 @@ def get_contextual_segments_stats() -> dict[str, Any]:
         # Segments with context
         cursor.execute(
             """
-            SELECT COUNT(*) as with_context 
-            FROM document_segments 
+            SELECT COUNT(*) as with_context
+            FROM document_segments
             WHERE context_description IS NOT NULL
         """
         )
@@ -259,8 +259,8 @@ def get_contextual_segments_stats() -> dict[str, Any]:
         # Segments with contextual embeddings
         cursor.execute(
             """
-            SELECT COUNT(*) as with_embedding 
-            FROM document_segments 
+            SELECT COUNT(*) as with_embedding
+            FROM document_segments
             WHERE context_embedding IS NOT NULL
         """
         )

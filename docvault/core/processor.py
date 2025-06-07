@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import html2text
 from bs4 import BeautifulSoup
@@ -55,7 +55,7 @@ def segment_markdown(markdown_content: str) -> list[dict[str, Any]]:
         - section_path: Path-like string representing the section hierarchy (e.g., '1.2.3')
     """
     import re
-    from typing import Any, Dict, List, Optional
+    from typing import Any, List, Optional
 
     class Section:
         def __init__(

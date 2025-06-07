@@ -7,7 +7,7 @@ in a backward-compatible way.
 import logging
 import sqlite3
 from collections.abc import Callable
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 from docvault import config
 
@@ -132,7 +132,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     if "section_title" not in columns:
         cursor.execute(
             """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN section_title TEXT
         """
         )
@@ -140,7 +140,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     if "section_level" not in columns:
         cursor.execute(
             """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN section_level INTEGER DEFAULT 1
         """
         )
@@ -148,7 +148,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     if "section_path" not in columns:
         cursor.execute(
             """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN section_path TEXT
         """
         )
@@ -156,7 +156,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     if "parent_segment_id" not in columns:
         cursor.execute(
             """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN parent_segment_id INTEGER
         REFERENCES document_segments(id) ON DELETE SET NULL
         """
@@ -165,21 +165,21 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     # Create indexes for section navigation
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_document 
+    CREATE INDEX IF NOT EXISTS idx_segment_document
     ON document_segments(document_id)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_section 
+    CREATE INDEX IF NOT EXISTS idx_segment_section
     ON document_segments(document_id, section_path)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_parent 
+    CREATE INDEX IF NOT EXISTS idx_segment_parent
     ON document_segments(document_id, parent_segment_id)
     """
     )
@@ -187,8 +187,8 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     # Update existing segments with default values
     cursor.execute(
         """
-    UPDATE document_segments 
-    SET section_title = 'Introduction', 
+    UPDATE document_segments
+    SET section_title = 'Introduction',
         section_path = '0',
         section_level = 1
     WHERE section_title IS NULL

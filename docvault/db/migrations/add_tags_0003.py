@@ -38,14 +38,14 @@ def migrate(conn: sqlite3.Connection):
         # Create indexes for efficient queries
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_tags_document 
+            CREATE INDEX IF NOT EXISTS idx_document_tags_document
             ON document_tags(document_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_tags_tag 
+            CREATE INDEX IF NOT EXISTS idx_document_tags_tag
             ON document_tags(tag_id)
         """
         )
@@ -53,7 +53,7 @@ def migrate(conn: sqlite3.Connection):
         # Create index on tag names for quick lookup
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_tags_name 
+            CREATE INDEX IF NOT EXISTS idx_tags_name
             ON tags(name)
         """
         )

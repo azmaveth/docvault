@@ -280,7 +280,8 @@ def cache_stats(format: str):
     console.print("\n[dim]Freshness Thresholds:[/]")
     console.print(f"  Fresh: < {stats['thresholds']['fresh_days']} days")
     console.print(
-        f"  Stale: {stats['thresholds']['fresh_days']}-{stats['thresholds']['stale_days']} days"
+        f"  Stale: {stats['thresholds']['fresh_days']}-"
+        f"{stats['thresholds']['stale_days']} days"
     )
     console.print(f"  Outdated: > {stats['thresholds']['stale_days']} days")
 

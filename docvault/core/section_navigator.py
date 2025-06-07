@@ -201,7 +201,7 @@ class SectionNavigator:
         with get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     id,
                     section_title,
                     section_level,
@@ -301,7 +301,7 @@ def get_section_content(document_id: int, section_path: str) -> dict | None:
         # Get the section and all its descendants
         cursor = conn.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 section_title,
                 section_level,

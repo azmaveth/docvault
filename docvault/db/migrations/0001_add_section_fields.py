@@ -10,28 +10,28 @@ def up(conn):
     # Add new columns to document_segments
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_title TEXT
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_level INTEGER DEFAULT 1
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_path TEXT
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN parent_segment_id INTEGER
     REFERENCES document_segments(id) ON DELETE SET NULL
     """
@@ -40,21 +40,21 @@ def up(conn):
     # Create indexes for section navigation
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_document 
+    CREATE INDEX IF NOT EXISTS idx_segment_document
     ON document_segments(document_id)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_section 
+    CREATE INDEX IF NOT EXISTS idx_segment_section
     ON document_segments(document_id, section_path)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_parent 
+    CREATE INDEX IF NOT EXISTS idx_segment_parent
     ON document_segments(document_id, parent_segment_id)
     """
     )
@@ -87,9 +87,9 @@ def down(conn):
     # Copy data to the new table
     cursor.execute(
         """
-    INSERT INTO document_segments_new 
+    INSERT INTO document_segments_new
     (id, document_id, content, embedding, segment_type, position)
-    SELECT id, document_id, content, embedding, segment_type, position 
+    SELECT id, document_id, content, embedding, segment_type, position
     FROM document_segments
     """
     )
@@ -101,7 +101,7 @@ def down(conn):
     # Recreate other indexes
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_document 
+    CREATE INDEX IF NOT EXISTS idx_segment_document
     ON document_segments(document_id)
     """
     )

@@ -38,7 +38,7 @@ The DataProcessor class handles data transformation and validation.
 class DataProcessor:
     def __init__(self, config):
         self.config = config
-    
+
     def process(self, data):
         # Process the data
         return transformed_data
@@ -54,7 +54,7 @@ Parse data from various formats.
 def parse_data(input_string, format='json'):
     '''
     Parse input string based on specified format.
-    
+
     :param input_string: The string to parse
     :param format: Format type (json, xml, csv)
     :return: Parsed data structure
@@ -238,13 +238,13 @@ The `parse_data` function supports multiple formats and is **thread-safe**.
         """Test extraction of relevant snippets"""
         content = """
         This is the beginning of the document.
-        
+
         Here we discuss Python programming and its benefits.
         Python is a versatile language used for many purposes.
-        
+
         In another section, we talk about data structures.
         Python provides lists, dictionaries, and sets.
-        
+
         Finally, we cover Python best practices and tips.
         """
 
@@ -300,12 +300,12 @@ The `parse_data` function supports multiple formats and is **thread-safe**.
         """Test handling of malformed code blocks"""
         content = """
         Here's a broken code example:
-        
+
         ```
         def broken_function(
             # Missing closing parenthesis
         ```
-        
+
         And some text after.
         """
 

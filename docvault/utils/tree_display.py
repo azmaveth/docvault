@@ -3,7 +3,7 @@ Tree display utilities for hierarchical data visualization.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 
 @dataclass

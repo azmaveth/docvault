@@ -10,7 +10,7 @@ sets with optional ordering and project-specific context.
 import json
 import logging
 import sqlite3
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from docvault.db.operations import get_connection
 
@@ -72,7 +72,7 @@ def get_collection(collection_id: int) -> dict[str, Any] | None:
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT id, name, description, is_active, default_tags, 
+            SELECT id, name, description, is_active, default_tags,
                    created_at, updated_at
             FROM collections
             WHERE id = ?
@@ -194,7 +194,7 @@ def add_document_to_collection(
         try:
             cursor.execute(
                 """
-                INSERT INTO collection_documents 
+                INSERT INTO collection_documents
                 (collection_id, document_id, position, notes)
                 VALUES (?, ?, ?, ?)
             """,
@@ -465,7 +465,7 @@ def search_documents_by_collection(
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT document_id 
+            SELECT document_id
             FROM collection_documents
             WHERE collection_id = ?
         """,

@@ -51,7 +51,7 @@ def find_sql_vulnerabilities(root_dir):
                 filepath = Path(root) / file
 
                 try:
-                    with open(filepath, "r", encoding="utf-8") as f:
+                    with open(filepath, encoding="utf-8") as f:
                         content = f.read()
 
                     # Check each pattern

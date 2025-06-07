@@ -2,7 +2,7 @@
 Database operations for llms.txt support.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from .operations import get_connection
 
@@ -20,7 +20,7 @@ def add_llms_txt_metadata(
 
     cursor.execute(
         """
-        INSERT INTO llms_txt_metadata 
+        INSERT INTO llms_txt_metadata
         (document_id, llms_title, llms_summary, llms_introduction, llms_sections, has_llms_txt)
         VALUES (?, ?, ?, ?, ?, 1)
         """,
@@ -47,7 +47,7 @@ def add_llms_txt_resource(
 
     cursor.execute(
         """
-        INSERT INTO llms_txt_resources 
+        INSERT INTO llms_txt_resources
         (document_id, section, title, url, description, is_optional)
         VALUES (?, ?, ?, ?, ?, ?)
         """,

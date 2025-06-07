@@ -2,7 +2,7 @@
 Test document caching and staleness tracking functionality.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -41,7 +41,7 @@ class TestStalenessCalculation:
     def test_fresh_document(self):
         """Test document is fresh when recently checked."""
         manager = CacheManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Document checked 3 days ago
         last_checked = now - timedelta(days=3)
@@ -51,7 +51,7 @@ class TestStalenessCalculation:
     def test_stale_document(self):
         """Test document is stale when checked 7-30 days ago."""
         manager = CacheManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Document checked 15 days ago
         last_checked = now - timedelta(days=15)
@@ -61,7 +61,7 @@ class TestStalenessCalculation:
     def test_outdated_document(self):
         """Test document is outdated when checked > 30 days ago."""
         manager = CacheManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Document checked 45 days ago
         last_checked = now - timedelta(days=45)
@@ -113,7 +113,7 @@ class TestCacheManager:
         conn = test_db  # test_db is already a connection
         cursor = conn.cursor()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cursor.execute(
             "UPDATE documents SET last_checked = ? WHERE id = ?",
             ((now - timedelta(days=3)).isoformat(), doc1_id),

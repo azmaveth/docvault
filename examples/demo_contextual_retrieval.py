@@ -36,7 +36,7 @@ async def main():
     with operations.get_connection() as conn:
         cursor = conn.execute(
             """
-            SELECT value FROM config 
+            SELECT value FROM config
             WHERE key = 'contextual_retrieval_enabled'
         """
         )

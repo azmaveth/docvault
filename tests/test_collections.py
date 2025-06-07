@@ -128,7 +128,7 @@ class TestCollectionCommands:
                 "A test collection",
             ],
         )
-        
+
         assert result.exit_code == 0
         assert "Created collection 'Test Collection'" in result.output
 

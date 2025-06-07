@@ -1,6 +1,6 @@
 """Generic content extractor for unspecified documentation types."""
 
-from typing import Any, Dict, List
+from typing import Any, List
 
 from bs4 import BeautifulSoup, Tag
 

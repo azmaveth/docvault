@@ -198,7 +198,8 @@ def show(collection_name: str, format: str):
     if not docs:
         console.print("\n[yellow]No documents in this collection yet.[/]")
         console.print(
-            f'Add documents with: [cyan]dv collection add "{collection_name}" <doc_id>[/]'
+            f"Add documents with: [cyan]dv collection add "
+            f'"{collection_name}" <doc_id>[/]'
         )
         return
 
@@ -270,10 +271,12 @@ def add(collection_name: str, document_ids: builtins.list[int], notes: str | Non
     # Suggest tagging if collection has default tags
     if coll.get("default_tags") and added > 0:
         console.print(
-            f"\n💡 Consider tagging these documents with: {', '.join(coll['default_tags'])}"
+            f"\n💡 Consider tagging these documents with: "
+            f"{', '.join(coll['default_tags'])}"
         )
         console.print(
-            f"   [cyan]dv tag add {' '.join(map(str, document_ids))} {' '.join(coll['default_tags'])}[/]"
+            f"   [cyan]dv tag add {' '.join(map(str, document_ids))} "
+            f"{' '.join(coll['default_tags'])}[/]"
         )
 
 

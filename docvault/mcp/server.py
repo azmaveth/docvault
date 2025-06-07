@@ -1320,7 +1320,7 @@ def create_server() -> FastMCP:
                 )
 
             # Get section navigator
-            navigator = SectionNavigator(document_id)
+            SectionNavigator(document_id)
 
             # Import the function we need
             from docvault.core.section_navigator import get_section_content
@@ -1375,7 +1375,7 @@ def create_server() -> FastMCP:
                 with get_connection() as conn:
                     cursor = conn.execute(
                         """SELECT section_title, section_level, section_path, content
-                           FROM document_segments 
+                           FROM document_segments
                            WHERE document_id = ? AND section_path LIKE ?
                            ORDER BY section_path""",
                         (document_id, f"{section_path}%"),
@@ -1490,7 +1490,7 @@ def create_server() -> FastMCP:
                 with get_connection() as conn:
                     cursor = conn.execute(
                         """SELECT section_title, section_level, section_path, content
-                           FROM document_segments 
+                           FROM document_segments
                            WHERE document_id = ? AND section_path LIKE ?
                            ORDER BY section_path""",
                         (document_id, f"{section_path}%"),
@@ -1689,7 +1689,7 @@ def create_server() -> FastMCP:
                 # Search for code blocks
                 search_conditions.append(
                     """
-                    (content LIKE '%```%' || content LIKE '%code%' || content LIKE '%def %' || 
+                    (content LIKE '%```%' || content LIKE '%code%' || content LIKE '%def %' ||
                      content LIKE '%function %' || content LIKE '%class %')
                 """
                 )
@@ -1701,7 +1701,7 @@ def create_server() -> FastMCP:
                 # Search for example sections
                 search_conditions.append(
                     """
-                    (LOWER(section_title) LIKE '%example%' OR 
+                    (LOWER(section_title) LIKE '%example%' OR
                      LOWER(content) LIKE '%example:%' OR
                      LOWER(content) LIKE '%usage:%')
                 """
@@ -1715,7 +1715,7 @@ def create_server() -> FastMCP:
             # Execute search
             with get_connection() as conn:
                 query_sql = f"""
-                    SELECT 
+                    SELECT
                         id,
                         section_title,
                         section_path,
@@ -1724,8 +1724,8 @@ def create_server() -> FastMCP:
                     FROM document_segments
                     WHERE document_id = ?
                         AND ({" AND ".join(search_conditions) if search_conditions else "1=1"})
-                    ORDER BY 
-                        CASE 
+                    ORDER BY
+                        CASE
                             WHEN LOWER(section_title) LIKE ? THEN 0
                             ELSE 1
                         END,
@@ -1874,8 +1874,8 @@ def create_server() -> FastMCP:
             with operations.get_connection() as conn:
                 conn.execute(
                     """
-                    UPDATE config 
-                    SET value = 'true' 
+                    UPDATE config
+                    SET value = 'true'
                     WHERE key = 'contextual_retrieval_enabled'
                     """
                 )
@@ -1909,8 +1909,8 @@ def create_server() -> FastMCP:
             with operations.get_connection() as conn:
                 conn.execute(
                     """
-                    UPDATE config 
-                    SET value = 'false' 
+                    UPDATE config
+                    SET value = 'false'
                     WHERE key = 'contextual_retrieval_enabled'
                     """
                 )
@@ -1944,7 +1944,7 @@ def create_server() -> FastMCP:
                 # Get config status
                 cursor = conn.execute(
                     """
-                    SELECT value FROM config 
+                    SELECT value FROM config
                     WHERE key = 'contextual_retrieval_enabled'
                     """
                 )
@@ -1954,7 +1954,7 @@ def create_server() -> FastMCP:
                 # Get provider info
                 cursor = conn.execute(
                     """
-                    SELECT key, value FROM config 
+                    SELECT key, value FROM config
                     WHERE key IN ('context_llm_provider', 'context_llm_model')
                     """
                 )
@@ -1963,7 +1963,7 @@ def create_server() -> FastMCP:
                 # Get statistics
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(DISTINCT document_id) as docs_with_context,
                         COUNT(*) as segments_with_context,
                         COUNT(DISTINCT context_model) as models_used
@@ -1976,7 +1976,7 @@ def create_server() -> FastMCP:
                 # Get total counts
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(DISTINCT d.id) as total_docs,
                         COUNT(*) as total_segments
                     FROM documents d

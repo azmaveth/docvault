@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS llms_txt_resources (
 );
 
 -- Add indexes for efficient querying
-CREATE INDEX IF NOT EXISTS idx_llms_txt_metadata_document 
+CREATE INDEX IF NOT EXISTS idx_llms_txt_metadata_document
     ON llms_txt_metadata(document_id);
-CREATE INDEX IF NOT EXISTS idx_llms_txt_resources_document 
+CREATE INDEX IF NOT EXISTS idx_llms_txt_resources_document
     ON llms_txt_resources(document_id);
-CREATE INDEX IF NOT EXISTS idx_llms_txt_resources_section 
+CREATE INDEX IF NOT EXISTS idx_llms_txt_resources_section
     ON llms_txt_resources(section);
 
 -- Add llms.txt related columns to documents table

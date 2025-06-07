@@ -49,7 +49,7 @@ beautifulsoup4==4.9.3
 
     def test_parse_requirements_txt(self):
         """Test parsing requirements.txt file."""
-        with open(self.requirements_txt, "r", encoding="utf-8") as f:
+        with open(self.requirements_txt, encoding="utf-8") as f:
             content = f.read()
 
         deps = ProjectManager().parse_requirements_txt(content)
@@ -60,7 +60,7 @@ beautifulsoup4==4.9.3
 
     def test_parse_package_json(self):
         """Test parsing package.json file."""
-        with open(self.package_json, "r", encoding="utf-8") as f:
+        with open(self.package_json, encoding="utf-8") as f:
             content = f.read()
 
         deps = ProjectManager().parse_package_json(content)

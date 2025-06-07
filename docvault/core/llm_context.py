@@ -321,7 +321,7 @@ class ContextGenerator:
                 # Try to get specific template for doc type
                 cursor = conn.execute(
                     """
-                    SELECT template FROM context_templates 
+                    SELECT template FROM context_templates
                     WHERE doc_type = ? AND is_active = 1
                     LIMIT 1
                 """,
@@ -331,7 +331,7 @@ class ContextGenerator:
                 # Get general template
                 cursor = conn.execute(
                     """
-                    SELECT template FROM context_templates 
+                    SELECT template FROM context_templates
                     WHERE name = 'general' AND is_active = 1
                     LIMIT 1
                 """
@@ -418,7 +418,7 @@ Please give a short succinct context to situate this chunk within the overall do
             if regenerate:
                 cursor = conn.execute(
                     """
-                    SELECT id, content, section_title 
+                    SELECT id, content, section_title
                     FROM document_segments
                     WHERE document_id = ?
                     ORDER BY section_path
@@ -428,9 +428,9 @@ Please give a short succinct context to situate this chunk within the overall do
             else:
                 cursor = conn.execute(
                     """
-                    SELECT id, content, section_title 
+                    SELECT id, content, section_title
                     FROM document_segments
-                    WHERE document_id = ? 
+                    WHERE document_id = ?
                     AND context_description IS NULL
                     ORDER BY section_path
                 """,

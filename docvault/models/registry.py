@@ -97,8 +97,8 @@ def add_documentation_source(
     try:
         cursor.execute(
             """
-            INSERT INTO documentation_sources 
-            (name, package_manager, base_url, version_url_template, 
+            INSERT INTO documentation_sources
+            (name, package_manager, base_url, version_url_template,
              latest_version_url, is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
@@ -174,11 +174,11 @@ def add_library_entry(
     try:
         cursor.execute(
             """
-            INSERT INTO libraries 
+            INSERT INTO libraries
             (name, version, doc_url, source_id, package_name, latest_version,
              description, homepage_url, repository_url, is_available, last_checked,
              created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP,
                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT(name, version) DO UPDATE SET
                 doc_url = EXCLUDED.doc_url,
@@ -224,7 +224,7 @@ def find_library(
     cursor = conn.cursor()
 
     query = """
-        SELECT * FROM libraries 
+        SELECT * FROM libraries
         WHERE name = ?
     """
     params = [name]
@@ -259,7 +259,7 @@ def search_libraries(
     cursor = conn.cursor()
 
     search_query = """
-        SELECT * FROM libraries 
+        SELECT * FROM libraries
         WHERE (name LIKE ? OR package_name LIKE ? OR description LIKE ?)
         AND is_available = 1
     """

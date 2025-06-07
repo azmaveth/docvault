@@ -23,7 +23,7 @@ def upgrade(conn=None):
         # Add last_checked timestamp - when we last verified if doc is up-to-date
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN last_checked TIMESTAMP
         """
         )
@@ -31,7 +31,7 @@ def upgrade(conn=None):
         # Add etag for HTTP caching
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN etag TEXT
         """
         )
@@ -39,7 +39,7 @@ def upgrade(conn=None):
         # Add staleness status
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN staleness_status TEXT DEFAULT 'fresh'
             CHECK (staleness_status IN ('fresh', 'stale', 'outdated'))
         """
@@ -48,7 +48,7 @@ def upgrade(conn=None):
         # Add pinned flag - pinned documents never become stale
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE
         """
         )
@@ -56,7 +56,7 @@ def upgrade(conn=None):
         # Add last_modified from the server
         cursor.execute(
             """
-            ALTER TABLE documents 
+            ALTER TABLE documents
             ADD COLUMN server_last_modified TIMESTAMP
         """
         )
@@ -64,7 +64,7 @@ def upgrade(conn=None):
         # Create index for staleness queries
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_documents_staleness 
+            CREATE INDEX IF NOT EXISTS idx_documents_staleness
             ON documents(staleness_status, last_checked)
         """
         )
@@ -72,7 +72,7 @@ def upgrade(conn=None):
         # Create index for pinned documents
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_documents_pinned 
+            CREATE INDEX IF NOT EXISTS idx_documents_pinned
             ON documents(is_pinned)
         """
         )
@@ -80,8 +80,8 @@ def upgrade(conn=None):
         # Initialize last_checked to scraped_at for existing documents
         cursor.execute(
             """
-            UPDATE documents 
-            SET last_checked = scraped_at 
+            UPDATE documents
+            SET last_checked = scraped_at
             WHERE last_checked IS NULL
         """
         )
@@ -127,8 +127,8 @@ def downgrade():
 
         cursor.execute(
             """
-            INSERT INTO documents_new 
-            SELECT id, url, version, title, html_path, markdown_path, 
+            INSERT INTO documents_new
+            SELECT id, url, version, title, html_path, markdown_path,
                    content_hash, scraped_at, updated_at, library_id, is_library_doc
             FROM documents
         """

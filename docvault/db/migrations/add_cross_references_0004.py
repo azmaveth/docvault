@@ -32,28 +32,28 @@ def migrate(conn: sqlite3.Connection):
         # Create indexes for efficient queries
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_cross_references_source 
+            CREATE INDEX IF NOT EXISTS idx_cross_references_source
             ON cross_references(source_segment_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_cross_references_target_segment 
+            CREATE INDEX IF NOT EXISTS idx_cross_references_target_segment
             ON cross_references(target_segment_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_cross_references_target_document 
+            CREATE INDEX IF NOT EXISTS idx_cross_references_target_document
             ON cross_references(target_document_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_cross_references_type 
+            CREATE INDEX IF NOT EXISTS idx_cross_references_type
             ON cross_references(reference_type)
         """
         )
@@ -80,21 +80,21 @@ def migrate(conn: sqlite3.Connection):
         # Create indexes for anchor lookups
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_anchors_document 
+            CREATE INDEX IF NOT EXISTS idx_document_anchors_document
             ON document_anchors(document_id)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_anchors_name 
+            CREATE INDEX IF NOT EXISTS idx_document_anchors_name
             ON document_anchors(anchor_name)
         """
         )
 
         conn.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_document_anchors_type 
+            CREATE INDEX IF NOT EXISTS idx_document_anchors_type
             ON document_anchors(anchor_type)
         """
         )

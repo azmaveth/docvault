@@ -273,12 +273,12 @@ Python is a high-level, interpreted programming language known for its simplicit
                 <li><a href="#usage">Usage</a></li>
             </ul>
         </div>
-        
+
         <section id="intro">
             <h2>Introduction</h2>
             <p>This is a complex documentation example with nested sections.</p>
         </section>
-        
+
         <section id="setup">
             <h2>Setup</h2>
             <section id="requirements">
@@ -293,11 +293,11 @@ Python is a high-level, interpreted programming language known for its simplicit
                 <pre><code>pip install complex-lib</code></pre>
             </section>
         </section>
-        
+
         <section id="usage">
             <h2>Usage</h2>
             <pre><code>from complex_lib import ComplexClass
-            
+
 obj = ComplexClass()
 obj.do_something()</code></pre>
         </section>

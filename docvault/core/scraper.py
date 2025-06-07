@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import aiohttp

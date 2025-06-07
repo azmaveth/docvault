@@ -124,11 +124,11 @@ async def test_scrape_url(mock_config, mock_html_content, temp_dir):
             assert Path(doc["markdown_path"]).exists()
 
             # Check content of saved files
-            with open(doc["html_path"], "r") as f:
+            with open(doc["html_path"]) as f:
                 html_content = f.read()
                 assert "Test Document" in html_content
 
-            with open(doc["markdown_path"], "r") as f:
+            with open(doc["markdown_path"]) as f:
                 md_content = f.read()
                 assert "# Test Document" in md_content
 

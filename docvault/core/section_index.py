@@ -60,13 +60,13 @@ class SectionIndexer:
             return self._index_cache
 
         index = {}
-        chunker = ContentChunker(self.document_id)
+        ContentChunker(self.document_id)
 
         # Get all sections
         with get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     id,
                     section_title,
                     section_path,
@@ -257,8 +257,8 @@ class SectionIndexer:
         if search_type == "code":
             conditions.append(
                 """
-                (content LIKE '%```%' OR content LIKE '%code%' OR 
-                 content LIKE '%def %' OR content LIKE '%function %' OR 
+                (content LIKE '%```%' OR content LIKE '%code%' OR
+                 content LIKE '%def %' OR content LIKE '%function %' OR
                  content LIKE '%class %')
             """
             )
@@ -268,7 +268,7 @@ class SectionIndexer:
         elif search_type == "examples":
             conditions.append(
                 """
-                (LOWER(section_title) LIKE '%example%' OR 
+                (LOWER(section_title) LIKE '%example%' OR
                  LOWER(content) LIKE '%example:%' OR
                  LOWER(content) LIKE '%usage:%')
             """
@@ -282,7 +282,7 @@ class SectionIndexer:
         # Execute search
         with get_connection() as conn:
             query_sql = f"""
-                SELECT 
+                SELECT
                     id,
                     section_title,
                     section_path,
@@ -290,8 +290,8 @@ class SectionIndexer:
                 FROM document_segments
                 WHERE document_id = ?
                     AND ({" AND ".join(conditions) if conditions else "1=1"})
-                ORDER BY 
-                    CASE 
+                ORDER BY
+                    CASE
                         WHEN LOWER(section_title) LIKE ? THEN 0
                         ELSE 1
                     END,

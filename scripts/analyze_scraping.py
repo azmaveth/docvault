@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from docvault.core.doc_type_detector import DocTypeDetector
 from docvault.core.extractors import GenericExtractor, MkDocsExtractor, SphinxExtractor
+
 # from docvault.core.scraper import WebScraper  # Not used in analysis
 
 

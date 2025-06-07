@@ -13,35 +13,35 @@ def upgrade(conn):
     # Add contextual columns to document_segments table
     cursor.execute(
         """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN context_description TEXT
     """
     )
 
     cursor.execute(
         """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN context_metadata JSON
     """
     )
 
     cursor.execute(
         """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN context_embedding BLOB
     """
     )
 
     cursor.execute(
         """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN context_generated_at TIMESTAMP
     """
     )
 
     cursor.execute(
         """
-        ALTER TABLE document_segments 
+        ALTER TABLE document_segments
         ADD COLUMN context_model TEXT
     """
     )
@@ -65,21 +65,21 @@ def upgrade(conn):
     # Create indices for efficient queries
     cursor.execute(
         """
-        CREATE INDEX IF NOT EXISTS idx_chunk_rel_source 
+        CREATE INDEX IF NOT EXISTS idx_chunk_rel_source
         ON chunk_relationships(source_segment_id)
     """
     )
 
     cursor.execute(
         """
-        CREATE INDEX IF NOT EXISTS idx_chunk_rel_target 
+        CREATE INDEX IF NOT EXISTS idx_chunk_rel_target
         ON chunk_relationships(target_segment_id)
     """
     )
 
     cursor.execute(
         """
-        CREATE INDEX IF NOT EXISTS idx_chunk_rel_type 
+        CREATE INDEX IF NOT EXISTS idx_chunk_rel_type
         ON chunk_relationships(relationship_type)
     """
     )
@@ -109,7 +109,7 @@ Here is the chunk we want to situate within the whole document:
 <chunk>
 {{CHUNK_CONTENT}}
 </chunk>
-Please give a short succinct context to situate this chunk within the overall document. 
+Please give a short succinct context to situate this chunk within the overall document.
 Focus on: 1) What section this is from, 2) What the main topic is, 3) How it relates to the document's purpose.""",
             None,
         ),
@@ -122,8 +122,8 @@ This chunk contains code documentation:
 <chunk>
 {{CHUNK_CONTENT}}
 </chunk>
-Please provide context including: 1) What function/class/module this documents, 
-2) What functionality it provides, 3) Its relationship to other components, 
+Please provide context including: 1) What function/class/module this documents,
+2) What functionality it provides, 3) Its relationship to other components,
 4) Any important parameters or return values mentioned.""",
             "code",
         ),
@@ -136,8 +136,8 @@ This chunk is from API reference documentation:
 <chunk>
 {{CHUNK_CONTENT}}
 </chunk>
-Provide context about: 1) Which API endpoint or method this describes, 
-2) What operations it performs, 3) Required parameters or authentication, 
+Provide context about: 1) Which API endpoint or method this describes,
+2) What operations it performs, 3) Required parameters or authentication,
 4) Related endpoints or methods in the same API.""",
             "api",
         ),
@@ -180,7 +180,7 @@ Explain: 1) What step or concept this chunk covers, 2) Prerequisites from earlie
     cursor.execute(
         """
         INSERT OR IGNORE INTO config (key, value, description)
-        VALUES 
+        VALUES
         ('contextual_retrieval_enabled', 'false', 'Enable contextual retrieval for new documents'),
         ('context_llm_provider', 'ollama', 'LLM provider for context generation (ollama, openai, anthropic)'),
         ('context_llm_model', 'llama2', 'Model to use for context generation'),
@@ -209,7 +209,7 @@ def downgrade(conn):
         """
         DELETE FROM config WHERE key IN (
             'contextual_retrieval_enabled',
-            'context_llm_provider', 
+            'context_llm_provider',
             'context_llm_model',
             'context_batch_size',
             'context_max_tokens',

@@ -7,7 +7,7 @@ in a backward-compatible way.
 import logging
 import sqlite3
 from collections.abc import Callable
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 from docvault import config
 
@@ -119,28 +119,28 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     # Add new columns to document_segments
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_title TEXT
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_level INTEGER DEFAULT 1
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN section_path TEXT
     """
     )
 
     cursor.execute(
         """
-    ALTER TABLE document_segments 
+    ALTER TABLE document_segments
     ADD COLUMN parent_segment_id INTEGER
     REFERENCES document_segments(id) ON DELETE SET NULL
     """
@@ -149,21 +149,21 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     # Create indexes for section navigation
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_document 
+    CREATE INDEX IF NOT EXISTS idx_segment_document
     ON document_segments(document_id)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_section 
+    CREATE INDEX IF NOT EXISTS idx_segment_section
     ON document_segments(document_id, section_path)
     """
     )
 
     cursor.execute(
         """
-    CREATE INDEX IF NOT EXISTS idx_segment_parent 
+    CREATE INDEX IF NOT EXISTS idx_segment_parent
     ON document_segments(document_id, parent_segment_id)
     """
     )
@@ -171,8 +171,8 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     # Update existing segments with default values
     cursor.execute(
         """
-    UPDATE document_segments 
-    SET section_title = 'Introduction', 
+    UPDATE document_segments
+    SET section_title = 'Introduction',
         section_path = '0',
         section_level = 1
     WHERE section_title IS NULL
@@ -203,14 +203,14 @@ def get_document_sections(document_id: int) -> list[dict[str, Any]]:
             FROM document_segments
             WHERE document_id = ? AND section_title IS NOT NULL
             ORDER BY section_path
-        SELECT 
+        SELECT
             id,
             section_title as title,
             section_level as level,
             section_path as path,
             parent_segment_id as parent_id
         FROM document_segments
-        WHERE document_id = ? 
+        WHERE document_id = ?
         AND section_title IS NOT NULL
         ORDER BY section_path, position
         """,

@@ -12,7 +12,7 @@ def sample_doc(test_db):
     cursor = test_db.cursor()
     cursor.execute(
         """
-    INSERT INTO documents 
+    INSERT INTO documents
     (url, title, html_path, markdown_path, version, content_hash, scraped_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
     """,

@@ -276,13 +276,13 @@ How to install.
         html = """
         <h1>Introduction</h1>
         <p>This is the intro.</p>
-        
+
         <h2>Getting Started</h2>
         <p>How to begin.</p>
-        
+
         <h3>Prerequisites</h3>
         <p>What you need.</p>
-        
+
         <h2>Installation</h2>
         <p>How to install.</p>
         """

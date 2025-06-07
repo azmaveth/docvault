@@ -5,7 +5,7 @@ import logging
 import re
 import sqlite3
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -94,8 +94,8 @@ def check_for_updates(document_id: int) -> dict[str, Any]:
         if check_record:
             cursor.execute(
                 """
-                UPDATE update_checks 
-                SET last_checked = ?, latest_available_version = ?, 
+                UPDATE update_checks
+                SET last_checked = ?, latest_available_version = ?,
                     needs_update = ?, check_error = ?
                 WHERE document_id = ?
             """,
@@ -110,8 +110,8 @@ def check_for_updates(document_id: int) -> dict[str, Any]:
         else:
             cursor.execute(
                 """
-                INSERT INTO update_checks 
-                (document_id, last_checked, latest_available_version, 
+                INSERT INTO update_checks
+                (document_id, last_checked, latest_available_version,
                  needs_update, check_error)
                 VALUES (?, ?, ?, ?, ?)
             """,
@@ -315,7 +315,7 @@ def compare_versions(doc_id: int, old_version: str, new_version: str) -> dict[st
         # Get the two versions
         cursor.execute(
             """
-            SELECT * FROM document_versions 
+            SELECT * FROM document_versions
             WHERE base_document_id = ? AND version_string = ?
         """,
             (doc_id, old_version),
@@ -324,7 +324,7 @@ def compare_versions(doc_id: int, old_version: str, new_version: str) -> dict[st
 
         cursor.execute(
             """
-            SELECT * FROM document_versions 
+            SELECT * FROM document_versions
             WHERE base_document_id = ? AND version_string = ?
         """,
             (doc_id, new_version),

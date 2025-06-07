@@ -2026,7 +2026,7 @@ def export_cmd(
 
                     # Add metadata if requested
                     if include_metadata:
-                        meta_html = f"""<!-- 
+                        meta_html = f"""<!--
 Document ID: {doc["id"]}
 Title: {doc["title"]}
 URL: {doc["url"]}
@@ -2173,7 +2173,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
     """
     import asyncio
     import json
-    from typing import Any, Dict, List, Tuple
+    from typing import Any, List, Tuple
 
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -2393,7 +2393,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     """
     import asyncio
     import json
-    from typing import Any, Dict, List, Tuple
+    from typing import Any, List, Tuple
 
     from rich.progress import (
         BarColumn,
@@ -4098,7 +4098,7 @@ def stats_cmd(format, verbose):
         if verbose:
             cursor.execute(
                 """
-                SELECT d.id, d.title, d.url, 
+                SELECT d.id, d.title, d.url,
                        COUNT(ds.id) as segment_count,
                        LENGTH(d.content_hash) as has_content
                 FROM documents d

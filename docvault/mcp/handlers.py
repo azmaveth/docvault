@@ -1,7 +1,7 @@
 # This file is kept for backward compatibility but is no longer used.
 # All handlers have been moved to server.py and integrated with FastMCP.
 
-from typing import Any, Dict
+from typing import Any
 
 from docvault.core.embeddings import search
 from docvault.core.library_manager import lookup_library_docs

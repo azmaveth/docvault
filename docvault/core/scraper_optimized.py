@@ -4,7 +4,7 @@ Optimized document scraper with performance improvements.
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import aiohttp
 
@@ -188,7 +188,7 @@ class OptimizedDocumentScraper:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    UPDATE documents 
+                    UPDATE documents
                     SET title = ?, html_path = ?, markdown_path = ?, scraped_at = datetime('now')
                     WHERE id = ?
                     """,

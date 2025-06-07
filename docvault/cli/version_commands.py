@@ -340,7 +340,7 @@ def configure_auto_check(enable, disable, frequency, document_id):
             if enable is not None:
                 cursor.execute(
                     """
-                    UPDATE documents 
+                    UPDATE documents
                     SET version_check_enabled = ?
                     WHERE id = ?
                     """,
@@ -350,7 +350,7 @@ def configure_auto_check(enable, disable, frequency, document_id):
             if frequency is not None:
                 cursor.execute(
                     """
-                    UPDATE documents 
+                    UPDATE documents
                     SET check_frequency_days = ?
                     WHERE id = ?
                     """,
