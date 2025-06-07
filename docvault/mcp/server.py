@@ -837,12 +837,14 @@ def create_server() -> FastMCP:
 
         Args:
             tags: List of tags to search for
-            match_all: If True, only return documents with ALL tags. If False, return documents with ANY tags.
+            match_all: If True, only return documents with ALL tags. If False,
+                return documents with ANY tags.
             limit: Maximum number of results to return (default: 10)
 
         Examples:
             search_by_tags(["python", "api"])  # Documents with python OR api
-            search_by_tags(["database", "orm"], match_all=True)  # Documents with database AND orm
+            search_by_tags(["database", "orm"], match_all=True)  # Documents
+            # with database AND orm
         """
         try:
             from docvault.models.tags import search_documents_by_tags

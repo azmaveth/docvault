@@ -218,7 +218,8 @@ class WebScraper:
         # Warn if depth was limited
         if effective_depth != depth and depth != "auto":
             self.logger.warning(
-                f"Depth limited from {depth} to {effective_depth} (max allowed: {config.MAX_SCRAPING_DEPTH})"
+                f"Depth limited from {depth} to {effective_depth} "
+                f"(max allowed: {config.MAX_SCRAPING_DEPTH})"
             )
 
         # Update depth analyzer if strategy is provided
@@ -364,7 +365,8 @@ class WebScraper:
                     parent_segments = {}  # Track parent segments by level
 
                     for i, segment in enumerate(segments):
-                        # Handle both dictionary and tuple formats for backward compatibility
+                        # Handle both dictionary and tuple formats for backward
+                        # compatibility
                         if isinstance(segment, dict):
                             stype = segment.get("type", "text")
                             content = segment.get("content", "")
