@@ -43,16 +43,17 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
 
 ### Available MCP Tools
 
+#### Document Management
 1. **scrape_document**: Adds documentation from a URL to the vault
-   - Parameters: `url` (string), `depth` (integer, default: 1)
+   - Parameters: `url` (string), `depth` (integer/string, default: 1), `sections` (list), `filter_selector` (string), `depth_strategy` (string), `force_update` (boolean)
    - Returns: Document ID, title, and URL
 
-2. **search_documents**: Searches documents in the vault
-   - Parameters: `query` (string), `limit` (integer, default: 5)
-   - Returns: Search results with document_id, segment_id, title, content, and score
+2. **search_documents**: Searches documents in the vault with contextual retrieval support
+   - Parameters: `query` (string), `limit` (integer, default: 5), `min_score` (float), `version` (string), `library` (boolean), `title_contains` (string), `updated_after` (string)
+   - Returns: Search results with document_id, segment_id, title, content, score, and contextual indicators
 
-3. **read_document**: Retrieves a document from the vault
-   - Parameters: `document_id` (integer), `format` (string, default: "markdown")
+3. **read_document**: Retrieves a document from the vault with summarization/chunking
+   - Parameters: `document_id` (integer), `format` (string, default: "markdown"), `mode` (string: "summary"/"full"/"chunk"), `chunk_size` (integer), `chunk_number` (integer), `summary_method` (string), `chunking_strategy` (string)
    - Returns: Document content, title, and URL
 
 4. **lookup_library_docs**: Looks up documentation for a specific library
@@ -62,6 +63,69 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
 5. **list_documents**: Lists all documents in the vault
    - Parameters: `filter` (string, default: ""), `limit` (integer, default: 20)
    - Returns: List of documents with their IDs, titles, URLs, and scrape dates
+
+#### Contextual Retrieval Tools
+6. **enable_contextual_retrieval**: Enable contextual retrieval for enhanced search accuracy
+   - No parameters
+   - Returns: Success status
+
+7. **disable_contextual_retrieval**: Disable contextual retrieval
+   - No parameters
+   - Returns: Success status
+
+8. **get_contextual_retrieval_status**: Get status and statistics of contextual retrieval
+   - No parameters
+   - Returns: Enabled status, provider info, coverage statistics
+
+9. **process_document_with_context**: Process a specific document with contextual retrieval
+   - Parameters: `document_id` (integer), `force` (boolean, default: false)
+   - Returns: Processing status and segments processed
+
+10. **configure_contextual_retrieval**: Configure the LLM provider for contextual retrieval
+    - Parameters: `provider` (string: "ollama"/"openai"/"anthropic"), `model` (string, optional)
+    - Returns: Configuration status
+
+11. **find_similar_by_context**: Find similar content using contextual metadata
+    - Parameters: `document_id` (integer), `segment_id` (integer, optional), `limit` (integer, default: 5)
+    - Returns: Similar content with similarity scores
+
+#### Organization and Navigation
+12. **add_tags**: Add tags to a document for better organization
+    - Parameters: `document_id` (integer), `tags` (list of strings)
+    - Returns: Success status
+
+13. **search_by_tags**: Search documents by tags
+    - Parameters: `tags` (list of strings), `match_all` (boolean), `limit` (integer)
+    - Returns: Matching documents
+
+14. **get_document_sections**: Get table of contents and section structure
+    - Parameters: `document_id` (integer), `max_depth` (integer, default: 3)
+    - Returns: Section hierarchy
+
+15. **read_document_section**: Read a specific section from a document
+    - Parameters: `document_id` (integer), `section_path` (string), `section_id` (integer), `include_subsections` (boolean)
+    - Returns: Section content
+
+16. **search_sections**: Search for specific sections within a document
+    - Parameters: `document_id` (integer), `query` (string), `search_type` (string), `limit` (integer)
+    - Returns: Section paths and chunk numbers
+
+#### Utility Tools
+17. **check_freshness**: Check document freshness status
+    - Parameters: `document_id` (integer, optional), `stale_only` (boolean)
+    - Returns: Freshness status and recommendations
+
+18. **add_from_package_manager**: Quickly add documentation from package managers
+    - Parameters: `package` (string), `manager` (string), `version` (string), `force` (boolean)
+    - Returns: Added document info
+
+19. **suggest**: Get AI-powered suggestions for functions and classes
+    - Parameters: `query` (string), `limit` (integer), `task_based` (boolean), `complementary` (string)
+    - Returns: Suggested functions/classes
+
+20. **get_chunk_info**: Get information about available chunks for a document
+    - Parameters: `document_id` (integer), `chunk_size` (integer), `chunking_strategy` (string)
+    - Returns: Total chunks and navigation hints
 
 ## Enhanced CLI Features for AI Assistance
 

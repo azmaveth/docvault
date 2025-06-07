@@ -8,7 +8,7 @@ contextual descriptions for chunks before embedding them.
 import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from docvault import config
 from docvault.core.content_chunker import ContentChunker
@@ -41,6 +41,7 @@ class ContextualChunkProcessor:
         self,
         document_id: int,
         regenerate: bool = False,
+        force: bool = False,
         chunk_size: int = 5000,
         chunking_strategy: str = "hybrid",
     ) -> dict[str, Any]:
@@ -48,7 +49,8 @@ class ContextualChunkProcessor:
 
         Args:
             document_id: Document to process
-            regenerate: Force regeneration of contexts
+            regenerate: Force regeneration of contexts (deprecated, use force)
+            force: Force regeneration of contexts
             chunk_size: Size of chunks in characters
             chunking_strategy: Strategy for chunking
 
@@ -65,7 +67,18 @@ class ContextualChunkProcessor:
         logger.info(f"Processing document {document_id}: {document['title']}")
 
         # Check if contextual retrieval is enabled
-        if not config.get("contextual_retrieval_enabled", False):
+        # Handle both regenerate and force parameters
+        regenerate = regenerate or force
+
+        # Check if contextual retrieval is enabled in database
+        with operations.get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT value FROM config WHERE key = 'contextual_retrieval_enabled'"
+            )
+            result = cursor.fetchone()
+            enabled = result["value"] == "true" if result else False
+
+        if not enabled:
             logger.warning("Contextual retrieval is not enabled. Enable it in config.")
             return {
                 "status": "skipped",
@@ -166,8 +179,9 @@ class ContextualChunkProcessor:
                 # Insert segment
                 cursor = conn.execute(
                     """
-                    INSERT INTO document_segments 
-                    (document_id, content, section_title, section_path, chunk_index, metadata)
+                    INSERT INTO document_segments
+                    (document_id, content, section_title, section_path, 
+                     chunk_index, metadata)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """,
                     (
@@ -293,7 +307,7 @@ class ContextualChunkProcessor:
                 with operations.get_connection() as conn:
                     cursor = conn.execute(
                         """
-                        SELECT DISTINCT section_title 
+                        SELECT DISTINCT section_title
                         FROM document_segments
                         WHERE document_id = ? AND section_path = ?
                         LIMIT 1
@@ -466,7 +480,7 @@ class ContextualChunkProcessor:
         # Other metadata
         for key, value in metadata.items():
             if key not in ["document_title", "section_hierarchy", "semantic_role"]:
-                if isinstance(value, (str, int, float)):
+                if isinstance(value, str | int | float):
                     parts.append(f"{key}: {value}")
 
         return " | ".join(parts)
@@ -503,7 +517,7 @@ class ContextualChunkProcessor:
 
             # Build query with optional filter
             query = """
-                SELECT 
+                SELECT
                     s.id,
                     s.content,
                     s.section_title,

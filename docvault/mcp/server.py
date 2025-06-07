@@ -19,6 +19,7 @@ from docvault.core.section_index import SectionIndexer
 from docvault.core.summarizer import DocumentSummarizer
 from docvault.core.vector_summarizer import VectorSummarizer
 from docvault.db import operations
+from docvault.db.operations import get_connection
 
 types.ToolResult = types.CallToolResult  # alias for backward compatibility with tests
 
@@ -1856,6 +1857,469 @@ def create_server() -> FastMCP:
                 content=[
                     types.TextContent(
                         type="text", text=f"Error searching sections: {str(e)}"
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    # Add contextual retrieval management tools
+    @server.tool()
+    async def enable_contextual_retrieval() -> types.CallToolResult:
+        """Enable contextual retrieval for enhanced search accuracy.
+
+        When enabled, new documents will be processed with context augmentation,
+        which can improve search accuracy by up to 49%.
+        """
+        try:
+            with operations.get_connection() as conn:
+                conn.execute(
+                    """
+                    UPDATE config 
+                    SET value = 'true' 
+                    WHERE key = 'contextual_retrieval_enabled'
+                    """
+                )
+                conn.commit()
+
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text="✓ Contextual retrieval enabled. New documents will be processed with contextual augmentation for improved search accuracy.",
+                    )
+                ],
+                metadata={"success": True, "enabled": True},
+            )
+        except Exception as e:
+            logger.exception(f"Error enabling contextual retrieval: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Error enabling contextual retrieval: {str(e)}",
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    @server.tool()
+    async def disable_contextual_retrieval() -> types.CallToolResult:
+        """Disable contextual retrieval."""
+        try:
+            with operations.get_connection() as conn:
+                conn.execute(
+                    """
+                    UPDATE config 
+                    SET value = 'false' 
+                    WHERE key = 'contextual_retrieval_enabled'
+                    """
+                )
+                conn.commit()
+
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text="✓ Contextual retrieval disabled."
+                    )
+                ],
+                metadata={"success": True, "enabled": False},
+            )
+        except Exception as e:
+            logger.exception(f"Error disabling contextual retrieval: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Error disabling contextual retrieval: {str(e)}",
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    @server.tool()
+    async def get_contextual_retrieval_status() -> types.CallToolResult:
+        """Get the status and statistics of contextual retrieval."""
+        try:
+            with operations.get_connection() as conn:
+                # Get config status
+                cursor = conn.execute(
+                    """
+                    SELECT value FROM config 
+                    WHERE key = 'contextual_retrieval_enabled'
+                    """
+                )
+                result = cursor.fetchone()
+                enabled = result["value"] == "true" if result else False
+
+                # Get provider info
+                cursor = conn.execute(
+                    """
+                    SELECT key, value FROM config 
+                    WHERE key IN ('context_llm_provider', 'context_llm_model')
+                    """
+                )
+                config_items = {row["key"]: row["value"] for row in cursor.fetchall()}
+
+                # Get statistics
+                cursor = conn.execute(
+                    """
+                    SELECT 
+                        COUNT(DISTINCT document_id) as docs_with_context,
+                        COUNT(*) as segments_with_context,
+                        COUNT(DISTINCT context_model) as models_used
+                    FROM document_segments
+                    WHERE context_description IS NOT NULL
+                    """
+                )
+                stats = cursor.fetchone()
+
+                # Get total counts
+                cursor = conn.execute(
+                    """
+                    SELECT 
+                        COUNT(DISTINCT d.id) as total_docs,
+                        COUNT(*) as total_segments
+                    FROM documents d
+                    JOIN document_segments ds ON d.id = ds.document_id
+                    """
+                )
+                totals = cursor.fetchone()
+
+                # Calculate coverage
+                doc_coverage = (
+                    (stats["docs_with_context"] / totals["total_docs"] * 100)
+                    if totals["total_docs"] > 0
+                    else 0
+                )
+                segment_coverage = (
+                    (stats["segments_with_context"] / totals["total_segments"] * 100)
+                    if totals["total_segments"] > 0
+                    else 0
+                )
+
+                # Format status text
+                status_text = f"Contextual Retrieval Status: {'ENABLED' if enabled else 'DISABLED'}\n\n"
+
+                if enabled:
+                    provider = config_items.get("context_llm_provider", "ollama")
+                    model = config_items.get("context_llm_model", "llama2")
+                    status_text += f"Provider: {provider}\n"
+                    status_text += f"Model: {model}\n\n"
+
+                status_text += "Coverage Statistics:\n"
+                status_text += f"- Documents with context: {stats['docs_with_context']}/{totals['total_docs']} ({doc_coverage:.1f}%)\n"
+                status_text += f"- Segments with context: {stats['segments_with_context']}/{totals['total_segments']} ({segment_coverage:.1f}%)\n"
+
+                if stats["docs_with_context"] > 0:
+                    status_text += f"\nModels used: {stats['models_used']}"
+
+                return types.CallToolResult(
+                    content=[types.TextContent(type="text", text=status_text)],
+                    metadata={
+                        "success": True,
+                        "enabled": enabled,
+                        "provider": config_items.get("context_llm_provider"),
+                        "model": config_items.get("context_llm_model"),
+                        "doc_coverage": doc_coverage,
+                        "segment_coverage": segment_coverage,
+                        "docs_with_context": stats["docs_with_context"],
+                        "total_docs": totals["total_docs"],
+                    },
+                )
+        except Exception as e:
+            logger.exception(f"Error getting contextual retrieval status: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Error getting contextual retrieval status: {str(e)}",
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    @server.tool()
+    async def process_document_with_context(
+        document_id: int, force: bool = False
+    ) -> types.CallToolResult:
+        """Process a specific document with contextual retrieval.
+
+        Args:
+            document_id: The ID of the document to process
+            force: If True, reprocess even if context already exists
+
+        This adds context to each chunk before embedding, improving search accuracy.
+        """
+        try:
+            # Check if document exists
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            # Check if already processed
+            if not force:
+                with operations.get_connection() as conn:
+                    cursor = conn.execute(
+                        """
+                        SELECT COUNT(*) as count
+                        FROM document_segments
+                        WHERE document_id = ? AND context_description IS NOT NULL
+                        """,
+                        (document_id,),
+                    )
+                    result = cursor.fetchone()
+                    if result["count"] > 0:
+                        return types.CallToolResult(
+                            content=[
+                                types.TextContent(
+                                    type="text",
+                                    text=f"Document {document_id} already has contextual data. Use force=True to reprocess.",
+                                )
+                            ],
+                            metadata={
+                                "success": False,
+                                "already_processed": True,
+                            },
+                        )
+
+            # Process with contextual retrieval
+            from docvault.core.contextual_processor import ContextualChunkProcessor
+
+            processor = ContextualChunkProcessor()
+
+            # Process the document
+            result = await processor.process_document(document_id, force=force)
+            success = result.get("status") == "completed"
+
+            if success:
+                # Get stats
+                with operations.get_connection() as conn:
+                    cursor = conn.execute(
+                        """
+                        SELECT COUNT(*) as processed_count
+                        FROM document_segments
+                        WHERE document_id = ? AND context_description IS NOT NULL
+                        """,
+                        (document_id,),
+                    )
+                    result = cursor.fetchone()
+                    processed_count = result["processed_count"]
+
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"✓ Successfully processed document {document_id} with contextual retrieval.\n"
+                            f"Processed {processed_count} segments with context.",
+                        )
+                    ],
+                    metadata={
+                        "success": True,
+                        "document_id": document_id,
+                        "segments_processed": processed_count,
+                    },
+                )
+            else:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"Failed to process document {document_id} with contextual retrieval.",
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "document_id": document_id,
+                    },
+                )
+
+        except Exception as e:
+            logger.exception(f"Error processing document with context: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Error processing document with context: {str(e)}",
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    @server.tool()
+    async def configure_contextual_retrieval(
+        provider: str = "ollama", model: str | None = None
+    ) -> types.CallToolResult:
+        """Configure the LLM provider for contextual retrieval.
+
+        Args:
+            provider: LLM provider - 'ollama', 'openai', or 'anthropic'
+            model: Model name (optional - uses defaults if not specified)
+                   - ollama: llama2, mistral, etc.
+                   - openai: gpt-3.5-turbo, gpt-4
+                   - anthropic: claude-3-haiku, claude-3-sonnet
+        """
+        try:
+            # Validate provider
+            valid_providers = ["ollama", "openai", "anthropic"]
+            if provider not in valid_providers:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"Invalid provider '{provider}'. Must be one of: {', '.join(valid_providers)}",
+                        )
+                    ],
+                    metadata={"success": False, "error": "Invalid provider"},
+                )
+
+            # Set default models if not specified
+            if not model:
+                default_models = {
+                    "ollama": "llama2",
+                    "openai": "gpt-3.5-turbo",
+                    "anthropic": "claude-3-haiku-20240307",
+                }
+                model = default_models[provider]
+
+            # Update configuration
+            with operations.get_connection() as conn:
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO config (key, value)
+                    VALUES ('context_llm_provider', ?)
+                    """,
+                    (provider,),
+                )
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO config (key, value)
+                    VALUES ('context_llm_model', ?)
+                    """,
+                    (model,),
+                )
+                conn.commit()
+
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"✓ Contextual retrieval configured:\n"
+                        f"Provider: {provider}\n"
+                        f"Model: {model}",
+                    )
+                ],
+                metadata={
+                    "success": True,
+                    "provider": provider,
+                    "model": model,
+                },
+            )
+        except Exception as e:
+            logger.exception(f"Error configuring contextual retrieval: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Error configuring contextual retrieval: {str(e)}",
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    @server.tool()
+    async def find_similar_by_context(
+        document_id: int, segment_id: int | None = None, limit: int = 5
+    ) -> types.CallToolResult:
+        """Find similar content using contextual metadata.
+
+        Args:
+            document_id: The document ID
+            segment_id: Optional specific segment ID to find similar content for
+            limit: Maximum number of similar items to return
+
+        This uses contextual embeddings to find semantically similar content.
+        """
+        try:
+            # Validate document
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            # Use contextual processor to find similar content
+            from docvault.core.contextual_processor import ContextualChunkProcessor
+
+            processor = ContextualChunkProcessor()
+
+            similar_items = processor.find_similar_by_metadata(
+                document_id=document_id, segment_id=segment_id, limit=limit
+            )
+
+            if not similar_items:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text="No similar content found. Make sure documents are processed with contextual retrieval.",
+                        )
+                    ],
+                    metadata={"success": True, "result_count": 0},
+                )
+
+            content_text = "Similar content found:\n\n"
+            for i, item in enumerate(similar_items, 1):
+                content_text += f"{i}. Document: {item['document_title']} (ID: {item['document_id']})\n"
+                if item.get("section_title"):
+                    content_text += f"   Section: {item['section_title']}\n"
+                content_text += f"   Similarity: {item['similarity_score']:.2f}\n"
+                if item.get("context_description"):
+                    content_text += (
+                        f"   Context: {item['context_description'][:100]}...\n"
+                    )
+                content_text += f"   Preview: {item['content'][:150]}...\n\n"
+
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=content_text)],
+                metadata={
+                    "success": True,
+                    "result_count": len(similar_items),
+                    "similar_items": [
+                        {
+                            "document_id": item["document_id"],
+                            "segment_id": item["segment_id"],
+                            "document_title": item["document_title"],
+                            "section_title": item.get("section_title"),
+                            "similarity_score": item["similarity_score"],
+                        }
+                        for item in similar_items
+                    ],
+                },
+            )
+        except Exception as e:
+            logger.exception(f"Error finding similar content: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text=f"Error finding similar content: {str(e)}"
                     )
                 ],
                 metadata={"success": False, "error": str(e)},
