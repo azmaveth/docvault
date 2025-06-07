@@ -154,7 +154,8 @@ async def search(
         if results:
             scores = [r.get("score", 0) for r in results]
             logger.info(
-                f"Found {len(results)} results (scores: {min(scores):.2f}-{max(scores):.2f})"
+                f"Found {len(results)} results (scores: "
+                f"{min(scores):.2f}-{max(scores):.2f})"
             )
         else:
             logger.info("No results found")

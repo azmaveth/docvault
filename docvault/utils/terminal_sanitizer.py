@@ -221,7 +221,8 @@ class TerminalSanitizer:
                 # Check if sequence is complete
                 if (
                     char
-                    in "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+                    in "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+                    "abcdefghijklmnopqrstuvwxyz{|}~"
                 ):
                     in_sequence = False
                     result.extend(current_sequence)

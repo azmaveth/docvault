@@ -145,7 +145,10 @@ class OpenAIProvider(LLMProvider):
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "You are a helpful assistant that creates concise contextual descriptions for document chunks.",
+                                "content": (
+                            "You are a helpful assistant that creates concise "
+                            "contextual descriptions for document chunks."
+                        ),
                             },
                             {"role": "user", "content": prompt},
                         ],
@@ -348,7 +351,8 @@ Here is the chunk we want to situate within the whole document:
 <chunk>
 {{CHUNK_CONTENT}}
 </chunk>
-Please give a short succinct context to situate this chunk within the overall document."""
+Please give a short succinct context to situate this chunk within the 
+overall document."""
 
     async def generate_context_for_chunk(
         self,

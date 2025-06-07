@@ -224,7 +224,8 @@ class LLMsGenerator:
             lines.append("## Optional")
             lines.append("")
             lines.append(
-                "- [Additional Resources](/resources): Extended documentation and examples"
+                "- [Additional Resources](/resources): Extended documentation and "
+                "examples"
             )
             lines.append("")
 

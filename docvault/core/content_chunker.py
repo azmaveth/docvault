@@ -1,5 +1,6 @@
 """
-Advanced content chunking system with section-awareness, semantic boundaries, and streaming support.
+Advanced content chunking system with section-awareness, semantic boundaries, and
+streaming support.
 
 This module provides sophisticated chunking strategies that respect content structure
 and natural boundaries, unlike simple character-based splitting.
