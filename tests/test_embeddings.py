@@ -98,7 +98,9 @@ async def test_search(mock_config, test_db):
     async def mock_generate_embeddings(text):
         return mock_embedding
 
-    def mock_search_segments(embedding, limit=5, text_query=None, min_score=0.0, doc_filter=None):
+    def mock_search_segments(
+        embedding, limit=5, text_query=None, min_score=0.0, doc_filter=None
+    ):
         return [
             {
                 "id": segment_id,

@@ -6,7 +6,7 @@ This module provides search functions that use contextual embeddings when availa
 
 import logging
 import sqlite3
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from docvault import config
 from docvault.db.operations import get_connection

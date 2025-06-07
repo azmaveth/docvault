@@ -7,7 +7,7 @@ in a backward-compatible way.
 import logging
 import sqlite3
 from collections.abc import Callable
-from typing import Any, List, Tuple
+from typing import Any
 
 from docvault import config
 

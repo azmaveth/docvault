@@ -6,7 +6,7 @@ import logging
 import sqlite3
 import time
 from functools import wraps
-from typing import Any, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger("docvault.sql")
 

@@ -2,7 +2,6 @@
 
 import functools
 from collections.abc import Callable
-from typing import Dict
 
 import click
 

@@ -9,7 +9,6 @@ import asyncio
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
 
 import aiohttp
 

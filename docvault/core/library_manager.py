@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import aiohttp
 

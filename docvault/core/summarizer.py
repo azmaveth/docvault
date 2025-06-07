@@ -7,7 +7,7 @@ code snippets, function signatures, and key technical details.
 
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 from docvault.utils.logging import get_logger
 

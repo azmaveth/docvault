@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, Optional, Tuple
 
 
 class FreshnessLevel(Enum):

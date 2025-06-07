@@ -4,7 +4,6 @@ Database indexes for performance optimization.
 
 import logging
 import sqlite3
-from typing import List
 
 from docvault.db.connection_pool import get_connection
 

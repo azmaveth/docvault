@@ -3,7 +3,7 @@ Batch database operations for improved performance.
 """
 
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from docvault.db.connection_pool import get_connection
 

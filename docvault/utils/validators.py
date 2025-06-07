@@ -6,7 +6,7 @@ such as SQL injection, command injection, path traversal, and XSS.
 
 import re
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Union
 from urllib.parse import urlparse
 
 from docvault.utils.path_security import PathSecurityError, validate_path

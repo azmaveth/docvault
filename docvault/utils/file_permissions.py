@@ -6,7 +6,6 @@ unauthorized access by other users on the system.
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from docvault.utils.console import console
 

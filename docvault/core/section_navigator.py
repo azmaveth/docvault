@@ -3,7 +3,7 @@ Section navigation utilities for hierarchical document traversal.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 from docvault.db.operations import get_connection
 

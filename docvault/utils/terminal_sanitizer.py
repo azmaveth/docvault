@@ -5,7 +5,6 @@ preventing malicious ANSI escape sequences from affecting the user's terminal.
 """
 
 import re
-from typing import Optional, Set
 
 # ANSI escape sequence patterns
 ANSI_ESCAPE_PATTERN = re.compile(

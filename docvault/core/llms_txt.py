@@ -7,7 +7,6 @@ according to the specification at https://llmstxt.org/
 
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 

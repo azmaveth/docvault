@@ -2173,7 +2173,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
     """
     import asyncio
     import json
-    from typing import Any, List, Tuple
+    from typing import Any
 
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -2393,7 +2393,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     """
     import asyncio
     import json
-    from typing import Any, List, Tuple
+    from typing import Any
 
     from rich.progress import (
         BarColumn,

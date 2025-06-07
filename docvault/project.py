@@ -7,7 +7,7 @@ and import documentation for project dependencies.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, TypedDict, Union
+from typing import TypedDict, Union
 
 import toml
 from rich.console import Console

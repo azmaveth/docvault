@@ -5,7 +5,7 @@ Path security utilities to prevent path traversal attacks.
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Union
 from urllib.parse import urlparse
 
 from docvault.core.exceptions import PathSecurityError

@@ -9,7 +9,7 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Union
 
 from docvault.core.section_navigator import SectionNavigator, get_section_content
 from docvault.db import operations

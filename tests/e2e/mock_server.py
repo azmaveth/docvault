@@ -18,7 +18,7 @@ class MockHTTPHandler(BaseHTTPRequestHandler):
         """Suppress server logs during tests."""
         pass
 
-    def do_GET(self):
+    def do_GET(self):  # noqa: N802
         """Handle GET requests."""
         parsed_path = urlparse(self.path)
         path = parsed_path.path

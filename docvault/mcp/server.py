@@ -47,16 +47,25 @@ def create_server() -> FastMCP:
             url: The URL to scrape
             depth: How many levels deep to scrape - number (1=single page) or
                    strategy (auto/conservative/aggressive) (default: 1)
-            sections: Filter by section headings (e.g., ['Installation', 'API Reference'])
-            filter_selector: CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')
-            depth_strategy: Override the depth control strategy (auto/conservative/aggressive/manual)
-            force_update: If True, re-scrape even if document already exists (updates existing)
+            sections: Filter by section headings
+                      (e.g., ['Installation', 'API Reference'])
+            filter_selector: CSS selector to filter specific sections
+                             (e.g., '.documentation', '#api-docs')
+            depth_strategy: Override the depth control strategy
+                            (auto/conservative/aggressive/manual)
+            force_update: If True, re-scrape even if document already exists
+                          (updates existing)
 
         Examples:
             scrape_document("https://docs.python.org/3/")
             scrape_document("https://docs.example.com", depth=2)
-            scrape_document("https://api.example.com", sections=["Authentication", "Endpoints"])
-            scrape_document("https://docs.example.com", force_update=True)  # Update existing
+            scrape_document(
+                "https://api.example.com",
+                sections=["Authentication", "Endpoints"]
+            )
+            scrape_document(
+                "https://docs.example.com", force_update=True
+            )  # Update existing
         """
         try:
             # Parse depth parameter - handle both int and string
@@ -124,8 +133,9 @@ def create_server() -> FastMCP:
                 if cooldown_match:
                     seconds = cooldown_match.group(1)
                     error_msg = (
-                        f"Domain is in cooldown period. Please wait {seconds} seconds.\n"
-                        f"This prevents overwhelming the target server."
+                        f"Domain is in cooldown period. Please wait "
+                        f"{seconds} seconds.\n"
+                        "This prevents overwhelming the target server."
                     )
             elif "timeout" in error_msg.lower():
                 error_msg = (
@@ -230,14 +240,19 @@ def create_server() -> FastMCP:
                 if r.get("is_library_doc") and r.get("library_name"):
                     metadata_parts.append(f"library: {r['library_name']}")
 
-                result_text = f"Document: {r.get('title', 'Untitled')} (ID: {r.get('document_id', 'N/A')})\n"
+                result_text = (
+                    f"Document: {r.get('title', 'Untitled')} "
+                    f"(ID: {r.get('document_id', 'N/A')})\n"
+                )
                 if metadata_parts:
                     result_text += f"{' • '.join(metadata_parts)}\n"
                 result_text += f"Score: {r.get('score', 0):.2f}"
                 if r.get("is_contextual"):
                     result_text += " [contextual]"
                 result_text += "\n"
-                result_text += f"Content: {r.get('content', '')[:200]}{'...' if len(r.get('content', '')) > 200 else ''}\n"
+                content_preview = r.get("content", "")[:200]
+                ellipsis = "..." if len(r.get("content", "")) > 200 else ""
+                result_text += f"Content: {content_preview}{ellipsis}\n"
                 if r.get("section_title"):
                     result_text += f"Section: {r['section_title']}\n"
                 if r.get("context_description"):
@@ -299,24 +314,29 @@ def create_server() -> FastMCP:
         summary_method: str = "vector",
         chunking_strategy: str = "hybrid",
     ) -> types.CallToolResult:
-        """Read document content from the vault with automatic summarization or chunking.
+        """Read document content from the vault with summarization or chunking.
 
         Args:
             document_id: The ID of the document to read
             format: Format to return - "markdown" (default) or "html"
             mode: Reading mode - "summary" (default), "full", or "chunk"
-                  - summary: Returns concise summary with key functions, classes, and examples
-                  - full: Returns complete document content (may fail for large docs)
+                  - summary: Returns concise summary with key functions, classes,
+                    and examples
+                  - full: Returns complete document content (may fail for large
+                    docs)
                   - chunk: Returns a specific chunk of the document
             chunk_size: Size of each chunk in characters (for chunk mode)
             chunk_number: Which chunk to return (1-based, for chunk mode)
-            summary_method: Method for summarization - "vector" (default) or "pattern"
+            summary_method: Method for summarization - "vector" (default) or
+                "pattern"
                   - vector: Uses embeddings to find most relevant sections
                   - pattern: Uses regex patterns to extract functions/classes
-            chunking_strategy: Strategy for chunking - "hybrid" (default), "section", "semantic", "paragraph", or "character"
+            chunking_strategy: Strategy for chunking - "hybrid" (default),
+                "section", "semantic", "paragraph", or "character"
                   - hybrid: Combines section and semantic awareness
                   - section: Chunks align with document sections
-                  - semantic: Chunks at natural boundaries (paragraphs, sentences)
+                  - semantic: Chunks at natural boundaries (paragraphs,
+                    sentences)
                   - paragraph: Chunks at paragraph boundaries
                   - character: Simple character-based chunking (legacy)
 
@@ -363,7 +383,8 @@ def create_server() -> FastMCP:
                         )
                     except Exception as e:
                         logger.warning(
-                            f"Vector summarization failed, falling back to pattern-based: {e}"
+                            f"Vector summarization failed, falling back to "
+                            f"pattern-based: {e}"
                         )
                         # Fall back to pattern-based summarizer
                         summarizer = DocumentSummarizer()
@@ -374,7 +395,10 @@ def create_server() -> FastMCP:
 
                         # Add metadata about summarization
                         result_content = f"# Summary of {document['title']}\n\n"
-                        result_content += "*This is a summarized version focusing on key functions, classes, and examples.*\n\n"
+                        result_content += (
+                            "*This is a summarized version focusing on key "
+                            "functions, classes, and examples.*\n\n"
+                        )
                         result_content += formatted_summary
                 else:
                     # Use pattern-based summarizer
@@ -386,7 +410,10 @@ def create_server() -> FastMCP:
 
                     # Add metadata about summarization
                     result_content = f"# Summary of {document['title']}\n\n"
-                    result_content += "*This is a summarized version focusing on key functions, classes, and examples.*\n\n"
+                    result_content += (
+                        "*This is a summarized version focusing on key "
+                        "functions, classes, and examples.*\n\n"
+                    )
                     result_content += formatted_summary
 
                 return types.CallToolResult(
@@ -415,7 +442,10 @@ def create_server() -> FastMCP:
                     )
 
                     # Format chunk with metadata
-                    chunk_header = f"# {document['title']} - Chunk {chunk.metadata.chunk_number}/{chunk.metadata.total_chunks}\n\n"
+                    chunk_header = (
+                        f"# {document['title']} - Chunk "
+                        f"{chunk.metadata.chunk_number}/{chunk.metadata.total_chunks}\n\n"
+                    )
 
                     # Add section info if available
                     if chunk.metadata.section_title:
@@ -1766,7 +1796,6 @@ def create_server() -> FastMCP:
             section_info = []
 
             for result in enhanced_results:
-
                 # Use content preview from enhanced results
                 content_preview = result.get("content_preview", "")
 

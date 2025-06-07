@@ -4,7 +4,6 @@ Documentation type detection for specialized content extraction.
 
 import re
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
 
 from bs4 import BeautifulSoup
 

@@ -8,7 +8,6 @@ analyzing URLs and content to determine optimal crawling depth.
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 

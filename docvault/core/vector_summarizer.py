@@ -6,7 +6,6 @@ for creating concise, targeted summaries.
 """
 
 import json
-from typing import Dict, List, Optional, Tuple
 
 from docvault import config
 from docvault.db import operations

@@ -7,7 +7,6 @@ for quick content location and navigation.
 
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 from docvault.core.content_chunker import ChunkingStrategy, ContentChunker
 from docvault.db.operations import get_connection
