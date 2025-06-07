@@ -521,7 +521,9 @@ def create_server() -> FastMCP:
                             ],
                             metadata={
                                 "success": False,
-                                "error": f"Invalid chunk number. Valid range: 1-{total_chunks}",
+                                "error": (
+                            f"Invalid chunk number. Valid range: 1-{total_chunks}"
+                        ),
                                 "total_chunks": total_chunks,
                             },
                         )
@@ -532,7 +534,10 @@ def create_server() -> FastMCP:
                     chunk_content = content[start:end]
 
                     # Add chunk metadata
-                    chunk_header = f"# {document['title']} - Chunk {chunk_number}/{total_chunks}\n\n"
+                    chunk_header = (
+                        f"# {document['title']} - Chunk "
+                        f"{chunk_number}/{total_chunks}\n\n"
+                    )
                     if chunk_number > 1:
                         chunk_header += "*...continued from previous chunk*\n\n"
 
@@ -562,8 +567,10 @@ def create_server() -> FastMCP:
                 # Return full content with a warning if large
                 if len(content) > 25000:  # Roughly 6250 tokens
                     warning = (
-                        "⚠️ **Warning**: This document is very large and may exceed token limits.\n"
-                        "Consider using mode='summary' for a concise version or mode='chunk' to read in parts.\n\n"
+                        "⚠️ **Warning**: This document is very large and may exceed "
+                        "token limits.\n"
+                        "Consider using mode='summary' for a concise version or "
+                        "mode='chunk' to read in parts.\n\n"
                     )
                     content = warning + content
 
@@ -608,12 +615,17 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Could not find documentation for {library_name} {version}",
+                            text=(
+                                f"Could not find documentation for {library_name} "
+                                f"{version}"
+                            ),
                         )
                     ],
                     metadata={
                         "success": False,
-                        "message": f"Could not find documentation for {library_name} {version}",
+                        "message": (
+                            f"Could not find documentation for {library_name} {version}"
+                        ),
                     },
                 )
 
@@ -627,7 +639,9 @@ def create_server() -> FastMCP:
                 content=[types.TextContent(type="text", text=content_text)],
                 metadata={
                     "success": True,
-                    "message": f"Documentation for {library_name} {version} is available",
+                    "message": (
+                        f"Documentation for {library_name} {version} is available"
+                    ),
                     "document_count": len(documents),
                     "documents": [
                         {"id": doc["id"], "title": doc["title"], "url": doc["url"]}
@@ -655,13 +669,18 @@ def create_server() -> FastMCP:
         task_based: bool = False,
         complementary: str | None = None,
     ) -> types.CallToolResult:
-        """Get AI-powered suggestions for functions, classes, or documentation based on a query.
+        """Get AI-powered suggestions for functions, classes, or documentation.
+
+        Based on a query string.
 
         Args:
-            query: The task or concept to get suggestions for (e.g., "database connection", "error handling")
+            query: The task or concept to get suggestions for
+                (e.g., "database connection", "error handling")
             limit: Maximum number of suggestions to return (default: 5)
-            task_based: If True, returns task-oriented suggestions instead of just matching functions
-            complementary: Find functions that complement this function name (e.g., "open" -> suggests "close")
+            task_based: If True, returns task-oriented suggestions instead of
+                just matching functions
+            complementary: Find functions that complement this function name
+                (e.g., "open" -> suggests "close")
 
         Examples:
             suggest("file handling", task_based=True)

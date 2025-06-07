@@ -127,7 +127,8 @@ class WebScraper:
                     body.append(soup.new_tag(heading.name))
                     body.contents[-1].string = heading.get_text()
 
-                    # Add subsequent elements until we hit another heading of same or higher level
+                    # Add subsequent elements until we hit another heading of
+                    # same or higher level
                     current = heading.next_sibling
                     while current:
                         # Skip text nodes that are just whitespace

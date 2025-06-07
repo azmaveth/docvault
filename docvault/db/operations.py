@@ -126,7 +126,8 @@ def add_document(
         cursor.execute(
             """
         INSERT INTO documents
-        (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
+        (url, version, title, html_path, markdown_path, content_hash, library_id,
+         is_library_doc, scraped_at, has_llms_txt, llms_txt_url)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
