@@ -117,7 +117,8 @@ class WebScraper:
                 heading_text = heading.get_text().strip().lower()
                 # Check if any of the requested sections match this heading
                 if any(section in heading_text for section in sections_lower):
-                    # Include this heading and collect content until the next heading of same or higher level
+                    # Include this heading and collect content until the next
+                    # heading of same or higher level
                     current_level = int(
                         heading.name[1]
                     )  # Extract number from h1, h2, etc.

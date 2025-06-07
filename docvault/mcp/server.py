@@ -597,7 +597,7 @@ def create_server() -> FastMCP:
         library_name: str, version: str = "latest"
     ) -> types.CallToolResult:
         """Lookup and fetch documentation for a specific library and version.
-        
+
         If documentation is not already available, attempts to fetch it.
         """
         try:
