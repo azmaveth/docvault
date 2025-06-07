@@ -114,7 +114,8 @@ def show_status():
         f"Documents with context: {stats['docs_with_context']}/{totals['total_docs']}"
     )
     console.print(
-        f"Segments with context: {stats['segments_with_context']}/{totals['total_segments']}"
+        f"Segments with context: {stats['segments_with_context']}/"
+        f"{totals['total_segments']}"
     )
 
     if stats["segments_with_context"] > 0:
@@ -179,7 +180,8 @@ def process_document(
                     console.print(f"  Duration: {result['duration_seconds']:.1f}s")
                 else:
                     console.print(
-                        f"\n[yellow]![/yellow] Processing skipped: {result.get('reason', 'Unknown')}"
+                        f"\n[yellow]![/yellow] Processing skipped: "
+                        f"{result.get('reason', 'Unknown')}"
                     )
 
             except Exception as e:

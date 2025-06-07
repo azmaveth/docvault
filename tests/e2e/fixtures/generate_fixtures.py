@@ -177,7 +177,8 @@ def generate_all_fixtures():
         <pre><code>curl https://api.example.com/users</code></pre>
         <h4>POST /users</h4>
         <p>Create a new user</p>
-        <pre><code>curl -X POST https://api.example.com/users -d '{"name": "John"}'</code></pre>
+        <pre><code>curl -X POST https://api.example.com/users -d '{"name": "John"}'
+        </code></pre>
         """,
         "api_reference.html",
     )
@@ -233,7 +234,8 @@ soup = BeautifulSoup(response.text, 'html.parser')
         """# Python Documentation Summary
 
 ## Overview
-Python is a high-level, interpreted programming language known for its simplicity and readability.
+Python is a high-level, interpreted programming language known for its simplicity
+and readability.
 
 ## Key Features
 - Dynamic typing

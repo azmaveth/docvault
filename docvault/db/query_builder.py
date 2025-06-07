@@ -241,7 +241,8 @@ def build_document_filter(
     # Collection filter
     if "collection_id" in doc_filter:
         fb.add_condition(
-            "d.id IN (SELECT document_id FROM collection_documents WHERE collection_id = ?)",
+            "d.id IN (SELECT document_id FROM collection_documents "
+            "WHERE collection_id = ?)",
             doc_filter["collection_id"],
         )
 

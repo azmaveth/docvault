@@ -102,7 +102,8 @@ def search_segments_contextual(
                     l.name as library_name,
                     (2.0 - cm.distance) / 2.0 AS score,
                     cm.is_contextual,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY cm.distance) as rn
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY cm.distance)
+                        as rn
                 FROM contextual_matches cm
                 JOIN document_segments s ON cm.id = s.id
                 JOIN documents d ON s.document_id = d.id
@@ -138,7 +139,8 @@ def search_segments_contextual(
                 contextual_count = sum(1 for row in rows if row.get("is_contextual"))
                 if contextual_count > 0:
                     logger.info(
-                        f"{contextual_count}/{len(rows)} results used contextual embeddings"
+                        f"{contextual_count}/{len(rows)} results used contextual "
+                        f"embeddings"
                     )
 
                 conn.close()
@@ -183,7 +185,8 @@ def search_segments_contextual(
                     l.name as library_name,
                     (2.0 - v.distance) / 2.0 AS score,
                     0 as is_contextual,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY v.distance) as rn
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY v.distance)
+                        as rn
                 FROM vector_matches v
                 JOIN document_segments s ON v.rowid = s.id
                 JOIN documents d ON s.document_id = d.id

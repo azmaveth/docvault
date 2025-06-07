@@ -360,7 +360,8 @@ class ScrapingAnalyzer:
         docvault_result = self.results.get("docvault", {})
         if docvault_result.get("detection_confidence", 0) < 0.5:
             issues.append(
-                f"Low detection confidence: {docvault_result.get('detection_confidence', 0):.2f}"
+                f"Low detection confidence: "
+                f"{docvault_result.get('detection_confidence', 0):.2f}"
             )
 
         if not issues:
@@ -381,7 +382,8 @@ class ScrapingAnalyzer:
 
         print(f"✅ Successfully analyzed: {successful_child_pages}")
         print(
-            f"❌ Failed to analyze: {len(self.results.get('child_pages', {})) - successful_child_pages}"
+            f"❌ Failed to analyze: "
+            f"{len(self.results.get('child_pages', {})) - successful_child_pages}"
         )
 
         if self.results.get("child_pages"):
@@ -400,7 +402,8 @@ class ScrapingAnalyzer:
 
         if "Site likely requires JavaScript" in str(issues):
             recommendations.append(
-                "Consider adding JavaScript rendering support (e.g., Playwright/Selenium)"
+                "Consider adding JavaScript rendering support (e.g., "
+                "Playwright/Selenium)"
             )
 
         if docvault_result.get("detection_confidence", 1) < 0.7:

@@ -92,7 +92,8 @@ async def quick_add_package(
     existing = find_library(package_name, version, source.id)
     if existing and not force:
         console.print(
-            f"[yellow]Library '{package_name}' already exists in {source.name} registry[/]"
+            f"[yellow]Library '{package_name}' already exists in {source.name} "
+            f"registry[/]"
         )
         console.print("[dim]Use --force to re-fetch documentation[/]")
 
@@ -225,7 +226,8 @@ def create_quick_add_command(package_manager: str, display_name: str):
         else:
             if doc:
                 console.print(
-                    f"[green]✓[/] Successfully added {package_name} documentation from {display_name}"
+                    f"[green]✓[/] Successfully added {package_name} documentation "
+                    f"from {display_name}"
                 )
                 console.print(f"  Document ID: {doc.get('id')}")
                 console.print(f"  Title: {doc.get('title')}")
@@ -233,7 +235,8 @@ def create_quick_add_command(package_manager: str, display_name: str):
                 console.print(f"\n[dim]View with:[/] [cyan]dv read {doc.get('id')}[/]")
             else:
                 console.print(
-                    f"[red]✗[/] Failed to add {package_name} documentation from {display_name}"
+                    f"[red]✗[/] Failed to add {package_name} documentation "
+                    f"from {display_name}"
                 )
 
     # Set the function name to avoid conflicts
@@ -324,7 +327,8 @@ def add_package_manager(package_spec, version, force, format):
     else:
         if doc:
             console.print(
-                f"[green]✓[/] Successfully added {package_name} documentation from {display_name}"
+                f"[green]✓[/] Successfully added {package_name} documentation "
+                f"from {display_name}"
             )
             console.print(f"  Document ID: {doc.get('id')}")
             console.print(f"  Title: {doc.get('title')}")
@@ -332,5 +336,6 @@ def add_package_manager(package_spec, version, force, format):
             console.print(f"\n[dim]View with:[/] [cyan]dv read {doc.get('id')}[/]")
         else:
             console.print(
-                f"[red]✗[/] Failed to add {package_name} documentation from {display_name}"
+                f"[red]✗[/] Failed to add {package_name} documentation "
+                f"from {display_name}"
             )

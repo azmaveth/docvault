@@ -1,8 +1,8 @@
 """
 Vector-based document summarization using embeddings for intelligent content extraction.
 
-This module uses vector similarity search to find the most relevant sections of a document
-for creating concise, targeted summaries.
+This module uses vector similarity search to find the most relevant sections of a
+document for creating concise, targeted summaries.
 """
 
 import json
@@ -61,7 +61,8 @@ class VectorSummarizer:
         """Initialize the vector summarizer.
 
         Args:
-            use_embeddings: Whether to use vector search (True) or fall back to text search
+            use_embeddings: Whether to use vector search (True) or fall back to text
+                search
         """
         self.use_embeddings = use_embeddings
         self._check_embeddings_available()

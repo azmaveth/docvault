@@ -65,7 +65,8 @@ class ContextExtractor:
         ]
 
         self.best_practice_indicators = [
-            r"(?:best practice|recommendation|tip|note|good practice|should|recommended)",
+            r"(?:best practice|recommendation|tip|note|good practice|should|"
+            r"recommended)",
             r"(?:✓|✅|👍|💡|📝|⭐)",  # Common symbols
             r"(?:pro tip|hint|advice|guideline)",
         ]
@@ -254,7 +255,8 @@ class ContextExtractor:
         related_patterns = [
             r"(?:see also|related|similar|compare with|alternatives?):\s*"
             r"(.*?)(?:\n\n|\n[A-Z])",
-            r"(?:other|additional|more) (?:functions|methods|classes|modules):\s*(.*?)(?:\n\n|\n[A-Z])",
+            r"(?:other|additional|more) (?:functions|methods|classes|modules):\s*"
+            r"(.*?)(?:\n\n|\n[A-Z])",
         ]
 
         for pattern in related_patterns:
@@ -280,9 +282,11 @@ class ContextExtractor:
         prerequisites = set()
 
         prereq_patterns = [
-            r"(?:prerequisite|requirement|dependency|need|require|must have|before using):\s*(.*?)(?:\n\n|\n[A-Z])",
+            r"(?:prerequisite|requirement|dependency|need|require|must have|"
+            r"before using):\s*(.*?)(?:\n\n|\n[A-Z])",
             r"(?:install|import|include|add):\s*([^\n]+)",
-            r"(?:make sure|ensure|verify).*?(?:you have|installed|available):\s*(.*?)(?:\n\n|\n[A-Z])",
+            r"(?:make sure|ensure|verify).*?(?:you have|installed|available):\s*"
+            r"(.*?)(?:\n\n|\n[A-Z])",
         ]
 
         for pattern in prereq_patterns:
@@ -417,7 +421,8 @@ class ContextExtractor:
         solution_text = content[pitfall_end : pitfall_end + 300]
 
         solution_patterns = [
-            r"(?:solution|fix|resolve|instead|alternative|correct way):\s*(.*?)(?:\n\n|\n[A-Z])",
+            r"(?:solution|fix|resolve|instead|alternative|correct way):\s*"
+            r"(.*?)(?:\n\n|\n[A-Z])",
             r"(?:to fix|to solve|to avoid).*?(.*?)(?:\n\n|\n[A-Z])",
         ]
 

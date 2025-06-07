@@ -715,7 +715,7 @@ def import_cmd(
                 console.print(table)
                 console.print(
                     f"✅ Imported: [bold green]{document['title']}[/] "
-                f"(ID: {document['id']})"
+                    f"(ID: {document['id']})"
                 )
 
                 # Provide helpful next steps
@@ -1432,7 +1432,8 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 )
             elif staleness_status == StalenessStatus.OUTDATED:
                 console.print(
-                    "❌ [red]This document is outdated (last updated more than 30 days ago)[/]"
+                    "❌ [red]This document is outdated "
+                    "(last updated more than 30 days ago)[/]"
                 )
                 console.print(
                     f"   Run [cyan]dv update {document_id}[/] to check for updates\n"
@@ -1512,7 +1513,8 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                     if refs_from:
                         has_refs = True
                         console.print(
-                            f"\n[yellow]From section: {segment.get('section_title', 'Unknown')}[/]"
+                            f"\n[yellow]From section: "
+                            f"{segment.get('section_title', 'Unknown')}[/]"
                         )
 
                         table = Table(show_header=True, header_style="bold magenta")
@@ -1708,7 +1710,8 @@ class DefaultGroup(click.Group):
         import logging
 
         logging.getLogger(__name__).debug(
-            f"[search.DefaultGroup] cmd_name={cmd_name!r}, ctx.args={ctx.args!r}, ctx.protected_args={getattr(ctx, 'protected_args', None)!r}"
+            f"[search.DefaultGroup] cmd_name={cmd_name!r}, ctx.args={ctx.args!r}, "
+            f"ctx.protected_args={getattr(ctx, 'protected_args', None)!r}"
         )
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
@@ -2231,7 +2234,9 @@ def search_lib(library_spec, version, format, timeout, verbose):
             # Show version in the progress message if it's not 'latest'
             version_display = f" {version}" if version != "latest" else ""
             task = progress.add_task(
-                f"[cyan]Searching for {library_name}{'@' + version_display if version_display else ''} documentation...",
+                f"[cyan]Searching for {library_name}"
+                f"{'@' + version_display if version_display else ''} "
+                f"documentation...",
                 total=None,
             )
 
@@ -2597,7 +2602,8 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     except TimeoutError:
         console.print(
             f"[red]Error:[/] Batch search timed out after {timeout} seconds. "
-            "Try increasing the timeout with --timeout or reducing concurrency with --concurrent"
+            "Try increasing the timeout with --timeout or reducing concurrency "
+            "with --concurrent"
         )
         if format == "json":
             print(
@@ -2742,7 +2748,8 @@ def search_text(
             logging.getLogger(__name__).info("sqlite-vec extension loaded successfully")
         except Exception as e:
             logging.getLogger(__name__).warning(
-                "sqlite-vec extension cannot be loaded: %s. Falling back to text search.",
+                "sqlite-vec extension cannot be loaded: %s. "
+                "Falling back to text search.",
                 e,
             )
         finally:
@@ -2850,7 +2857,10 @@ def search_text(
                                 "count": 0,
                                 "results": [],
                                 "query": query,
-                                "message": "No documents match both document and collection filters",
+                                "message": (
+                                    "No documents match both document and "
+                                    "collection filters"
+                                ),
                             }
                         )
                     )
@@ -3109,10 +3119,12 @@ def search_text(
             console.print(f"Embedding dimensions: {len(embedding_array)}")
             console.print(f"Embedding sample: {embedding_array[:5]}...")
             console.print(
-                f"Embedding min/max: {embedding_array.min():.4f}/{embedding_array.max():.4f}"
+                f"Embedding min/max: {embedding_array.min():.4f}/"
+                f"{embedding_array.max():.4f}"
             )
             console.print(
-                f"Embedding mean/std: {embedding_array.mean():.4f}/{embedding_array.std():.4f}"
+                f"Embedding mean/std: {embedding_array.mean():.4f}/"
+                f"{embedding_array.std():.4f}"
             )
         except Exception as e:
             console.print(f"[red]Error analyzing embedding: {e}")
@@ -3277,7 +3289,8 @@ def search_text(
                 len(section_hits) for section_hits in doc_info["sections"].values()
             )
             console.print(
-                f"\n[dim]Total: {total_matches} matches across {len(doc_info['sections'])} sections[/]"
+                f"\n[dim]Total: {total_matches} matches across "
+                f"{len(doc_info['sections'])} sections[/]"
             )
             console.print("[dim]" + "─" * 60 + "[/]")
 
@@ -3317,7 +3330,8 @@ def search_text(
         if metadata_parts:
             console.print(f"[dim]{' • '.join(metadata_parts)}[/]")
         console.print(
-            f"[dim]Found {total_matches} matches in {len(doc_info['sections'])} sections[/]"
+            f"[dim]Found {total_matches} matches in "
+            f"{len(doc_info['sections'])} sections[/]"
         )
 
         # Sort sections by their path for logical ordering
@@ -3337,7 +3351,8 @@ def search_text(
             # Section header with match count
             console.print(f"\n{indent}📂 [bold]{section_title}[/]")
             console.print(
-                f"{indent}[dim]  {len(section_hits)} matches • Section {section_path}[/]"
+                f"{indent}[dim]  {len(section_hits)} matches • "
+                f"Section {section_path}[/]"
             )
 
             # Show top 3 matches in this section
@@ -3406,7 +3421,8 @@ def search_text(
         # Document footer with navigation options
         console.print("[dim]────────────────────────────────────────[/]")
         console.print(
-            f"[dim]Document: {doc_title} • {len(doc_info['sections'])} sections with matches • [bold]d[/] to view document[/]"
+            f"[dim]Document: {doc_title} • {len(doc_info['sections'])} "
+            f"sections with matches • [bold]d[/] to view document[/]"
         )
 
         # Add keyboard navigation hints
@@ -3461,7 +3477,10 @@ def search_text(
 @click.option(
     "--task-based",
     is_flag=True,
-    help="Get suggestions for common programming tasks (e.g., 'file handling', 'database queries')",
+    help=(
+        "Get suggestions for common programming tasks "
+        "(e.g., 'file handling', 'database queries')"
+    ),
 )
 @click.option(
     "--complementary",
@@ -3572,12 +3591,14 @@ def suggest_cmd(query, limit, task_based, complementary, format):
                     )
                 elif task_based:
                     console.print(
-                        "[dim]Tip: Use 'dv search <function_name>' to find implementation details[/]"
+                        "[dim]Tip: Use 'dv search <function_name>' to find "
+                        "implementation details[/]"
                     )
             else:
                 console.print("[yellow]No suggestions found for this query.[/]")
                 console.print(
-                    "[dim]Try using different keywords or use --task-based for programming tasks[/]"
+                    "[dim]Try using different keywords or use --task-based "
+                    "for programming tasks[/]"
                 )
 
     except Exception as e:
@@ -3602,7 +3623,8 @@ def suggest_cmd(query, limit, task_based, complementary, format):
 def index_cmd(verbose, force, batch_size, rebuild_table):
     """Index or re-index documents for improved search
 
-    This command generates or updates embeddings for existing documents to improve search.
+    This command generates or updates embeddings for existing documents to improve
+    search.
     Use this if you've imported documents from a backup or if search isn't working well.
     """
     from docvault.core.embeddings import generate_embeddings
@@ -3632,7 +3654,8 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
         conn.commit()
     except Exception as e:
         logging.getLogger(__name__).error(
-            "Error initializing vector table.\nMake sure the sqlite-vec extension is installed and enabled."
+            "Error initializing vector table.\n"
+            "Make sure the sqlite-vec extension is installed and enabled."
         )
         logging.getLogger(__name__).error("Details: %s", e)
         logging.getLogger(__name__).warning("Try: pip install sqlite-vec && dv init-db")
@@ -3683,7 +3706,8 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
                     conn = get_connection()
                     cursor = conn.cursor()
                     cursor.execute(
-                        "SELECT id, embedding FROM document_segments WHERE document_id = ? AND content = ?",
+                        "SELECT id, embedding FROM document_segments WHERE "
+                        "document_id = ? AND content = ?",
                         (doc["id"], segment),
                     )
                     existing = cursor.fetchone()
@@ -3726,7 +3750,8 @@ def index_cmd(verbose, force, batch_size, rebuild_table):
 
             if indexed_segments > 0:
                 console.print(
-                    f"✅ Indexed {indexed_segments} segments for [bold green]{doc['title']}[/]"
+                    f"✅ Indexed {indexed_segments} segments for "
+                    f"[bold green]{doc['title']}[/]"
                 )
 
         except Exception as e:
@@ -4295,12 +4320,15 @@ def stats_cmd(format, verbose):
         console.print("\n[bold]Health Summary:[/]")
         if stats["document_count"] == 0:
             console.print(
-                "  [yellow]⚠ No documents in vault. Use 'dv add <url>' to add documentation.[/]"
+                "  [yellow]⚠ No documents in vault. Use 'dv add <url>' to add "
+                "documentation.[/]"
             )
         elif stats["vector_search_enabled"]:
             if stats["vector_index_coverage"] < 50:
                 console.print(
-                    f"  [yellow]⚠ Vector index coverage is low ({stats['vector_index_coverage']}%). Run 'dv index' to improve search.[/]"
+                    f"  [yellow]⚠ Vector index coverage is low "
+                    f"({stats['vector_index_coverage']}%). Run 'dv index' to "
+                    f"improve search.[/]"
                 )
             else:
                 console.print(

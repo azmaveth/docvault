@@ -284,7 +284,8 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
     # Add new columns to libraries table only if they don't exist
     if "source_id" not in columns:
         cursor.execute(
-            "ALTER TABLE libraries ADD COLUMN source_id INTEGER REFERENCES documentation_sources(id)"
+            "ALTER TABLE libraries ADD COLUMN source_id INTEGER REFERENCES "
+            "documentation_sources(id)"
         )
     if "package_name" not in columns:
         cursor.execute("ALTER TABLE libraries ADD COLUMN package_name TEXT")
@@ -298,11 +299,13 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
         cursor.execute("ALTER TABLE libraries ADD COLUMN repository_url TEXT")
     if "created_at" not in columns:
         cursor.execute(
-            "ALTER TABLE libraries ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            "ALTER TABLE libraries ADD COLUMN created_at TIMESTAMP DEFAULT "
+            "CURRENT_TIMESTAMP"
         )
     if "updated_at" not in columns:
         cursor.execute(
-            "ALTER TABLE libraries ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            "ALTER TABLE libraries ADD COLUMN updated_at TIMESTAMP DEFAULT "
+            "CURRENT_TIMESTAMP"
         )
 
     # Add indexes
@@ -320,7 +323,8 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
         AFTER UPDATE ON documentation_sources
         FOR EACH ROW
         BEGIN
-            UPDATE documentation_sources SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+            UPDATE documentation_sources SET updated_at = CURRENT_TIMESTAMP
+            WHERE id = NEW.id;
         END
     """
     )

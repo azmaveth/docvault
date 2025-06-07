@@ -108,7 +108,8 @@ async def generate_embeddings(text: str) -> bytes:
                 if resp.status != 200:
                     error_text = await resp.text()
                     logger.warning(
-                        f"Embedding generation failed (attempt {attempt + 1}): {error_text}"
+                        f"Embedding generation failed (attempt {attempt + 1}): "
+                        f"{error_text}"
                     )
                     if attempt == 2:  # Last attempt
                         embedding = np.zeros(384, dtype=np.float32).tobytes()
@@ -184,7 +185,8 @@ async def generate_embeddings_batch(
         embeddings.extend(batch_embeddings)
 
         logger.debug(
-            f"Completed batch {i // batch_size + 1}/{(len(texts) + batch_size - 1) // batch_size}"
+            f"Completed batch {i // batch_size + 1}/"
+            f"{(len(texts) + batch_size - 1) // batch_size}"
         )
 
         # Small delay to avoid overwhelming the service
@@ -309,7 +311,8 @@ async def search(
         if results:
             scores = [r.get("score", 0) for r in results]
             logger.info(
-                f"Found {len(results)} results (scores: {min(scores):.2f}-{max(scores):.2f})"
+                f"Found {len(results)} results (scores: "
+                f"{min(scores):.2f}-{max(scores):.2f})"
             )
         else:
             logger.info("No results found")

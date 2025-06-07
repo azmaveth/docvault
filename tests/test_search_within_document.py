@@ -78,7 +78,8 @@ class TestSearchWithinDocument:
         # Add segments to both documents
         segment1_id = add_document_segment(
             document_id=doc1_id,
-            content="Python functions are defined using def keyword. Example: def hello():",
+            content="Python functions are defined using def keyword. Example: "
+            "def hello():",
             section_title="Functions",
             segment_type="text",
         )
@@ -263,7 +264,8 @@ class TestSearchWithinDocument:
 
         assert result.exit_code == 0
         # The status message should mention the document title
-        # Note: This tests the logic but Rich status messages don't appear in test output
+        # Note: This tests the logic but Rich status messages don't appear in test
+        # output
 
     def test_search_empty_query_within_document(self, setup_test_docs):
         """Test searching within document without a query (filter-only search)."""

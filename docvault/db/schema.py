@@ -72,13 +72,16 @@ def initialize_database(force_recreate=False):
         section_path TEXT,
         parent_segment_id INTEGER,
         FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-        FOREIGN KEY (parent_segment_id) REFERENCES document_segments(id) ON DELETE SET NULL
+        FOREIGN KEY (parent_segment_id) REFERENCES document_segments(id)
+            ON DELETE SET NULL
     );
 
     -- Index for section navigation
     CREATE INDEX IF NOT EXISTS idx_segment_document ON document_segments(document_id);
-    CREATE INDEX IF NOT EXISTS idx_segment_section ON document_segments(document_id, section_path);
-    CREATE INDEX IF NOT EXISTS idx_segment_parent ON document_segments(document_id, parent_segment_id);
+    CREATE INDEX IF NOT EXISTS idx_segment_section ON document_segments(document_id,
+        section_path);
+    CREATE INDEX IF NOT EXISTS idx_segment_parent ON document_segments(document_id,
+        parent_segment_id);
 
     -- Library documentation mapping
     CREATE TABLE IF NOT EXISTS libraries (
@@ -107,7 +110,8 @@ def initialize_database(force_recreate=False):
     );
 
     -- Add index for documentation sources
-    CREATE INDEX IF NOT EXISTS idx_sources_package_manager ON documentation_sources(package_manager);
+    CREATE INDEX IF NOT EXISTS idx_sources_package_manager ON documentation_sources(
+        package_manager);
     CREATE INDEX IF NOT EXISTS idx_sources_active ON documentation_sources(is_active);
     """
     )

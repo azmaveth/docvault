@@ -184,7 +184,7 @@ def update_document_by_url(
     llms_txt_url: str | None = None,
 ) -> int:
     """Update a document by deleting the old one (if any) and re-adding it.
-    
+
     Uses a new timestamp/version for the updated document.
     """
     old_doc = get_document_by_url(url)
@@ -353,7 +353,8 @@ def add_document_segment(
         position: Position within the document
         section_title: Title of the section
         section_level: Heading level (1 for h1, 2 for h2, etc.)
-        section_path: Path-like string representing the section hierarchy (e.g., '1.2.3')
+        section_path: Path-like string representing the section hierarchy
+            (e.g., '1.2.3')
         parent_segment_id: ID of the parent segment (for nested sections)
 
     Returns:
@@ -445,7 +446,8 @@ def search_segments(
         limit: Maximum number of results to return
         text_query: Text query for full-text search
         min_score: Minimum similarity score (0.0 to 1.0)
-        doc_filter: Dictionary of document filters (e.g., {'version': '1.0', 'is_library_doc': True})
+        doc_filter: Dictionary of document filters (e.g., {'version': '1.0',
+            'is_library_doc': True})
 
     Returns:
         List of matching document segments with metadata
@@ -466,7 +468,8 @@ def search_segments(
             logger = logging.getLogger(__name__)
             logger.debug(f"Vector search with {len(filter_params)} filter params")
 
-            # Build vector search query - use static base query with additional conditions
+            # Build vector search query - use static base query with additional
+            # conditions
             base_query = """
             WITH vector_matches AS (
                 SELECT
@@ -493,8 +496,10 @@ def search_segments(
                     d.is_library_doc,
                     d.library_id,
                     l.name as library_name,
-                    (2.0 - v.distance) / 2.0 AS score,  -- Convert distance [0,2] to similarity [0,1]
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY v.distance) as rn
+                    (2.0 - v.distance) / 2.0 AS score,  -- Convert distance [0,2]
+                                                       -- to similarity [0,1]
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path
+                        ORDER BY v.distance) as rn
                 FROM vector_matches v
                 JOIN document_segments s ON v.rowid = s.id
                 JOIN documents d ON s.document_id = d.id
@@ -504,7 +509,8 @@ def search_segments(
 
             # Add filter conditions
             if filter_conditions:
-                # Since filter_conditions come from our controlled build_document_filter function,
+                # Since filter_conditions come from our controlled
+                # build_document_filter function,
                 # and all user input is parameterized, this is safe
                 base_query += " AND " + " AND ".join(filter_conditions)
 
@@ -538,13 +544,16 @@ def search_segments(
             use_text_search = True
             logger = logging.getLogger(__name__)
             logger.warning(
-                "Vector search returned no matching results; falling back to text search. Ensure sqlite-vec extension is installed."
+                "Vector search returned no matching results; falling back to text "
+                "search. Ensure sqlite-vec extension is installed."
             )
 
         except sqlite3.OperationalError as e:
             logger = logging.getLogger(__name__)
             logger.warning(
-                f"Vector search failed ({e}); falling back to text search. To enable vector search, install sqlite-vec extension and ensure it's available."
+                f"Vector search failed ({e}); falling back to text search. "
+                f"To enable vector search, install sqlite-vec extension and "
+                f"ensure it's available."
             )
             use_text_search = True
 
@@ -584,10 +593,12 @@ def search_segments(
             for i, term in enumerate(search_terms[:3]):
                 # Higher score for matches in title or section title
                 score_cases.append(
-                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(s.section_title) LIKE ?) THEN {10.0 - i * 0.5}"
+                    f"WHEN (LOWER(s.content) LIKE ?) AND "
+                    f"(LOWER(s.section_title) LIKE ?) THEN {10.0 - i * 0.5}"
                 )
                 score_cases.append(
-                    f"WHEN (LOWER(s.content) LIKE ?) AND (LOWER(d.title) LIKE ?) THEN {8.0 - i * 0.5}"
+                    f"WHEN (LOWER(s.content) LIKE ?) AND "
+                    f"(LOWER(d.title) LIKE ?) THEN {8.0 - i * 0.5}"
                 )
                 score_cases.append(f"WHEN LOWER(s.content) LIKE ? THEN {5.0 - i * 0.5}")
 
@@ -604,7 +615,7 @@ def search_segments(
                 + " END) AS score"
                 + """
                     ,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY
+                    ROW_NUMBER() OVER (PARTITION BY s.section_pathORDER BY
                         (CASE
                 """
                 + "\n".join(order_score_cases)
@@ -629,7 +640,8 @@ def search_segments(
             for _ in search_terms[:3]:
                 # Search in content, section title, and document title
                 where_clauses.append(
-                    "LOWER(s.content) LIKE ? OR LOWER(s.section_title) LIKE ? OR LOWER(d.title) LIKE ?"
+                    "LOWER(s.content) LIKE ? OR LOWER(s.section_title) LIKE ? OR "
+                    "LOWER(d.title) LIKE ?"
                 )
 
             query += " OR ".join(where_clauses)
@@ -643,11 +655,13 @@ def search_segments(
             LIMIT ?
             """
 
-            # Prepare all parameters - for each term, we need to add it multiple times for each condition
+            # Prepare all parameters - for each term, we need to add it
+            # multiple times for each condition
             params = []
             # For the score calculation in SELECT clause
             for term in like_patterns:
-                # For each term, we have 3 WHEN conditions, each checking 2 fields for first two, 1 for the third
+                # For each term, we have 3 WHEN conditions, each checking
+                # 2 fields for first two, 1 for the third
                 params.extend(
                     [f"%{term}%", f"%{term}%"]
                 )  # First WHEN: content LIKE ? AND section_title LIKE ?
@@ -670,7 +684,8 @@ def search_segments(
                     [f"%{term}%"] * 3
                 )  # For each of the 3 fields we search in
 
-            # Combine all parameters: SELECT CASE params + ORDER BY CASE params + filter params + WHERE params + min_score + limit
+            # Combine all parameters: SELECT CASE params + ORDER BY CASE params +
+            # filter params + WHERE params + min_score + limit
             params = (
                 params
                 + order_params
@@ -702,7 +717,8 @@ def search_segments(
                     d.library_id,
                     l.name as library_name,
                     0.1 AS score,
-                    ROW_NUMBER() OVER (PARTITION BY s.section_path ORDER BY RANDOM()) as rn
+                    ROW_NUMBER() OVER (PARTITION BY s.section_path
+                        ORDER BY RANDOM()) as rn
                 FROM document_segments s
                 JOIN documents d ON s.document_id = d.id
                 LEFT JOIN libraries l ON d.library_id = l.id
@@ -876,7 +892,8 @@ def get_latest_library_version(name: str) -> dict[str, Any] | None:
             WHEN version GLOB '[0-9]*.[0-9]*' THEN 2
             ELSE 3
         END,
-        CAST(REPLACE(REPLACE(REPLACE(version, 'v', ''), '-beta', ''), '-alpha', '') AS TEXT) DESC,
+        CAST(REPLACE(REPLACE(REPLACE(version, 'v', ''), '-beta', ''),
+            '-alpha', '') AS TEXT) DESC,
         last_checked DESC
     LIMIT 1
     """,

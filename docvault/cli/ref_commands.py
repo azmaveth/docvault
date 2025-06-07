@@ -152,7 +152,9 @@ def show_graph(document_id):
                 for target_id, ref_text, ref_type in refs_from[seg_id]:
                     target_seg = segments_map.get(target_id, {})
                     out_branch.add(
-                        f"[cyan]{ref_text}[/] → {target_seg.get('section_title', 'Unknown')} [dim]({ref_type})[/]"
+                        f"[cyan]{ref_text}[/] → "
+                        f"{target_seg.get('section_title', 'Unknown')} "
+                        f"[dim]({ref_type})[/]"
                     )
 
             # Add incoming references
@@ -161,7 +163,8 @@ def show_graph(document_id):
                 for source_id, ref_text, ref_type in refs_to[seg_id]:
                     source_seg = segments_map.get(source_id, {})
                     in_branch.add(
-                        f"{source_seg.get('section_title', 'Unknown')} → [cyan]{ref_text}[/] [dim]({ref_type})[/]"
+                        f"{source_seg.get('section_title', 'Unknown')} → "
+                        f"[cyan]{ref_text}[/] [dim]({ref_type})[/]"
                     )
 
     console.print(tree)

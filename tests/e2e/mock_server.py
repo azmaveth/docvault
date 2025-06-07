@@ -115,7 +115,8 @@ print(text.lower())  # hello
             <h1>JavaScript Array Methods</h1>
             <section>
                 <h2>Array.prototype.map()</h2>
-                <p>Creates a new array with the results of calling a function on every element.</p>
+                <p>Creates a new array with the results of calling a function on every
+                element.</p>
                 <pre><code>
 const numbers = [1, 2, 3];
 const doubled = numbers.map(x => x * 2);
@@ -184,7 +185,8 @@ console.log(evens); // [2, 4]
         </head>
         <body>
             <h1>Test HTML Document</h1>
-            <p>This is a test paragraph with <strong>bold</strong> and <em>italic</em> text.</p>
+            <p>This is a test paragraph with <strong>bold</strong> and <em>italic</em>
+            text.</p>
             <h2>Code Example</h2>
             <pre><code>
 def hello_world():

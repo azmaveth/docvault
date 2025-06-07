@@ -522,8 +522,9 @@ def create_server() -> FastMCP:
                             metadata={
                                 "success": False,
                                 "error": (
-                            f"Invalid chunk number. Valid range: 1-{total_chunks}"
-                        ),
+                                    f"Invalid chunk number. Valid range: "
+                                    f"1-{total_chunks}"
+                                ),
                                 "total_chunks": total_chunks,
                             },
                         )
@@ -1115,7 +1116,12 @@ def create_server() -> FastMCP:
                         content=[
                             types.TextContent(
                                 type="text",
-                                text=f"Unknown package manager: {manager}. Supported: pypi, npm, gem, hex, go, cargo/crates, composer/packagist",
+                                text=(
+                                    f"Unknown package manager: {manager}. "
+                                    f"Supported: pypi, npm, gem, hex, go, "
+                                    f"cargo/crates, "
+                                    f"composer/packagist"
+                                ),
                             )
                         ],
                         metadata={
@@ -1144,8 +1150,10 @@ def create_server() -> FastMCP:
                         )
                     else:
                         content_text = (
-                            f"Package {package} is registered but documentation is not available locally.\n"
-                            f"The documentation may have been deleted or the URL may be invalid."
+                            f"Package {package} is registered but documentation is "
+                            f"not available locally.\n"
+                            f"The documentation may have been deleted or the URL may "
+                            f"be invalid."
                         )
 
                     return types.CallToolResult(
@@ -1164,7 +1172,10 @@ def create_server() -> FastMCP:
                     )
                 else:
                     # Successfully added new documentation
-                    content_text = f"Successfully added documentation for {package} from {display_name or pm_name}:\n"
+                    content_text = (
+                        f"Successfully added documentation for {package} from "
+                        f"{display_name or pm_name}:\n"
+                    )
                     content_text += f"Title: {result.get('title', 'Unknown')}\n"
                     content_text += f"Version: {version}\n"
                     content_text += f"Document ID: {result.get('id', 'Unknown')}\n"
@@ -1185,7 +1196,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Failed to add {package} from {display_name or pm_name}: Documentation not found",
+                            text=(
+                                f"Failed to add {package} from "
+                                f"{display_name or pm_name}: Documentation not found"
+                            ),
                         )
                     ],
                     metadata={"success": False, "error": "Documentation not found"},
@@ -1279,7 +1293,10 @@ def create_server() -> FastMCP:
                 text = ""
                 for section in sections:
                     prefix = "  " * indent + "- "
-                    text += f"{prefix}{section.section_title} (path: {section.section_path})\n"
+                    text += (
+                        f"{prefix}{section.section_title} "
+                        f"(path: {section.section_path})\n"
+                    )
                     if section.children:
                         text += format_toc(section.children, indent + 1)
                 return text
@@ -1340,7 +1357,8 @@ def create_server() -> FastMCP:
 
         Args:
             document_id: The ID of the document
-            section_path: The section path (e.g., "1.2.3" for nested sections) - use quotes!
+            section_path: The section path (e.g., "1.2.3" for nested sections) -
+                use quotes!
             section_id: Alternative - the section ID (from get_document_sections)
             include_subsections: If True, include all subsections
 
@@ -1348,7 +1366,8 @@ def create_server() -> FastMCP:
             read_document_section(5, section_path="2")  # Read section 2
             read_document_section(5, section_path="2.1")  # Read subsection 2.1
             read_document_section(5, section_id=123)  # Read section by ID
-            read_document_section(5, section_path="2", include_subsections=True)  # With subsections
+            read_document_section(5, section_path="2", include_subsections=True)
+                # With subsections
         """
         try:
             from docvault.core.section_navigator import SectionNavigator
@@ -1374,7 +1393,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text="Error: Either section_path or section_id must be provided",
+                            text=(
+                                "Error: Either section_path or section_id must be "
+                                "provided"
+                            ),
                         )
                     ],
                     metadata={
@@ -1399,7 +1421,10 @@ def create_server() -> FastMCP:
                         content=[
                             types.TextContent(
                                 type="text",
-                                text=f"Section not found: ID {section_id} in document {document_id}",
+                                text=(
+                                    f"Section not found: ID {section_id} in document "
+                                    f"{document_id}"
+                                ),
                             )
                         ],
                         metadata={
@@ -1422,7 +1447,10 @@ def create_server() -> FastMCP:
                         content=[
                             types.TextContent(
                                 type="text",
-                                text=f"Section not found: {section_path} in document {document_id}",
+                                text=(
+                                    f"Section not found: {section_path} in document "
+                                    f"{document_id}"
+                                ),
                             )
                         ],
                         metadata={
@@ -1433,12 +1461,14 @@ def create_server() -> FastMCP:
 
             # Get section content
             if include_subsections:
-                # For subsections, we need to get all segments with paths starting with section_path
+                # For subsections, we need to get all segments with paths
+                # starting with section_path
                 from docvault.db.operations import get_connection
 
                 with get_connection() as conn:
                     cursor = conn.execute(
-                        """SELECT section_title, section_level, section_path, content
+                        """SELECT section_title, section_level, section_path,
+                           content
                            FROM document_segments
                            WHERE document_id = ? AND section_path LIKE ?
                            ORDER BY section_path""",
@@ -1446,7 +1476,10 @@ def create_server() -> FastMCP:
                     )
                     sections = cursor.fetchall()
 
-                content_text = f"Section {section_path} and subsections from '{document['title']}':\n\n"
+                content_text = (
+                    f"Section {section_path} and subsections from "
+                    f"'{document['title']}':\n\n"
+                )
                 for s in sections:
                     content_text += (
                         f"{'#' * s['section_level']} {s['section_title']}\n\n"
@@ -1454,7 +1487,10 @@ def create_server() -> FastMCP:
                     content_text += s["content"] + "\n\n"
             else:
                 content_text = f"Section {section_path} from '{document['title']}':\n\n"
-                content_text += f"{'#' * section.get('section_level', 1)} {section.get('section_title', 'Section')}\n\n"
+                content_text += (
+                    f"{'#' * section.get('section_level', 1)} "
+                    f"{section.get('section_title', 'Section')}\n\n"
+                )
                 content_text += section.get("content", "")
 
             return types.CallToolResult(
@@ -1485,7 +1521,8 @@ def create_server() -> FastMCP:
         section: str,
         include_subsections: bool = False,
     ) -> types.CallToolResult:
-        """Read a document section. Prefix numeric paths with 's' (e.g., 's1.2' for section 1.2).
+        """Read a document section. Prefix numeric paths with 's' (e.g., 's1.2'
+        for section 1.2).
 
         Args:
             document_id: The ID of the document
@@ -1539,7 +1576,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Section not found: {section} in document {document_id}",
+                            text=(
+                                f"Section not found: {section} in document "
+                                f"{document_id}"
+                            ),
                         )
                     ],
                     metadata={
@@ -1553,7 +1593,8 @@ def create_server() -> FastMCP:
                 # Get all segments with paths starting with section_path
                 with get_connection() as conn:
                     cursor = conn.execute(
-                        """SELECT section_title, section_level, section_path, content
+                        """SELECT section_title, section_level, section_path,
+                           content
                            FROM document_segments
                            WHERE document_id = ? AND section_path LIKE ?
                            ORDER BY section_path""",
@@ -1565,11 +1606,15 @@ def create_server() -> FastMCP:
                 )
 
                 for s in sections:
-                    content_text += f"{'#' * s.get('section_level', 1)} {s.get('section_title', 'Section')}\n\n"
+                    level = "#" * s.get("section_level", 1)
+                    title = s.get("section_title", "Section")
+                    content_text += f"{level} {title}\n\n"
                     content_text += s.get("content", "") + "\n\n"
             else:
                 content_text = f"Section {section} from '{document['title']}':\n\n"
-                content_text += f"{'#' * section_obj.get('section_level', 1)} {section_obj.get('section_title', 'Section')}\n\n"
+                level = "#" * section_obj.get("section_level", 1)
+                title = section_obj.get("section_title", "Section")
+                content_text += f"{level} {title}\n\n"
                 content_text += section_obj.get("content", "")
 
             return types.CallToolResult(
@@ -1603,7 +1648,8 @@ def create_server() -> FastMCP:
         Args:
             document_id: The ID of the document
             chunk_size: Size of each chunk in characters
-            chunking_strategy: Strategy for chunking - "hybrid", "section", "semantic", "paragraph", or "character"
+            chunking_strategy: Strategy for chunking - "hybrid", "section",
+                "semantic", "paragraph", or "character"
 
         Returns:
             Information about total chunks and navigation hints
@@ -1657,7 +1703,10 @@ def create_server() -> FastMCP:
                         ]
 
                 content_text = f"Document: {document['title']}\n\n"
-                content_text += f"Total chunks: {total_chunks} (using {chunking_strategy} strategy)\n"
+                content_text += (
+                    f"Total chunks: {total_chunks} "
+                    f"(using {chunking_strategy} strategy)\n"
+                )
                 content_text += f"Chunk size: {chunk_size} characters\n\n"
 
                 if sections_info:
@@ -1669,7 +1718,11 @@ def create_server() -> FastMCP:
                             f"  ... and {len(sections_info) - 10} more sections\n"
                         )
 
-                content_text += f"\nUse read_document with mode='chunk' and chunk_number=1 to {total_chunks} to read specific chunks."
+                content_text += (
+                    f"\nUse read_document with mode='chunk' and "
+                    f"chunk_number=1 to {total_chunks} to read "
+                    "specific chunks."
+                )
 
                 return types.CallToolResult(
                     content=[types.TextContent(type="text", text=content_text)],
@@ -1709,12 +1762,15 @@ def create_server() -> FastMCP:
     async def search_sections(
         document_id: int, query: str, search_type: str = "all", limit: int = 10
     ) -> types.CallToolResult:
-        """Search for specific sections within a document and get navigation info.
+        """Search for specific sections within a document and get navigation
+        info.
 
         Args:
             document_id: The ID of the document to search within
-            query: Search query (e.g., "code example", "error handling", "def function_name")
-            search_type: Type of search - "all", "code", "headings", "examples", or "content"
+            query: Search query (e.g., "code example", "error handling",
+                "def function_name")
+            search_type: Type of search - "all", "code", "headings", "examples",
+                or "content"
                 - all: Search everything
                 - code: Focus on code blocks and examples
                 - headings: Search section titles only
@@ -1753,7 +1809,8 @@ def create_server() -> FastMCP:
                 # Search for code blocks
                 search_conditions.append(
                     """
-                    (content LIKE '%```%' || content LIKE '%code%' || content LIKE '%def %' ||
+                    (content LIKE '%```%' || content LIKE '%code%' ||
+                     content LIKE '%def %' ||
                      content LIKE '%function %' || content LIKE '%class %')
                 """
                 )
@@ -1787,7 +1844,8 @@ def create_server() -> FastMCP:
                         LENGTH(content) as content_length
                     FROM document_segments
                     WHERE document_id = ?
-                        AND ({" AND ".join(search_conditions) if search_conditions else "1=1"})
+                        AND ({" AND ".join(search_conditions)
+                              if search_conditions else "1=1"})
                     ORDER BY
                         CASE
                             WHEN LOWER(section_title) LIKE ? THEN 0
@@ -1806,7 +1864,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"No sections found matching '{query}' in document {document_id}",
+                            text=(
+                                f"No sections found matching '{query}' "
+                                f"in document {document_id}"
+                            ),
                         )
                     ],
                     metadata={
@@ -1872,7 +1933,10 @@ def create_server() -> FastMCP:
                 )
 
             # Format results
-            content_text = f"Found {len(section_info)} sections matching '{query}' in {document['title']}:\n\n"
+            content_text = (
+                f"Found {len(section_info)} sections matching '{query}' in "
+                f"{document['title']}:\n\n"
+            )
 
             for i, info in enumerate(section_info, 1):
                 content_text += f"{i}. "
@@ -1893,7 +1957,11 @@ def create_server() -> FastMCP:
                     content_text += "..."
                 content_text += "\n\n"
 
-            content_text += "\nUse `read_document_section` with section_path or `read_document` with mode='chunk' to read these sections."
+            content_text += (
+                "\nUse `read_document_section` with section_path "
+                "or `read_document` with mode='chunk' to read "
+                "these sections."
+            )
 
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=content_text)],
@@ -1948,7 +2016,11 @@ def create_server() -> FastMCP:
                 content=[
                     types.TextContent(
                         type="text",
-                        text="✓ Contextual retrieval enabled. New documents will be processed with contextual augmentation for improved search accuracy.",
+                        text=(
+                            "✓ Contextual retrieval enabled. New documents will be "
+                            "processed with contextual augmentation for improved "
+                            "search accuracy."
+                        ),
                     )
                 ],
                 metadata={"success": True, "enabled": True},
@@ -2061,7 +2133,10 @@ def create_server() -> FastMCP:
                 )
 
                 # Format status text
-                status_text = f"Contextual Retrieval Status: {'ENABLED' if enabled else 'DISABLED'}\n\n"
+                status_text = (
+                    f"Contextual Retrieval Status: "
+                    f"{'ENABLED' if enabled else 'DISABLED'}\n\n"
+                )
 
                 if enabled:
                     provider = config_items.get("context_llm_provider", "ollama")
@@ -2070,8 +2145,14 @@ def create_server() -> FastMCP:
                     status_text += f"Model: {model}\n\n"
 
                 status_text += "Coverage Statistics:\n"
-                status_text += f"- Documents with context: {stats['docs_with_context']}/{totals['total_docs']} ({doc_coverage:.1f}%)\n"
-                status_text += f"- Segments with context: {stats['segments_with_context']}/{totals['total_segments']} ({segment_coverage:.1f}%)\n"
+                status_text += (
+                    f"- Documents with context: {stats['docs_with_context']}/"
+                    f"{totals['total_docs']} ({doc_coverage:.1f}%)\n"
+                )
+                status_text += (
+                    f"- Segments with context: {stats['segments_with_context']}/"
+                    f"{totals['total_segments']} ({segment_coverage:.1f}%)\n"
+                )
 
                 if stats["docs_with_context"] > 0:
                     status_text += f"\nModels used: {stats['models_used']}"
@@ -2146,7 +2227,11 @@ def create_server() -> FastMCP:
                             content=[
                                 types.TextContent(
                                     type="text",
-                                    text=f"Document {document_id} already has contextual data. Use force=True to reprocess.",
+                                    text=(
+                                        f"Document {document_id} already has "
+                                        "contextual data. Use force=True to "
+                                        "reprocess."
+                                    ),
                                 )
                             ],
                             metadata={
@@ -2182,8 +2267,12 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"✓ Successfully processed document {document_id} with contextual retrieval.\n"
-                            f"Processed {processed_count} segments with context.",
+                            text=(
+                                f"✓ Successfully processed document "
+                                f"{document_id} with contextual retrieval.\n"
+                                f"Processed {processed_count} segments with "
+                                "context."
+                            ),
                         )
                     ],
                     metadata={
@@ -2197,7 +2286,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Failed to process document {document_id} with contextual retrieval.",
+                            text=(
+                                f"Failed to process document {document_id} with "
+                                f"contextual retrieval."
+                            ),
                         )
                     ],
                     metadata={
@@ -2239,7 +2331,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"Invalid provider '{provider}'. Must be one of: {', '.join(valid_providers)}",
+                            text=(
+                                f"Invalid provider '{provider}'. Must be one of: "
+                                f"{', '.join(valid_providers)}"
+                            ),
                         )
                     ],
                     metadata={"success": False, "error": "Invalid provider"},
@@ -2342,7 +2437,10 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text="No similar content found. Make sure documents are processed with contextual retrieval.",
+                            text=(
+                                "No similar content found. Make sure documents are "
+                                "processed with contextual retrieval."
+                            ),
                         )
                     ],
                     metadata={"success": True, "result_count": 0},
@@ -2350,7 +2448,10 @@ def create_server() -> FastMCP:
 
             content_text = "Similar content found:\n\n"
             for i, item in enumerate(similar_items, 1):
-                content_text += f"{i}. Document: {item['document_title']} (ID: {item['document_id']})\n"
+                content_text += (
+                    f"{i}. Document: {item['document_title']} "
+                    f"(ID: {item['document_id']})\n"
+                )
                 if item.get("section_title"):
                     content_text += f"   Section: {item['section_title']}\n"
                 content_text += f"   Similarity: {item['similarity_score']:.2f}\n"

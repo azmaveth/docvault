@@ -37,7 +37,8 @@ def main():
     print("====================================")
     print()
     print(
-        "This demo shows how to search within a specific document using the --in-doc flag."
+        "This demo shows how to search within a specific document using the "
+        "--in-doc flag."
     )
     print()
 

@@ -18,7 +18,8 @@ def batch_insert_segments(
 
     Args:
         document_id: The document ID
-        segments: List of segment dictionaries with keys: content, section_title, segment_type, embedding
+        segments: List of segment dictionaries with keys: content, section_title,
+            segment_type, embedding
         batch_size: Number of segments to insert per batch
 
     Returns:
@@ -61,7 +62,8 @@ def batch_insert_segments(
                 cursor.executemany(
                     """
                     INSERT INTO document_segments
-                    (document_id, content, section_title, segment_type, section_path, parent_id)
+                    (document_id, content, section_title, segment_type, section_path,
+                     parent_id)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     segment_data,
@@ -83,7 +85,8 @@ def batch_insert_segments(
                 if vector_insert_data:
                     try:
                         cursor.executemany(
-                            "INSERT INTO document_segments_vec (segment_id, embedding) VALUES (?, ?)",
+                            "INSERT INTO document_segments_vec (segment_id, embedding) "
+                            "VALUES (?, ?)",
                             vector_insert_data,
                         )
                     except Exception as e:
@@ -167,7 +170,8 @@ def batch_delete_segments(segment_ids: list[int], batch_size: int = 100) -> int:
             try:
                 # Delete from vector table first
                 cursor.execute(
-                    f"DELETE FROM document_segments_vec WHERE segment_id IN ({placeholders})",
+                    f"DELETE FROM document_segments_vec WHERE segment_id IN "
+                    f"({placeholders})",
                     batch,
                 )
 

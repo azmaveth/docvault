@@ -136,7 +136,8 @@ def test_stats_command_with_documents(runner, temp_db, mock_app_initialization):
     # Insert a segment
     cursor.execute(
         """
-        INSERT INTO document_segments (document_id, content, segment_type, section_title)
+        INSERT INTO document_segments (document_id, content, segment_type,
+                                        section_title)
         VALUES (?, 'Test content for the document', 'text', 'Introduction')
     """,
         (doc_id,),

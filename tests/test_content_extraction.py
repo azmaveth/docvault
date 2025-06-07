@@ -218,7 +218,8 @@ class TestSphinxExtractor:
                         <dd class="field-odd">
                             <ul class="simple">
                                 <li><strong>path</strong> – Base path</li>
-                                <li><strong>paths</strong> – Path components to join</li>
+                                <li><strong>paths</strong> – Path components to "
+                                "join</li>
                             </ul>
                         </dd>
                         <dt class="field-even">Returns</dt>

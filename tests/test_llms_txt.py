@@ -20,11 +20,13 @@ SAMPLE_LLMS_TXT = """# DocVault Documentation
 
 > A powerful tool for managing and searching documentation
 
-DocVault helps you collect, index, and search through documentation from various sources.
+DocVault helps you collect, index, and search through documentation from various
+sources.
 
 ## Docs
 
-- [Installation Guide](https://docvault.io/docs/install): Complete installation instructions
+- [Installation Guide](https://docvault.io/docs/install): Complete installation
+  instructions
 - [API Reference](https://docvault.io/docs/api): Detailed API documentation
 - [CLI Usage](https://docvault.io/docs/cli): Command line interface guide
 

@@ -110,7 +110,8 @@ Here is the chunk we want to situate within the whole document:
 {{CHUNK_CONTENT}}
 </chunk>
 Please give a short succinct context to situate this chunk within the overall document.
-Focus on: 1) What section this is from, 2) What the main topic is, 3) How it relates to the document's purpose.""",
+Focus on: 1) What section this is from, 2) What the main topic is, 3) How it
+relates to the document's purpose.""",
             None,
         ),
         (
@@ -150,8 +151,9 @@ This chunk is from a tutorial or guide:
 <chunk>
 {{CHUNK_CONTENT}}
 </chunk>
-Explain: 1) What step or concept this chunk covers, 2) Prerequisites from earlier sections,
-3) What the reader should understand after this section, 4) How it fits in the tutorial sequence.""",
+Explain: 1) What step or concept this chunk covers, 2) Prerequisites from earlier
+sections, 3) What the reader should understand after this section, 4) How it fits
+in the tutorial sequence.""",
             "tutorial",
         ),
     ]
@@ -181,12 +183,15 @@ Explain: 1) What step or concept this chunk covers, 2) Prerequisites from earlie
         """
         INSERT OR IGNORE INTO config (key, value, description)
         VALUES
-        ('contextual_retrieval_enabled', 'false', 'Enable contextual retrieval for new documents'),
-        ('context_llm_provider', 'ollama', 'LLM provider for context generation (ollama, openai, anthropic)'),
+        ('contextual_retrieval_enabled', 'false',
+         'Enable contextual retrieval for new documents'),
+        ('context_llm_provider', 'ollama',
+         'LLM provider for context generation (ollama, openai, anthropic)'),
         ('context_llm_model', 'llama2', 'Model to use for context generation'),
         ('context_batch_size', '10', 'Number of chunks to process in one LLM call'),
         ('context_max_tokens', '150', 'Maximum tokens for context description'),
-        ('context_cache_enabled', 'true', 'Cache generated contexts to avoid regeneration')
+        ('context_cache_enabled', 'true',
+         'Cache generated contexts to avoid regeneration')
     """
     )
 

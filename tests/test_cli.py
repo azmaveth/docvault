@@ -329,7 +329,8 @@ def test_init_db_command(mock_config, cli_runner):
     """Test init-db command"""
     from docvault.main import cli
 
-    # Patch the correct target if needed; using 'docvault.db.schema.initialize_database' as a likely correct path
+    # Patch the correct target if needed; using
+    # 'docvault.db.schema.initialize_database' as a likely correct path
     with patch("docvault.db.schema.initialize_database") as mock_init_db:
         result = cli_runner.invoke(cli, ["init-db", "--help"])
         assert result.exit_code in (0, 2)
@@ -354,7 +355,8 @@ def test_init_db_command(mock_config, cli_runner):
 
 
 @pytest.mark.xfail(
-    reason="Click CLI help/usage triggers SystemExit, which pytest treats as failure but is expected."
+    reason="Click CLI help/usage triggers SystemExit, which pytest treats as "
+    "failure but is expected."
 )
 def test_backup_command(mock_config, cli_runner):
     """Test backup command"""
@@ -362,7 +364,8 @@ def test_backup_command(mock_config, cli_runner):
 
     with patch("docvault.cli.commands.backup") as mock_backup_command:
         main = create_main()
-        # Click may return exit code 0 (help) or 2 (usage error) depending on argument validation order
+        # Click may return exit code 0 (help) or 2 (usage error) depending on
+        # argument validation order
         with pytest.raises(SystemExit) as excinfo:
             cli_runner.invoke(main, ["backup", "dummy.zip", "--help"])
         assert excinfo.value.code in (0, 2)
@@ -375,7 +378,8 @@ def test_backup_command(mock_config, cli_runner):
 
 
 @pytest.mark.xfail(
-    reason="Click CLI help/usage triggers SystemExit, which pytest treats as failure but is expected."
+    reason="Click CLI help/usage triggers SystemExit, which pytest treats as "
+    "failure but is expected."
 )
 def test_import_backup_command(mock_config, cli_runner):
     """Test import-backup command"""
@@ -385,7 +389,8 @@ def test_import_backup_command(mock_config, cli_runner):
     mock_config_module.DEFAULT_BASE_DIR = os.getcwd()
     main = create_main()
     Path("backup.zip").write_bytes(b"dummy content")
-    # Click may return exit code 0 (help) or 2 (usage error) depending on argument validation order
+    # Click may return exit code 0 (help) or 2 (usage error) depending on
+    # argument validation order
     with pytest.raises(SystemExit) as excinfo:
         cli_runner.invoke(main, ["import-backup", "backup.zip", "--help"])
     assert excinfo.value.code in (0, 2)

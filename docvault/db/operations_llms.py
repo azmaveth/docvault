@@ -21,7 +21,8 @@ def add_llms_txt_metadata(
     cursor.execute(
         """
         INSERT INTO llms_txt_metadata
-        (document_id, llms_title, llms_summary, llms_introduction, llms_sections, has_llms_txt)
+        (document_id, llms_title, llms_summary, llms_introduction, llms_sections,
+         has_llms_txt)
         VALUES (?, ?, ?, ?, ?, 1)
         """,
         (document_id, llms_title, llms_summary, llms_introduction, llms_sections),

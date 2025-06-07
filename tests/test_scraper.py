@@ -852,11 +852,13 @@ async def test_docs_pagination_and_nav(mock_config, temp_dir, monkeypatch):
     # Invoke with depth 2 to enable link crawling
     await scraper.scrape_url(main_url, depth=2)
 
-    # Ensure at least the main page was scraped, and check that link crawling was attempted
+    # Ensure at least the main page was scraped, and check that link crawling was
+    # attempted
     assert scraper.stats["pages_scraped"] >= 1
     assert scraper.stats["segments_created"] >= 1
     assert main_url in scraper.visited_urls
-    # Note: Link crawling behavior may vary, so we don't strictly require next_url to be visited
+    # Note: Link crawling behavior may vary, so we don't strictly require next_url
+    # to be visited
     # Print visited URLs for debugging
     print("Visited URLs:", scraper.visited_urls)
 

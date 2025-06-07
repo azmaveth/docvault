@@ -286,7 +286,8 @@ class TestSectionedStorage:
     @pytest.mark.asyncio
     async def test_mcp_scrape_document_with_sections(self):
         """Test MCP scrape_document tool with section filtering"""
-        # Test that the MCP server can be created successfully with the new tool signature
+        # Test that the MCP server can be created successfully with the new tool
+        # signature
         from docvault.mcp.server import create_server
 
         try:

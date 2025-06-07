@@ -128,7 +128,8 @@ async def demo_cli_usage():
         ),
         (
             "Conservative strategy (high-confidence docs only):",
-            "dv import https://docs.example.com --depth 5 --depth-strategy conservative",
+            "dv import https://docs.example.com --depth 5 --depth-strategy "
+            "conservative",
         ),
         (
             "Aggressive strategy (follow most links):",

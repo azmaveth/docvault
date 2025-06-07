@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 class OptimizedDocumentScraper:
     """
-    Optimized document scraper with batching, connection pooling, and performance monitoring.
+    Optimized document scraper with batching, connection pooling, and performance
+    monitoring.
     """
 
     def __init__(self, quiet: bool = False, max_concurrent_requests: int = 5):
@@ -189,7 +190,8 @@ class OptimizedDocumentScraper:
                 cursor.execute(
                     """
                     UPDATE documents
-                    SET title = ?, html_path = ?, markdown_path = ?, scraped_at = datetime('now')
+                    SET title = ?, html_path = ?, markdown_path = ?,
+                        scraped_at = datetime('now')
                     WHERE id = ?
                     """,
                     (

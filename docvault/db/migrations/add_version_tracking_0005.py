@@ -23,15 +23,18 @@ def migrate(conn: sqlite3.Connection):
                 content_hash TEXT,
                 scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_latest BOOLEAN DEFAULT FALSE,    -- Mark the latest version
-                change_summary TEXT,                -- Summary of changes from previous version
+                change_summary TEXT,                -- Summary of changes from previous
+                                                    -- version
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (base_document_id) REFERENCES documents(id) ON DELETE CASCADE,
+                FOREIGN KEY (base_document_id) REFERENCES documents(id)
+                    ON DELETE CASCADE,
                 UNIQUE(base_document_id, version_string)
             )
         """
         )
 
-        # Create update_checks table to track when documents were last checked for updates
+        # Create update_checks table to track when documents were last checked for
+        # updates
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS update_checks (
@@ -58,15 +61,18 @@ def migrate(conn: sqlite3.Connection):
                 document_id INTEGER NOT NULL,
                 old_version_id INTEGER,
                 new_version_id INTEGER,
-                comparison_type TEXT DEFAULT 'content',  -- 'content', 'structure', 'functions'
+                comparison_type TEXT DEFAULT 'content',  -- 'content', 'structure',
+                                                         -- 'functions'
                 added_content TEXT,                      -- Content that was added
                 removed_content TEXT,                    -- Content that was removed
                 modified_sections TEXT,                  -- JSON of modified sections
                 similarity_score REAL,                  -- Similarity score (0-1)
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-                FOREIGN KEY (old_version_id) REFERENCES document_versions(id) ON DELETE SET NULL,
-                FOREIGN KEY (new_version_id) REFERENCES document_versions(id) ON DELETE SET NULL
+                FOREIGN KEY (old_version_id) REFERENCES document_versions(id)
+                    ON DELETE SET NULL,
+                FOREIGN KEY (new_version_id) REFERENCES document_versions(id)
+                    ON DELETE SET NULL
             )
         """
         )
@@ -79,7 +85,8 @@ def migrate(conn: sqlite3.Connection):
 
         try:
             conn.execute(
-                "ALTER TABLE documents ADD COLUMN check_for_updates BOOLEAN DEFAULT TRUE"
+                "ALTER TABLE documents ADD COLUMN check_for_updates BOOLEAN "
+                "DEFAULT TRUE"
             )
         except sqlite3.OperationalError:
             pass
@@ -134,14 +141,16 @@ def migrate(conn: sqlite3.Connection):
             AFTER UPDATE ON update_checks
             FOR EACH ROW
             BEGIN
-                UPDATE update_checks SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+                UPDATE update_checks SET updated_at = CURRENT_TIMESTAMP
+                WHERE id = NEW.id;
             END
         """
         )
 
         conn.commit()
         logger.info(
-            "Successfully added version tracking and update monitoring to database schema"
+            "Successfully added version tracking and update monitoring to database "
+            "schema"
         )
 
     except Exception as e:

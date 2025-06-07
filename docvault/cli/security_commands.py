@@ -61,7 +61,8 @@ def audit(fix):
     for severity in ["critical", "high", "medium", "info"]:
         if issues[severity]:
             console.print(
-                f"\n[{severity_colors[severity]}]{severity.upper()} Issues:[/{severity_colors[severity]}]"
+                f"\n[{severity_colors[severity]}]{severity.upper()} "
+                f"Issues:[/{severity_colors[severity]}]"
             )
 
             table = Table(show_header=True, header_style="bold")
@@ -112,7 +113,8 @@ def umask():
 
     if current & 0o077 != 0o077:
         console.print(
-            "\n[yellow]⚠ Warning: Your umask may create files readable by others.[/yellow]"
+            "\n[yellow]⚠ Warning: Your umask may create files readable by "
+            "others.[/yellow]"
         )
         console.print(
             "[yellow]Consider setting 'umask 077' in your shell profile.[/yellow]"

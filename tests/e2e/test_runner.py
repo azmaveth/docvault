@@ -294,7 +294,8 @@ class E2ETestRunner:
                                     f"[yellow]Command output:[/]\n{output}"
                                 )
                             raise Exception(
-                                f"Command {i + 1} output missing expected text: {expected}"
+                                f"Command {i + 1} output missing expected text: "
+                                f"{expected}"
                             )
 
             # Run validations

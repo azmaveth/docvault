@@ -47,7 +47,8 @@ def upgrade(conn=None):
                 added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 notes TEXT,  -- Optional notes about why this doc is in collection
                 PRIMARY KEY (collection_id, document_id),
-                FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,
+                FOREIGN KEY (collection_id) REFERENCES collections(id)
+                    ON DELETE CASCADE,
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
             )
         """

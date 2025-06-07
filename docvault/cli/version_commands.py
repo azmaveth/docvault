@@ -129,7 +129,8 @@ def list_versions(document_id):
     if not versions:
         console.print(f"[yellow]No version history found for document {document_id}[/]")
         console.print(
-            "[dim]Version history is created when documents are updated or when multiple versions are explicitly tracked.[/]"
+            "[dim]Version history is created when documents are updated or when "
+            "multiple versions are explicitly tracked.[/]"
         )
         return
 
@@ -272,7 +273,8 @@ def show_pending_updates():
 
     console.print(table)
     console.print(
-        "\n[dim]Use 'dv version check <id>' to check for updates or 'dv add <url> --update' to update a document.[/]"
+        "\n[dim]Use 'dv version check <id>' to check for updates or 'dv add <url> "
+        "--update' to update a document.[/]"
     )
 
 
@@ -319,21 +321,24 @@ def configure_auto_check(enable, disable, frequency, document_id):
             updates.append("check_for_updates = ?")
             values.append(True)
             console.print(
-                f"[green]Enabled automatic update checking for document {document_id}[/]"
+                f"[green]Enabled automatic update checking for document "
+                f"{document_id}[/]"
             )
 
         if disable:
             updates.append("check_for_updates = ?")
             values.append(False)
             console.print(
-                f"[yellow]Disabled automatic update checking for document {document_id}[/]"
+                f"[yellow]Disabled automatic update checking for document "
+                f"{document_id}[/]"
             )
 
         if frequency:
             updates.append("update_frequency = ?")
             values.append(frequency)
             console.print(
-                f"[blue]Set update check frequency to {frequency} days for document {document_id}[/]"
+                f"[blue]Set update check frequency to {frequency} days for document "
+                f"{document_id}[/]"
             )
 
         if updates:

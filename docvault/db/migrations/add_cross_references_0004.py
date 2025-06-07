@@ -17,14 +17,20 @@ def migrate(conn: sqlite3.Connection):
                 source_segment_id INTEGER NOT NULL,
                 target_segment_id INTEGER,
                 target_document_id INTEGER,
-                reference_type TEXT NOT NULL,  -- 'function', 'class', 'module', 'link', etc.
-                reference_text TEXT NOT NULL,  -- The actual text that references (e.g., 'foo()')
+                reference_type TEXT NOT NULL,  -- 'function', 'class', 'module',
+                                               -- 'link', etc.
+                reference_text TEXT NOT NULL,  -- The actual text that references
+                                               -- (e.g., 'foo()')
                 reference_context TEXT,        -- Surrounding context
-                confidence REAL DEFAULT 1.0,   -- Confidence score for auto-detected references
+                confidence REAL DEFAULT 1.0,   -- Confidence score for auto-detected
+                                               -- references
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (source_segment_id) REFERENCES document_segments(id) ON DELETE CASCADE,
-                FOREIGN KEY (target_segment_id) REFERENCES document_segments(id) ON DELETE SET NULL,
-                FOREIGN KEY (target_document_id) REFERENCES documents(id) ON DELETE SET NULL
+                FOREIGN KEY (source_segment_id) REFERENCES document_segments(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY (target_segment_id) REFERENCES document_segments(id)
+                    ON DELETE SET NULL,
+                FOREIGN KEY (target_document_id) REFERENCES documents(id)
+                    ON DELETE SET NULL
             )
         """
         )
@@ -65,13 +71,17 @@ def migrate(conn: sqlite3.Connection):
                 id INTEGER PRIMARY KEY,
                 document_id INTEGER NOT NULL,
                 segment_id INTEGER NOT NULL,
-                anchor_type TEXT NOT NULL,     -- 'function', 'class', 'method', 'section', etc.
-                anchor_name TEXT NOT NULL,     -- The identifier (e.g., 'MyClass', 'foo', 'installation')
+                anchor_type TEXT NOT NULL,     -- 'function', 'class', 'method',
+                                               -- 'section', etc.
+                anchor_name TEXT NOT NULL,     -- The identifier (e.g., 'MyClass',
+                                               -- 'foo', 'installation')
                 anchor_signature TEXT,         -- Full signature for functions/methods
-                anchor_path TEXT,              -- Full path (e.g., 'module.class.method')
+                anchor_path TEXT,              -- Full path (e.g.,
+                                               -- 'module.class.method')
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-                FOREIGN KEY (segment_id) REFERENCES document_segments(id) ON DELETE CASCADE,
+                FOREIGN KEY (segment_id) REFERENCES document_segments(id)
+                    ON DELETE CASCADE,
                 UNIQUE(document_id, anchor_path)
             )
         """

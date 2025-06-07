@@ -56,7 +56,8 @@ DOCUMENT_TESTS = [
         validations=[
             {
                 "type": "database",
-                "document_count": 1,  # DocVault treats linked pages as part of same document
+                "document_count": 1,  # DocVault treats linked pages as part of same
+                # document
                 "has_documents": ["Depth Test - Level 0"],
             }
         ],

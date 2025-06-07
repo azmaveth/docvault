@@ -98,7 +98,8 @@ class TestDocumentCommands:
 
     def test_list_with_limit(self, cli_runner, mock_documents):
         """Test listing with simulated limit (via mock)."""
-        # The list command doesn't have a --limit flag, so we simulate it by returning fewer documents
+        # The list command doesn't have a --limit flag, so we simulate it by
+        # returning fewer documents
         with (
             patch(
                 "docvault.db.operations.list_documents", return_value=mock_documents[:2]

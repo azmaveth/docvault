@@ -224,7 +224,9 @@ class ProjectManager:
             deps = []
 
             def process_dependency_spec(spec: str) -> tuple[str, str]:
-                """Process a dependency specification string into (name, version) tuple."""
+                """
+                Process a dependency specification string into (name, version) tuple.
+                """
                 spec = spec.strip()
                 if not spec:
                     return "", ""
@@ -465,7 +467,8 @@ class ProjectManager:
                 seen.add(dep_key)
                 unique_deps.append(dep)
             else:
-                # If we already have this package but without a version, and this one has a version, update it
+                # If we already have this package but without a version, and this one
+                # has a version, update it
                 existing = next(
                     (d for d in unique_deps if d["name"].lower() == dep_key), None
                 )
@@ -536,7 +539,8 @@ class ProjectManager:
                             }
                         )
                         console.print(
-                            f"[green]Successfully imported {dep_name} {version_to_use}[/]"
+                            f"[green]Successfully imported {dep_name} "
+                            f"{version_to_use}[/]"
                         )
                     else:
                         error_msg = "No documentation found or could not be parsed"

@@ -191,7 +191,8 @@ class LibraryManager:
                         if len(lib_ver_part) > 1:
                             title_version = lib_ver_part[1].lstrip("v")
                             if version != title_version:
-                                # Add resolved_version to show the user the correct version they asked for
+                                # Add resolved_version to show the user the correct
+                                # version they asked for
                                 document["resolved_version"] = actual_version
                 else:
                     # If we can't parse the title, just set the resolved_version
@@ -203,7 +204,9 @@ class LibraryManager:
         return None
 
     async def determine_actual_version(self, library_name: str, doc_url: str) -> str:
-        """Try to determine the actual version number from documentation URL or content"""
+        """
+        Try to determine the actual version number from documentation URL or content.
+        """
         # Check if version is in URL
         import re
 
@@ -222,7 +225,8 @@ class LibraryManager:
                 return match.group(1)
 
         # If we can't determine the version, leave it as latest for now
-        # In a more advanced implementation, we could scrape the page to find version info
+        # In a more advanced implementation, we could scrape the page to find version
+        # info
         return "latest"
 
     async def resolve_doc_url(self, library_name: str, version: str) -> str | None:

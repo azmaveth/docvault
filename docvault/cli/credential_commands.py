@@ -102,7 +102,8 @@ def remove(name, category):
                 console.print(f"[green]✓[/] Credential '{name}' removed")
             else:
                 console.print(
-                    f"[yellow]Not found:[/] Credential '{name}' in category '{category}'"
+                    f"[yellow]Not found:[/] Credential '{name}' in category "
+                    f"'{category}'"
                 )
 
     except CredentialError as e:

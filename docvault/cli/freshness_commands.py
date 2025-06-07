@@ -122,8 +122,8 @@ def freshness_check(
         for doc in processed_docs:
             color = FRESHNESS_COLORS[doc["freshness_level"]]
             console.print(
-                f"{doc['icon']} [{color}]{doc['id']:3d}[/{color}] {doc['title'][:50]:<50} "
-                f"[{color}]{doc['formatted_age']}[/{color}]"
+                f"{doc['icon']} [{color}]{doc['id']:3d}[/{color}] "
+                f"{doc['title'][:50]:<50} [{color}]{doc['formatted_age']}[/{color}]"
             )
             if doc["needs_update"]:
                 console.print("     💡 Update recommended", style="yellow")
@@ -149,7 +149,10 @@ def freshness_check(
 
             # Format status with color
             color = FRESHNESS_COLORS[doc["freshness_level"]]
-            status = f"[{color}]{doc['icon']} {doc['freshness_level'].value.title()}[/{color}]"
+            status = (
+                f"[{color}]{doc['icon']} "
+                f"{doc['freshness_level'].value.title()}[/{color}]"
+            )
 
             # Action recommendation
             action = ""
@@ -173,7 +176,8 @@ def freshness_check(
                 color = FRESHNESS_COLORS[level]
                 icon = FRESHNESS_ICONS[level]
                 console.print(
-                    f"  {icon} [{color}]{level.value.title()}[/{color}]: {count} document{'s' if count != 1 else ''}"
+                    f"  {icon} [{color}]{level.value.title()}[/{color}]: {count} "
+                    f"document{'s' if count != 1 else ''}"
                 )
 
         # Show update recommendations

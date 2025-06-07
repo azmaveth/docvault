@@ -28,7 +28,8 @@ with open('example.txt', 'r') as f:
     content = f.read()
 ```
 
-**Best Practice**: Always use context managers (with statements) when working with files to ensure proper cleanup.
+**Best Practice**: Always use context managers (with statements) when working with
+files to ensure proper cleanup.
 
 ```javascript
 // JavaScript file reading
@@ -48,12 +49,15 @@ with open('output.txt', 'w') as f:
 
 **Important**: Never forget to close files properly. Always use `with` statements.
 
-**Warning**: Opening files without proper error handling can lead to resource leaks. Always wrap file operations in try-except blocks.
+**Warning**: Opening files without proper error handling can lead to resource
+leaks. Always wrap file operations in try-except blocks.
 
 ## Common Pitfalls
 
-- **Memory Issues**: Reading very large files at once can cause memory problems. Use `readline()` for large files.
-- **Encoding Problems**: Always specify encoding when opening text files to avoid UnicodeDecodeError.
+- **Memory Issues**: Reading very large files at once can cause memory problems.
+  Use `readline()` for large files.
+- **Encoding Problems**: Always specify encoding when opening text files to avoid
+  UnicodeDecodeError.
 
 ## Related Concepts
 
@@ -134,7 +138,8 @@ class TestContextExtractor:
             sample_markdown_content, "Python File Operations"
         )
 
-        # The current implementation may not extract concepts from this particular format
+        # The current implementation may not extract concepts from this particular
+        # format
         # Just check that the field exists and is a list
         assert isinstance(context_info.related_concepts, list)
         # If concepts are found, they should be strings
@@ -171,7 +176,8 @@ class TestSuggestionEngine:
                 "document_id": 1,
                 "id": 1,
                 "title": "file.open()",
-                "content": "Opens a file and returns a file object. Use open() to open files.",
+                "content": "Opens a file and returns a file object. Use open() to "
+                "open files.",
                 "score": 0.9,
                 "url": "https://docs.python.org/3/library/functions.html#open",
                 "section_title": "Built-in Functions",

@@ -120,7 +120,8 @@ class TestDepthAnalyzer:
         # Only high-confidence documentation links should be followed
         # Use a URL that matches multiple patterns to get a higher score
         result = analyzer.analyze_url(
-            "https://example.com/docs/api/reference",  # Matches /docs/, /api/, and gets bonus
+            "https://example.com/docs/api/reference",  # Matches /docs/, /api/,
+            # and gets bonus
             base_url,
             3,
         )

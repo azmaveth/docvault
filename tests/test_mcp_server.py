@@ -391,4 +391,5 @@ async def test_list_documents_empty():
         assert result.metadata["document_count"] == 0
 
 
-# Transport function tests removed - these were integration tests requiring a running server
+# Transport function tests removed - these were integration tests requiring a
+# running server

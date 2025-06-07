@@ -219,7 +219,8 @@ def monitor(duration, interval):
             # Cache stats
             cache_stats = get_cache_stats()
             console.print(
-                f"Cache Entries: {cache_stats['valid_entries']}/{cache_stats['total_entries']}"
+                f"Cache Entries: {cache_stats['valid_entries']}/"
+                f"{cache_stats['total_entries']}"
             )
             console.print(f"Cache Memory: {cache_stats['memory_usage_mb']:.2f} MB")
 
@@ -229,7 +230,8 @@ def monitor(duration, interval):
                 console.print("\nRecent Operations:")
                 for operation, stats in list(perf_stats.items())[-5:]:
                     console.print(
-                        f"  {operation}: {stats['count']} calls, avg {stats['avg_time']:.3f}s"
+                        f"  {operation}: {stats['count']} calls, avg "
+                        f"{stats['avg_time']:.3f}s"
                     )
 
             time.sleep(interval)

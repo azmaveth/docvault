@@ -269,7 +269,8 @@ class WebScraper:
                 parent_segments = {}  # Track parent segments by level
 
                 for i, segment in enumerate(segments):
-                    # Handle both dictionary and tuple formats for backward compatibility
+                    # Handle both dictionary and tuple formats for backward
+                    # compatibility
                     if isinstance(segment, dict):
                         stype = segment.get("type", "text")
                         content = segment.get("content", "")
@@ -398,7 +399,8 @@ class WebScraper:
                             # Find the nearest parent level
                             for lvl in range(section_level - 1, 0, -1):
                                 if lvl in parent_segments:
-                                    # In a real implementation, we'd look up the segment ID
+                                    # In a real implementation, we'd look up the
+                                    # segment ID
                                     # For now, we'll just track the path
                                     parent_segment_id = (
                                         None  # Will be set by the database
@@ -443,7 +445,8 @@ class WebScraper:
                     potential_llms_url
                 )
                 if llms_content and not llms_error:
-                    # Check if it's actually an llms.txt file (starts with # and has markdown)
+                    # Check if it's actually an llms.txt file (starts with # and
+                    # has markdown)
                     if llms_content.strip().startswith("#"):
                         llms_txt_url = potential_llms_url
                         llms_txt_content = llms_content
@@ -454,7 +457,8 @@ class WebScraper:
         # Apply section filtering if requested
         if sections or filter_selector:
             self.logger.info(
-                f"Applying section filtering: sections={sections}, selector={filter_selector}"
+                f"Applying section filtering: sections={sections}, "
+                f"selector={filter_selector}"
             )
             html_content = self._filter_content_sections(
                 html_content, sections, filter_selector
@@ -512,7 +516,8 @@ class WebScraper:
         detector = DocTypeDetector()
         doc_type, confidence = detector.detect(url, html_content)
         self.logger.info(
-            f"Detected documentation type: {doc_type.value} (confidence: {confidence:.2f}) for {url}"
+            f"Detected documentation type: {doc_type.value} "
+            f"(confidence: {confidence:.2f}) for {url}"
         )
 
         # Select appropriate extractor
@@ -521,7 +526,8 @@ class WebScraper:
             "mkdocs": MkDocsExtractor(),
             "nextjs": NextJSExtractor(),
             "openapi": OpenAPIExtractor(),
-            "swagger": OpenAPIExtractor(),  # Both swagger and openapi use the same extractor
+            "swagger": OpenAPIExtractor(),  # Both swagger and openapi use the
+            # same extractor
             "readthedocs": SphinxExtractor(),  # ReadTheDocs often uses Sphinx
             "generic": GenericExtractor(),
             "unknown": GenericExtractor(),
@@ -678,7 +684,10 @@ class WebScraper:
                 if api_elem.get("parameters"):
                     api_content += "**Parameters:**\n"
                     for param in api_elem["parameters"]:
-                        api_content += f"- `{param['name']}` ({param.get('type', 'Any')}): {param.get('description', '')}\n"
+                        api_content += (
+                            f"- `{param['name']}` ({param.get('type', 'Any')}): "
+                            f"{param.get('description', '')}\n"
+                        )
                     api_content += "\n"
                 if api_elem.get("returns"):
                     api_content += f"**Returns:** {api_elem['returns']}\n\n"
@@ -708,7 +717,8 @@ class WebScraper:
                 is_library_doc,
                 library_id,
                 max_links,
-                strict_path=False,  # Documentation sites often have complex URL structures
+                strict_path=False,  # Documentation sites often have complex
+                # URL structures
                 force_update=False,
                 sections=sections,
                 filter_selector=filter_selector,
@@ -719,7 +729,8 @@ class WebScraper:
         return operations.get_document(document_id)
 
     async def _safe_fetch_url(self, url: str):
-        """Call ``_fetch_url`` in a way that is resilient to monkey‑patches and returns (content, error_detail)."""
+        """Call ``_fetch_url`` in a way that is resilient to monkey‑patches and
+        returns (content, error_detail)."""
         try:
             result = await self._fetch_url(url)
             if isinstance(result, tuple) and len(result) == 2:
@@ -780,7 +791,8 @@ class WebScraper:
         if wait_time:
             if wait_time > 60:  # If wait time is too long, skip
                 self.logger.warning(
-                    f"Rate limit for {domain}: would need to wait {wait_time:.1f}s, skipping"
+                    f"Rate limit for {domain}: would need to wait "
+                    f"{wait_time:.1f}s, skipping"
                 )
                 return (
                     None,
@@ -807,7 +819,8 @@ class WebScraper:
 
             if self.pages_per_domain[domain] >= config.MAX_PAGES_PER_DOMAIN:
                 self.logger.warning(
-                    f"Domain {domain} has reached max pages limit ({config.MAX_PAGES_PER_DOMAIN})"
+                    f"Domain {domain} has reached max pages limit "
+                    f"({config.MAX_PAGES_PER_DOMAIN})"
                 )
                 return (
                     None,
@@ -861,7 +874,10 @@ class WebScraper:
                                 and "application/json" not in content_type
                                 and "text/plain" not in content_type
                             ):
-                                msg = f"Skipping non-text content: {url} (Content-Type: {content_type})"
+                                msg = (
+                                    f"Skipping non-text content: {url} "
+                                    f"(Content-Type: {content_type})"
+                                )
                                 if not self.quiet:
                                     self.logger.warning(msg)
                                 else:
@@ -874,7 +890,11 @@ class WebScraper:
                                     content_length
                                     and int(content_length) > config.MAX_RESPONSE_SIZE
                                 ):
-                                    msg = f"Response too large: {int(content_length)} bytes (max: {config.MAX_RESPONSE_SIZE})"
+                                    msg = (
+                                        f"Response too large: "
+                                        f"{int(content_length)} bytes "
+                                        f"(max: {config.MAX_RESPONSE_SIZE})"
+                                    )
                                     self.logger.warning(msg)
                                     error_detail = msg
                                 else:
@@ -889,7 +909,10 @@ class WebScraper:
                                                 len(content_bytes)
                                                 > config.MAX_RESPONSE_SIZE
                                             ):
-                                                msg = f"Response exceeded size limit of {config.MAX_RESPONSE_SIZE} bytes"
+                                                msg = (
+                                                    f"Response exceeded size limit of "
+                                                    f"{config.MAX_RESPONSE_SIZE} bytes"
+                                                )
                                                 self.logger.warning(msg)
                                                 error_detail = msg
                                                 content_bytes = None
@@ -907,7 +930,10 @@ class WebScraper:
                                             self.logger.debug(msg)
                                         error_detail = msg
                         else:
-                            msg = f"Failed to fetch URL: {url} (Status: {response.status})"
+                            msg = (
+                                f"Failed to fetch URL: {url} "
+                                f"(Status: {response.status})"
+                            )
                             if response.status != 404:
                                 self.logger.warning(msg)
                             error_detail = msg
@@ -972,13 +998,15 @@ class WebScraper:
             )
             if not should_continue:
                 self.logger.info(
-                    f"Stopping crawl at {base_url} - content score too low: {content_scores['overall']:.2f}"
+                    f"Stopping crawl at {base_url} - content score too low: "
+                    f"{content_scores['overall']:.2f}"
                 )
                 return
             # Adjust depth if suggested
             if suggested_depth < depth:
                 self.logger.info(
-                    f"Reducing depth from {depth} to {suggested_depth} based on content analysis"
+                    f"Reducing depth from {depth} to {suggested_depth} based on "
+                    f"content analysis"
                 )
                 depth = suggested_depth
 
@@ -1037,7 +1065,8 @@ class WebScraper:
             )
 
             self.logger.info(
-                f"Smart depth: selected {len(urls_to_scrape)} of {len(all_urls)} links at depth {depth}"
+                f"Smart depth: selected {len(urls_to_scrape)} of {len(all_urls)} "
+                f"links at depth {depth}"
             )
         else:
             # Traditional filtering for manual depth mode
@@ -1270,7 +1299,10 @@ class WebScraper:
                         name = param.get("name")
                         required = param.get("required", False)
                         desc = param.get("description", "")
-                        md += f"- `{name}` ({'required' if required else 'optional'}): {desc}\n"
+                        md += (
+                            f"- `{name}` ({'required' if required else 'optional'}): "
+                            f"{desc}\n"
+                        )
                     md += "\n"
                 if "responses" in op:
                     md += "\n**Responses**\n\n"

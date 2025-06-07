@@ -47,7 +47,8 @@ def main():
 
     print("\n1. Create a project collection with suggested tags:")
     run_command(
-        'dv collection create "Full-Stack SaaS" --description "My SaaS startup docs" --tags python django react postgresql'
+        'dv collection create "Full-Stack SaaS" --description "My SaaS startup '
+        'docs" --tags python django react postgresql'
     )
 
     print("\n2. Search for relevant Django documentation:")
@@ -91,7 +92,8 @@ def main():
 
     print("\n1. Create a learning collection:")
     run_command(
-        'dv collection create "Learn React" --description "React from basics to advanced"'
+        'dv collection create "Learn React" --description "React from basics to '
+        'advanced"'
     )
 
     print("\n2. Add documents in learning order:")

@@ -91,7 +91,8 @@ def show_llms_details(document_id: int, format: str):
         metadata = get_llms_txt_metadata(document_id)
         if not metadata:
             console.print(
-                f"[yellow]No llms.txt metadata found for document {document_id}[/yellow]"
+                f"[yellow]No llms.txt metadata found for document "
+                f"{document_id}[/yellow]"
             )
             return
 
@@ -264,13 +265,15 @@ def export_llms(
                 console.print(f"[red]Collection '{collection}' not found[/red]")
                 return
             filter_clause.append(
-                "d.id IN (SELECT document_id FROM collection_documents WHERE collection_id = ?)"
+                "d.id IN (SELECT document_id FROM collection_documents "
+                "WHERE collection_id = ?)"
             )
             params.append(coll["id"])
 
         if tag:
             filter_clause.append(
-                "d.id IN (SELECT document_id FROM document_tags WHERE tag_id = (SELECT id FROM tags WHERE name = ?))"
+                "d.id IN (SELECT document_id FROM document_tags WHERE tag_id = "
+                "(SELECT id FROM tags WHERE name = ?))"
             )
             params.append(tag)
 

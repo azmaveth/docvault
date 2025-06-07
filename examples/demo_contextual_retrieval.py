@@ -96,7 +96,8 @@ async def main():
             if regular_results:
                 for i, result in enumerate(regular_results, 1):
                     console.print(
-                        f"{i}. {result.get('title', 'Untitled')} - Score: {result.get('score', 0):.3f}"
+                        f"{i}. {result.get('title', 'Untitled')} - Score: "
+                        f"{result.get('score', 0):.3f}"
                     )
                     console.print(
                         f"   Section: {result.get('section_title', 'Unknown')}"
@@ -119,7 +120,8 @@ async def main():
                 for i, result in enumerate(contextual_results, 1):
                     ctx_indicator = " [ctx]" if result.get("is_contextual") else ""
                     console.print(
-                        f"{i}. {result.get('title', 'Untitled')} - Score: {result.get('score', 0):.3f}{ctx_indicator}"
+                        f"{i}. {result.get('title', 'Untitled')} - Score: "
+                        f"{result.get('score', 0):.3f}{ctx_indicator}"
                     )
                     console.print(
                         f"   Section: {result.get('section_title', 'Unknown')}"
@@ -136,7 +138,8 @@ async def main():
 
     else:
         console.print(
-            "\n[yellow]No documents have been processed with contextual retrieval yet.[/yellow]"
+            "\n[yellow]No documents have been processed with contextual retrieval "
+            "yet.[/yellow]"
         )
         console.print(
             "Process documents with: [cyan]dv context process <document_id>[/cyan]"

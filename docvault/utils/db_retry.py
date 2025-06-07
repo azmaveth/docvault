@@ -37,7 +37,8 @@ def retry_on_lock(max_attempts: int = 3, delay: float = 0.1, backoff: float = 2.
                         last_exception = e
                         if attempt < max_attempts - 1:
                             logger.debug(
-                                f"Database locked on attempt {attempt + 1}/{max_attempts}, "
+                                f"Database locked on attempt {attempt + 1}/"
+                                f"{max_attempts}, "
                                 f"retrying in {current_delay:.2f}s..."
                             )
                             time.sleep(current_delay)
@@ -69,7 +70,8 @@ def retry_on_lock(max_attempts: int = 3, delay: float = 0.1, backoff: float = 2.
                         last_exception = e
                         if attempt < max_attempts - 1:
                             logger.debug(
-                                f"Database locked on attempt {attempt + 1}/{max_attempts}, "
+                                f"Database locked on attempt {attempt + 1}/"
+                                f"{max_attempts}, "
                                 f"retrying in {current_delay:.2f}s..."
                             )
                             await asyncio.sleep(current_delay)

@@ -105,7 +105,8 @@ def downgrade():
     cursor = conn.cursor()
 
     try:
-        # SQLite doesn't support dropping columns easily, so we need to recreate the table
+        # SQLite doesn't support dropping columns easily, so we need to recreate
+        # the table
         cursor.execute(
             """
             CREATE TABLE documents_new (

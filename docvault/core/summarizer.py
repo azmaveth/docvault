@@ -38,7 +38,7 @@ class Summary:
 
 
 class DocumentSummarizer:
-    """Summarizes documentation focusing on method signatures, parameters, and 
+    """Summarizes documentation focusing on method signatures, parameters, and
     examples."""
 
     def __init__(self):
