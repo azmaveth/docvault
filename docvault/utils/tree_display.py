@@ -181,7 +181,8 @@ def render_tree_with_style(
         if node.children:
             for i, child in enumerate(node.children):
                 is_last_child = i == len(node.children) - 1
-                # For direct children of root (parent_is_last is empty), don't add prefix
+                # For direct children of root (parent_is_last is empty), don't add
+                # prefix
                 if not parent_is_last:  # Root level
                     child_prefix = ""
                 else:

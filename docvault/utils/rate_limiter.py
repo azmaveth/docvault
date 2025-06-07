@@ -224,7 +224,8 @@ class ResourceMonitor:
             if memory_mb > self.config.max_memory_mb:
                 return (
                     False,
-                    f"Memory usage ({memory_mb:.1f}MB) exceeds limit ({self.config.max_memory_mb}MB)",
+                    f"Memory usage ({memory_mb:.1f}MB) exceeds limit "
+                    f"({self.config.max_memory_mb}MB)",
                 )
 
             # Warn if approaching limit
@@ -251,7 +252,8 @@ class ResourceMonitor:
             if elapsed > self.config.max_processing_time_seconds:
                 return (
                     False,
-                    f"Operation exceeded time limit ({elapsed:.1f}s > {self.config.max_processing_time_seconds}s)",
+                    f"Operation exceeded time limit ({elapsed:.1f}s > "
+                    f"{self.config.max_processing_time_seconds}s)",
                 )
 
             return True, None

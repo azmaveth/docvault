@@ -66,7 +66,8 @@ class DefaultGroup(click.Group):
         return None
 
     def invoke(self, ctx):
-        # If the command is not found, treat all args as a query for the default subcommand
+        # If the command is not found, treat all args as a query for the default
+        # subcommand
         if ctx.protected_args and self.default_cmd is not None:
             cmd_name = ctx.protected_args[0]
             if click.Group.get_command(self, ctx, cmd_name) is None:
@@ -266,7 +267,8 @@ def register_commands(main):
     main.add_command(context_group, name="context")
 
 
-# All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.
+# All command aliases are registered manually above to ensure compatibility with
+# Click <8.1.0 and for explicit aliasing.
 
 cli = create_main
 

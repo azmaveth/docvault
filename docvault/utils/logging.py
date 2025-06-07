@@ -96,8 +96,14 @@ class UserFriendlyFormatter(logging.Formatter):
     """Custom formatter that shows user-friendly messages for common errors."""
 
     ERROR_MESSAGES = {
-        "ConnectionError": "Could not connect to the server. Please check your internet connection.",
-        "SSLError": "SSL certificate verification failed. The website might be using a self-signed certificate.",
+        "ConnectionError": (
+            "Could not connect to the server. Please check your internet "
+            "connection."
+        ),
+        "SSLError": (
+            "SSL certificate verification failed. The website might be using a "
+            "self-signed certificate."
+        ),
         "TimeoutError": "Request timed out. The server might be slow or unresponsive.",
         "DNSLookupError": "Could not resolve the domain name. Please check the URL.",
         "HTTPError": "Server returned an error response.",

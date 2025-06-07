@@ -214,7 +214,8 @@ class CacheManager:
                         if new_modified and new_modified != last_modified:
                             return (
                                 True,
-                                f"Last-Modified changed: {last_modified} → {new_modified}",
+                                f"Last-Modified changed: {last_modified} → "
+                        f"{new_modified}",
                             )
 
                         # If no caching headers, we'll need to fetch and compare content
@@ -222,7 +223,8 @@ class CacheManager:
                             # For now, assume it might have changed
                             return (
                                 True,
-                                "No caching headers available, content may have changed",
+                                "No caching headers available, content may have "
+                        "changed",
                             )
 
                         self._mark_as_checked(document_id)

@@ -51,8 +51,10 @@ def segment_markdown(markdown_content: str) -> list[dict[str, Any]]:
         - type: Segment type ('h1', 'h2', ..., 'h6', 'text', 'code')
         - content: The content of the segment
         - section_title: Title of the current section (for non-header segments)
-        - section_level: Nesting level of the current section (1-6 for headers, 0 for text/code)
-        - section_path: Path-like string representing the section hierarchy (e.g., '1.2.3')
+        - section_level: Nesting level of the current section (1-6 for headers,
+          0 for text/code)
+        - section_path: Path-like string representing the section hierarchy
+          (e.g., '1.2.3')
     """
     import re
     from typing import Optional

@@ -221,8 +221,12 @@ def get_update_suggestion(freshness_level: FreshnessLevel) -> str | None:
         Suggestion string or None if no suggestion
     """
     suggestions = {
-        FreshnessLevel.STALE: "Consider updating this document for the latest information.",
-        FreshnessLevel.OUTDATED: "This document is outdated. Update recommended for accuracy.",
+        FreshnessLevel.STALE: (
+            "Consider updating this document for the latest information."
+        ),
+        FreshnessLevel.OUTDATED: (
+            "This document is outdated. Update recommended for accuracy."
+        ),
     }
 
     return suggestions.get(freshness_level)
