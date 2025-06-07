@@ -246,7 +246,8 @@ def _migrate_to_v2(conn: sqlite3.Connection) -> None:
             name TEXT NOT NULL,                   -- e.g., 'Python', 'Elixir', 'Node.js'
             package_manager TEXT,                -- e.g., 'pypi', 'hex', 'npm'
             base_url TEXT,                       -- Base URL for documentation
-            version_url_template TEXT,            -- Template URL with {version} placeholder
+            version_url_template TEXT,            -- Template URL with {version}
+                                               -- placeholder
             latest_version_url TEXT,              -- URL to fetch latest version
             is_active BOOLEAN DEFAULT TRUE,
             last_checked TIMESTAMP,

@@ -98,7 +98,8 @@ def validate_path(
         if not is_allowed:
             # Log the actual paths for debugging
             logger.warning(
-                f"Path {resolved_path} is not within allowed base paths: {[Path(p).resolve() for p in allowed_base_paths]}"
+                f"Path {resolved_path} is not within allowed base paths: "
+                f"{[Path(p).resolve() for p in allowed_base_paths]}"
             )
             raise PathSecurityError("Path is not under any allowed base path")
 

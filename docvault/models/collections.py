@@ -430,7 +430,8 @@ def reorder_collection_documents(
 
             conn.commit()
             logger.info(
-                f"Reordered {len(document_positions)} documents in collection {collection_id}"
+                f"Reordered {len(document_positions)} documents in collection "
+                f"{collection_id}"
             )
             return True
 

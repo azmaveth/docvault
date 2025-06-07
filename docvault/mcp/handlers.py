@@ -11,7 +11,8 @@ from docvault.core.storage import read_html, read_markdown
 from docvault.db import operations
 
 
-# Legacy handler functions - no longer used directly but kept for reference and backward compatibility
+# Legacy handler functions - no longer used directly but kept for reference and
+# backward compatibility
 async def handle_scrape_document(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for scrape_document tool (Legacy)"""
     url = params["url"]

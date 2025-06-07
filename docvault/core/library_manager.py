@@ -80,7 +80,8 @@ class LibraryManager:
             latest_lib = operations.get_latest_library_version(library_name)
             if latest_lib and latest_lib.get("is_available"):
                 self.logger.info(
-                    f"Using latest known version {latest_lib['version']} for {library_name}"
+                    f"Using latest known version {latest_lib['version']} for "
+                    f"{library_name}"
                 )
                 documents = operations.get_library_documents(latest_lib["id"])
                 if documents and isinstance(documents, list):
@@ -98,10 +99,12 @@ class LibraryManager:
         # If not, resolve the documentation URL
         doc_url = await self.resolve_doc_url(library_name, version)
 
-        # If we can't find the URL and we're looking for latest version, try to find the latest version
+        # If we can't find the URL and we're looking for latest version, try to
+        # find the latest version
         if not doc_url and version == "latest":
             self.logger.info(
-                f"Couldn't find latest version URL, trying to find latest version for {library_name}"
+                f"Couldn't find latest version URL, trying to find latest "
+                f"version for {library_name}"
             )
 
             # First, try to use Brave search to find the latest version

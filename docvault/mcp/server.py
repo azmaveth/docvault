@@ -863,14 +863,20 @@ def create_server() -> FastMCP:
                     content=[
                         types.TextContent(
                             type="text",
-                            text=f"No documents found with {match_type} of these tags: {', '.join(tags)}",
+                            text=(
+                                f"No documents found with {match_type} of these tags: "
+                                f"{', '.join(tags)}"
+                            ),
                         )
                     ],
                     metadata={"success": True, "document_count": 0},
                 )
 
             match_type = "all" if match_all else "any"
-            content_text = f"Found {len(documents)} documents with {match_type} of these tags: {', '.join(tags)}\n\n"
+            content_text = (
+                f"Found {len(documents)} documents with {match_type} of these tags: "
+                f"{', '.join(tags)}\n\n"
+            )
 
             for doc in documents:
                 content_text += f"- ID {doc['id']}: {doc['title']}\n"
