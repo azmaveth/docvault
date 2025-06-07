@@ -79,7 +79,8 @@ def check_updates(document_id, all, force):
 
         console.print(table)
         console.print(
-            f"\n[bold]Summary:[/] {updates_available} updates available, {errors} errors"
+            f"\n[bold]Summary:[/] {updates_available} updates available, "
+            f"{errors} errors"
         )
 
     elif document_id:

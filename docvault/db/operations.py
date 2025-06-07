@@ -149,7 +149,8 @@ def add_document(
         cursor.execute(
             """
         INSERT INTO documents
-        (url, version, title, html_path, markdown_path, content_hash, library_id, is_library_doc, scraped_at)
+        (url, version, title, html_path, markdown_path, content_hash, library_id,
+         is_library_doc, scraped_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
@@ -182,7 +183,10 @@ def update_document_by_url(
     has_llms_txt: bool = False,
     llms_txt_url: str | None = None,
 ) -> int:
-    """Update a document by deleting the old one (if any) and re-adding it with a new timestamp/version."""
+    """Update a document by deleting the old one (if any) and re-adding it.
+    
+    Uses a new timestamp/version for the updated document.
+    """
     old_doc = get_document_by_url(url)
     if old_doc:
         delete_document(old_doc["id"])

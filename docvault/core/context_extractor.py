@@ -60,7 +60,8 @@ class ContextExtractor:
         self.example_patterns = [
             r"```(\w+)?\s*\n(.*?)\n```",  # Code blocks
             r"`([^`]+)`",  # Inline code
-            r"(?:example|sample|demo):\s*\n(.*?)(?:\n\n|\nNote:|\n[A-Z])",  # Example sections
+            r"(?:example|sample|demo):\s*\n(.*?)(?:\n\n|\nNote:|\n[A-Z])",
+            # Example sections
         ]
 
         self.best_practice_indicators = [
@@ -251,7 +252,8 @@ class ContextExtractor:
 
         # Look for "see also", "related", "similar" sections
         related_patterns = [
-            r"(?:see also|related|similar|compare with|alternatives?):\s*(.*?)(?:\n\n|\n[A-Z])",
+            r"(?:see also|related|similar|compare with|alternatives?):\s*"
+            r"(.*?)(?:\n\n|\n[A-Z])",
             r"(?:other|additional|more) (?:functions|methods|classes|modules):\s*(.*?)(?:\n\n|\n[A-Z])",
         ]
 
