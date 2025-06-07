@@ -89,7 +89,7 @@ def _render_html(html_content: str) -> str:
 
 def read_html(document_path: str) -> str:
     """Read HTML content from file and render it as markdown"""
-    with open(document_path, "r", encoding="utf-8") as f:
+    with open(document_path, encoding="utf-8") as f:
         content = f.read()
     return _render_html(content)
 
@@ -105,7 +105,7 @@ def read_markdown(document_path: str, render: bool = True) -> str:
     Returns:
         str: The markdown content, either rendered or raw
     """
-    with open(document_path, "r", encoding="utf-8") as f:
+    with open(document_path, encoding="utf-8") as f:
         content = f.read()
 
     if not render:

@@ -36,7 +36,7 @@ def sections():
     help="Output format for table of contents",
 )
 @click.option("--max-depth", type=int, default=None, help="Maximum depth to display")
-def table_of_contents(document_id: int, format: str, max_depth: Optional[int]):
+def table_of_contents(document_id: int, format: str, max_depth: int | None):
     """Display table of contents for a document."""
     # Verify document exists
     doc = get_document(document_id)
@@ -281,7 +281,7 @@ def navigate_sections(document_id: int, section_id: int, show: str):
         console.print(tree)
 
 
-def _display_toc_tree(doc_title: str, toc_nodes, max_depth: Optional[int]):
+def _display_toc_tree(doc_title: str, toc_nodes, max_depth: int | None):
     """Display TOC as a tree."""
     tree = Tree(f"[bold]{doc_title}[/bold]")
     _build_tree_node(tree, toc_nodes, max_depth=max_depth)
@@ -289,7 +289,7 @@ def _display_toc_tree(doc_title: str, toc_nodes, max_depth: Optional[int]):
 
 
 def _build_tree_node(
-    parent_node, sections, current_depth: int = 1, max_depth: Optional[int] = None
+    parent_node, sections, current_depth: int = 1, max_depth: int | None = None
 ):
     """Recursively build tree nodes."""
     if max_depth and current_depth > max_depth:
@@ -306,7 +306,7 @@ def _build_tree_node(
             _build_tree_node(child_node, section.children, current_depth + 1, max_depth)
 
 
-def _display_toc_flat(doc_title: str, toc_nodes, max_depth: Optional[int]):
+def _display_toc_flat(doc_title: str, toc_nodes, max_depth: int | None):
     """Display TOC as a flat list."""
     console.print(f"[bold]{doc_title}[/bold]\n")
 

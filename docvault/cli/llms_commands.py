@@ -242,12 +242,12 @@ def search_llms(query: str, limit: int, format: str):
 @click.option("--summary", "-s", help="Summary for the llms.txt file")
 @click.option("--output", "-o", help="Output file path (default: stdout)")
 def export_llms(
-    collection: Optional[str],
-    tag: Optional[str],
+    collection: str | None,
+    tag: str | None,
     limit: int,
     title: str,
-    summary: Optional[str],
-    output: Optional[str],
+    summary: str | None,
+    output: str | None,
 ):
     """Export documents in llms.txt format."""
     try:

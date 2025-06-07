@@ -78,7 +78,7 @@ def calculate_age(timestamp_str: str) -> timedelta:
 
 
 def get_freshness_level(
-    age_days: float, thresholds: Optional[Dict[FreshnessLevel, int]] = None
+    age_days: float, thresholds: dict[FreshnessLevel, int] | None = None
 ) -> FreshnessLevel:
     """Determine the freshness level based on age.
 
@@ -148,7 +148,7 @@ def format_age(age: timedelta) -> str:
         return f"{years} years ago"
 
 
-def get_freshness_info(timestamp_str: str) -> Tuple[FreshnessLevel, str, str]:
+def get_freshness_info(timestamp_str: str) -> tuple[FreshnessLevel, str, str]:
     """Get comprehensive freshness information for a document.
 
     Args:
@@ -212,7 +212,7 @@ def should_suggest_update(timestamp_str: str, threshold_days: int = 90) -> bool:
     return age_days > threshold_days
 
 
-def get_update_suggestion(freshness_level: FreshnessLevel) -> Optional[str]:
+def get_update_suggestion(freshness_level: FreshnessLevel) -> str | None:
     """Get an update suggestion based on freshness level.
 
     Args:

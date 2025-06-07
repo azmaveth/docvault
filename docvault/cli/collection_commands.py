@@ -6,8 +6,9 @@ documentation for specific purposes. Unlike tags (which are attributes),
 collections are curated sets of documents.
 """
 
+import builtins
 import json
-from typing import List, Optional
+from typing import Optional
 
 import click
 from rich.table import Table
@@ -41,7 +42,7 @@ def collection():
     "--tags", "-t", multiple=True, help="Default tags for documents in this collection"
 )
 @click.option("--format", type=click.Choice(["text", "json"]), default="text")
-def create(name: str, description: Optional[str], tags: List[str], format: str):
+def create(name: str, description: str | None, tags: list[str], format: str):
     """Create a new collection.
 
     Examples:
@@ -233,7 +234,7 @@ def show(collection_name: str, format: str):
 @click.argument("document_ids", nargs=-1, type=int, required=True)
 @click.option("--notes", "-n", help="Notes about why these documents are included")
 @validate_doc_id
-def add(collection_name: str, document_ids: List[int], notes: Optional[str]):
+def add(collection_name: str, document_ids: builtins.list[int], notes: str | None):
     """Add documents to a collection.
 
     Examples:
@@ -279,7 +280,7 @@ def add(collection_name: str, document_ids: List[int], notes: Optional[str]):
 @collection.command()
 @click.argument("collection_name")
 @click.argument("document_ids", nargs=-1, type=int, required=True)
-def remove(collection_name: str, document_ids: List[int]):
+def remove(collection_name: str, document_ids: builtins.list[int]):
     """Remove documents from a collection.
 
     Examples:
@@ -319,9 +320,9 @@ def remove(collection_name: str, document_ids: List[int]):
 @click.option("--activate/--deactivate", default=None, help="Change active status")
 def update(
     collection_name: str,
-    name: Optional[str],
-    description: Optional[str],
-    activate: Optional[bool],
+    name: str | None,
+    description: str | None,
+    activate: bool | None,
 ):
     """Update collection properties.
 

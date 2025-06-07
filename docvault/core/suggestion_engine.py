@@ -27,7 +27,7 @@ class Suggestion:
     description: str
     relevance_score: float
     reason: str  # Why this is suggested
-    usage_example: Optional[str] = None
+    usage_example: str | None = None
 
 
 class SuggestionEngine:
@@ -96,10 +96,10 @@ class SuggestionEngine:
     def get_suggestions(
         self,
         query: str,
-        current_document_id: Optional[int] = None,
-        context: Optional[str] = None,
+        current_document_id: int | None = None,
+        context: str | None = None,
         limit: int = 10,
-    ) -> List[Suggestion]:
+    ) -> list[Suggestion]:
         """Get suggestions based on a query or current context.
 
         Args:
@@ -133,7 +133,7 @@ class SuggestionEngine:
 
     def get_task_based_suggestions(
         self, task_description: str, limit: int = 5
-    ) -> List[Suggestion]:
+    ) -> list[Suggestion]:
         """Get suggestions based on a task description.
 
         Args:
@@ -170,7 +170,7 @@ class SuggestionEngine:
 
     def get_complementary_functions(
         self, function_name: str, limit: int = 5
-    ) -> List[Suggestion]:
+    ) -> list[Suggestion]:
         """Get functions that are commonly used together with the given function.
 
         Args:
@@ -235,7 +235,7 @@ class SuggestionEngine:
 
         return self._deduplicate_suggestions(suggestions)[:limit]
 
-    def _get_semantic_suggestions(self, query: str, limit: int) -> List[Suggestion]:
+    def _get_semantic_suggestions(self, query: str, limit: int) -> list[Suggestion]:
         """Get suggestions using semantic search."""
         suggestions = []
 
@@ -268,8 +268,8 @@ class SuggestionEngine:
         return suggestions
 
     def _get_pattern_based_suggestions(
-        self, query: str, current_doc_id: Optional[int]
-    ) -> List[Suggestion]:
+        self, query: str, current_doc_id: int | None
+    ) -> list[Suggestion]:
         """Get suggestions based on naming patterns and conventions."""
         suggestions = []
 
@@ -315,8 +315,8 @@ class SuggestionEngine:
         return suggestions
 
     def _get_cross_reference_suggestions(
-        self, query: str, current_doc_id: Optional[int]
-    ) -> List[Suggestion]:
+        self, query: str, current_doc_id: int | None
+    ) -> list[Suggestion]:
         """Get suggestions using cross-reference information."""
         suggestions = []
 
@@ -368,8 +368,8 @@ class SuggestionEngine:
         return suggestions
 
     def _get_category_based_suggestions(
-        self, query: str, context: Optional[str]
-    ) -> List[Suggestion]:
+        self, query: str, context: str | None
+    ) -> list[Suggestion]:
         """Get suggestions based on task categories."""
         suggestions = []
 
@@ -388,7 +388,7 @@ class SuggestionEngine:
 
     def _get_suggestions_for_category(
         self, category: str, query: str
-    ) -> List[Suggestion]:
+    ) -> list[Suggestion]:
         """Get suggestions for a specific task category."""
         suggestions = []
 
@@ -440,7 +440,7 @@ class SuggestionEngine:
 
         return suggestions
 
-    def _extract_identifiers_from_content(self, content: str) -> List[Tuple[str, str]]:
+    def _extract_identifiers_from_content(self, content: str) -> list[tuple[str, str]]:
         """Extract function/class identifiers from content."""
         identifiers = []
 
@@ -468,7 +468,7 @@ class SuggestionEngine:
 
         return identifiers
 
-    def _extract_functions_from_content(self, content: str) -> List[str]:
+    def _extract_functions_from_content(self, content: str) -> list[str]:
         """Extract function names from content."""
         functions = []
 
@@ -493,8 +493,8 @@ class SuggestionEngine:
         return functions
 
     def _find_function_variants(
-        self, variants: List[str], reason: str
-    ) -> List[Suggestion]:
+        self, variants: list[str], reason: str
+    ) -> list[Suggestion]:
         """Find function variants in the database."""
         suggestions = []
 
@@ -540,7 +540,7 @@ class SuggestionEngine:
 
         return suggestions
 
-    def _find_similar_named_functions(self, base_name: str) -> List[Suggestion]:
+    def _find_similar_named_functions(self, base_name: str) -> list[Suggestion]:
         """Find functions with similar names."""
         suggestions = []
 
@@ -607,8 +607,8 @@ class SuggestionEngine:
         return common_chars / total_chars
 
     def _deduplicate_suggestions(
-        self, suggestions: List[Suggestion]
-    ) -> List[Suggestion]:
+        self, suggestions: list[Suggestion]
+    ) -> list[Suggestion]:
         """Remove duplicate suggestions, keeping the highest scoring ones."""
         seen = {}
 

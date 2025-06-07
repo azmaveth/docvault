@@ -35,7 +35,7 @@ REFERENCE_PATTERNS = {
 }
 
 
-def extract_references(content: str, segment_id: int) -> List[Dict[str, Any]]:
+def extract_references(content: str, segment_id: int) -> list[dict[str, Any]]:
     """Extract potential cross-references from content.
 
     Args:
@@ -92,7 +92,7 @@ def extract_references(content: str, segment_id: int) -> List[Dict[str, Any]]:
     return references
 
 
-def store_references(references: List[Dict[str, Any]]) -> int:
+def store_references(references: list[dict[str, Any]]) -> int:
     """Store extracted references in the database.
 
     Args:
@@ -143,8 +143,8 @@ def store_anchor(
     segment_id: int,
     anchor_type: str,
     anchor_name: str,
-    anchor_signature: Optional[str] = None,
-    anchor_path: Optional[str] = None,
+    anchor_signature: str | None = None,
+    anchor_path: str | None = None,
 ) -> int:
     """Store a document anchor (identifier that can be referenced).
 
@@ -192,7 +192,7 @@ def store_anchor(
 
 def extract_anchors_from_segment(
     content: str, segment_id: int, document_id: int
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Extract anchors (identifiers) from a segment.
 
     Args:
@@ -317,7 +317,7 @@ def resolve_references(document_id: int) -> int:
         conn.close()
 
 
-def get_references_from_segment(segment_id: int) -> List[Dict[str, Any]]:
+def get_references_from_segment(segment_id: int) -> list[dict[str, Any]]:
     """Get all references from a segment.
 
     Args:
@@ -351,7 +351,7 @@ def get_references_from_segment(segment_id: int) -> List[Dict[str, Any]]:
         conn.close()
 
 
-def get_references_to_segment(segment_id: int) -> List[Dict[str, Any]]:
+def get_references_to_segment(segment_id: int) -> list[dict[str, Any]]:
     """Get all references pointing to a segment.
 
     Args:
@@ -385,7 +385,7 @@ def get_references_to_segment(segment_id: int) -> List[Dict[str, Any]]:
         conn.close()
 
 
-def build_reference_graph(document_id: int) -> Dict[str, Any]:
+def build_reference_graph(document_id: int) -> dict[str, Any]:
     """Build a reference graph for a document.
 
     Args:

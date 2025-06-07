@@ -33,7 +33,7 @@ class FilePermissionManager:
     @classmethod
     def check_permission(
         cls, file_path: Path, expected_mode: int
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Check if a file has the expected permissions.
 
         Args:
@@ -117,8 +117,8 @@ class FilePermissionManager:
 
     @classmethod
     def audit_permissions(
-        cls, base_dir: Optional[Path] = None
-    ) -> Dict[str, List[Tuple[Path, str]]]:
+        cls, base_dir: Path | None = None
+    ) -> dict[str, list[tuple[Path, str]]]:
         """Audit all DocVault files for permission issues.
 
         Args:
@@ -177,7 +177,7 @@ class FilePermissionManager:
         return issues
 
     @classmethod
-    def fix_all_permissions(cls, base_dir: Optional[Path] = None) -> Tuple[int, int]:
+    def fix_all_permissions(cls, base_dir: Path | None = None) -> tuple[int, int]:
         """Fix permissions for all DocVault files.
 
         Args:
@@ -263,7 +263,7 @@ def ensure_secure_permissions():
         FilePermissionManager.secure_file(env_file, "config")
 
 
-def check_umask() -> Optional[int]:
+def check_umask() -> int | None:
     """Check and optionally set a secure umask.
 
     Returns:

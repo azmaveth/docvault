@@ -71,7 +71,7 @@ class LibraryManager:
 
     async def get_library_docs(
         self, library_name: str, version: str = "latest"
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """Get documentation for a library, fetching it if necessary"""
         # Handle "latest" version lookup
         actual_version = version
@@ -222,7 +222,7 @@ class LibraryManager:
         # In a more advanced implementation, we could scrape the page to find version info
         return "latest"
 
-    async def resolve_doc_url(self, library_name: str, version: str) -> Optional[str]:
+    async def resolve_doc_url(self, library_name: str, version: str) -> str | None:
         """Resolve the documentation URL for a library"""
         # Check if we can connect to the URL using default patterns
         try:
@@ -286,7 +286,7 @@ class LibraryManager:
 
         return pattern.format(version=version)
 
-    async def get_pypi_doc_url(self, library_name: str, version: str) -> Optional[str]:
+    async def get_pypi_doc_url(self, library_name: str, version: str) -> str | None:
         """Get documentation URL from PyPI metadata"""
         try:
             url = f"https://pypi.org/pypi/{library_name}/json"
@@ -322,7 +322,7 @@ class LibraryManager:
             self.logger.error(f"Error fetching PyPI metadata: {e}")
             return None
 
-    async def find_latest_version_with_search(self, library_name: str) -> Optional[str]:
+    async def find_latest_version_with_search(self, library_name: str) -> str | None:
         """Try to find the latest version of a library using Brave Search"""
         if not config.BRAVE_API_KEY:
             self.logger.warning("Brave API key not configured")
@@ -373,7 +373,7 @@ class LibraryManager:
             self.logger.error(f"Error searching for latest version: {e}")
             return "latest"
 
-    async def search_doc_url(self, library_name: str, version: str) -> Optional[str]:
+    async def search_doc_url(self, library_name: str, version: str) -> str | None:
         """Search for documentation URL using Brave Search"""
         if not config.BRAVE_API_KEY:
             self.logger.warning("Brave API key not configured")
@@ -481,6 +481,6 @@ library_manager = LibraryManager()
 # Convenience function
 async def lookup_library_docs(
     library_name: str, version: str = "latest"
-) -> Optional[List[Dict[str, Any]]]:
+) -> list[dict[str, Any]] | None:
     """Lookup and fetch documentation for a library"""
     return await library_manager.get_library_docs(library_name, version)

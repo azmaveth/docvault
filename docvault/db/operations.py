@@ -65,14 +65,14 @@ def add_document(
     title: str,
     html_path: str,
     markdown_path: str,
-    library_id: Optional[int] = None,
+    library_id: int | None = None,
     is_library_doc: bool = False,
     version: str = "latest",
-    content_hash: Optional[str] = None,
+    content_hash: str | None = None,
     has_llms_txt: bool = False,
-    llms_txt_url: Optional[str] = None,
-    doc_type: Optional[str] = None,
-    metadata: Optional[str] = None,
+    llms_txt_url: str | None = None,
+    doc_type: str | None = None,
+    metadata: str | None = None,
     force_update: bool = False,
 ) -> int:
     """Add a document to the database, supporting versioning and content hash."""
@@ -173,12 +173,12 @@ def update_document_by_url(
     title: str,
     html_path: str,
     markdown_path: str,
-    library_id: Optional[int] = None,
+    library_id: int | None = None,
     is_library_doc: bool = False,
     version: str = "latest",
-    content_hash: Optional[str] = None,
+    content_hash: str | None = None,
     has_llms_txt: bool = False,
-    llms_txt_url: Optional[str] = None,
+    llms_txt_url: str | None = None,
 ) -> int:
     """Update a document by deleting the old one (if any) and re-adding it with a new timestamp/version."""
     old_doc = get_document_by_url(url)
@@ -248,7 +248,7 @@ def delete_document(document_id: int) -> bool:
         conn.close()
 
 
-def get_document_segment(segment_id: int) -> Optional[Dict[str, Any]]:
+def get_document_segment(segment_id: int) -> dict[str, Any] | None:
     """Get a single document segment by ID"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -269,7 +269,7 @@ def get_document_segment(segment_id: int) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_document_segments(document_id: int) -> List[Dict[str, Any]]:
+def get_document_segments(document_id: int) -> list[dict[str, Any]]:
     """Get all segments for a document.
 
     Args:
@@ -295,7 +295,7 @@ def get_document_segments(document_id: int) -> List[Dict[str, Any]]:
     return segments
 
 
-def get_document(document_id: int) -> Optional[Dict[str, Any]]:
+def get_document(document_id: int) -> dict[str, Any] | None:
     """Get a document by ID"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -310,7 +310,7 @@ def get_document(document_id: int) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_document_by_url(url: str) -> Optional[Dict[str, Any]]:
+def get_document_by_url(url: str) -> dict[str, Any] | None:
     """Get a document by URL"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -430,8 +430,8 @@ def search_segments(
     limit: int = 5,
     text_query: str = None,
     min_score: float = 0.0,
-    doc_filter: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, Any]]:
+    doc_filter: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """Search for similar document segments with metadata filtering
 
     Args:
@@ -767,8 +767,8 @@ def document_exists(doc_id: str) -> bool:
 
 
 def list_documents(
-    limit: int = 20, offset: int = 0, filter_text: Optional[str] = None
-) -> List[Dict[str, Any]]:
+    limit: int = 20, offset: int = 0, filter_text: str | None = None
+) -> list[dict[str, Any]]:
     """List documents with optional filtering"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -813,7 +813,7 @@ def add_library(name: str, version: str, doc_url: str) -> int:
     return library_id
 
 
-def get_library(name: str, version: str) -> Optional[Dict[str, Any]]:
+def get_library(name: str, version: str) -> dict[str, Any] | None:
     """Get a library by name and version"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -834,7 +834,7 @@ def get_library(name: str, version: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_library_documents(library_id: int) -> List[Dict[str, Any]]:
+def get_library_documents(library_id: int) -> list[dict[str, Any]]:
     """Get all documents for a library"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -853,7 +853,7 @@ def get_library_documents(library_id: int) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def get_latest_library_version(name: str) -> Optional[Dict[str, Any]]:
+def get_latest_library_version(name: str) -> dict[str, Any] | None:
     """Get the latest version of a library by name"""
     conn = get_connection()
     cursor = conn.cursor()

@@ -200,7 +200,7 @@ def optimize_database():
             logger.error(f"Database optimization failed: {e}")
 
 
-def get_query_plan(sql: str, params: List = None) -> List[dict]:
+def get_query_plan(sql: str, params: list = None) -> list[dict]:
     """
     Get query execution plan for a SQL statement.
 

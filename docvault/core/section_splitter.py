@@ -17,11 +17,11 @@ class DocumentSection:
     level: int
     content: str
     path: str
-    parent_path: Optional[str] = None
-    metadata: Dict[str, str] = field(default_factory=dict)
+    parent_path: str | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
 
     @property
-    def parent_id_path(self) -> Optional[str]:
+    def parent_id_path(self) -> str | None:
         """Get parent path from current path."""
         if not self.parent_path:
             parts = self.path.split(".")
@@ -61,7 +61,7 @@ class SectionSplitter:
 
     def split_document(
         self, content: str, content_type: str = "html"
-    ) -> List[DocumentSection]:
+    ) -> list[DocumentSection]:
         """
         Split a document into sections based on headers.
 
@@ -77,7 +77,7 @@ class SectionSplitter:
         else:
             return self._split_html(content)
 
-    def _split_html(self, html_content: str) -> List[DocumentSection]:
+    def _split_html(self, html_content: str) -> list[DocumentSection]:
         """Split HTML document into sections."""
         soup = BeautifulSoup(html_content, "html.parser")
         sections = []
@@ -172,7 +172,7 @@ class SectionSplitter:
 
         return sections
 
-    def _split_markdown(self, markdown_content: str) -> List[DocumentSection]:
+    def _split_markdown(self, markdown_content: str) -> list[DocumentSection]:
         """Split Markdown document into sections."""
         lines = markdown_content.split("\n")
         sections = []
@@ -261,7 +261,7 @@ class SectionSplitter:
 
         return final_sections
 
-    def _split_large_section(self, section: DocumentSection) -> List[DocumentSection]:
+    def _split_large_section(self, section: DocumentSection) -> list[DocumentSection]:
         """
         Split a large section into smaller chunks while preserving structure.
 
@@ -333,7 +333,7 @@ class SectionSplitter:
 
         return chunks
 
-    def _extract_metadata(self, title: str) -> Dict[str, str]:
+    def _extract_metadata(self, title: str) -> dict[str, str]:
         """Extract metadata from section title."""
         metadata = {}
         title_lower = title.lower()
@@ -368,8 +368,8 @@ class SectionSplitter:
 
 
 def create_section_segments(
-    document_id: int, sections: List[DocumentSection]
-) -> List[Dict]:
+    document_id: int, sections: list[DocumentSection]
+) -> list[dict]:
     """
     Convert DocumentSection objects to segment dictionaries for storage.
 

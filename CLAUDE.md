@@ -11,6 +11,7 @@
 ### Semantic Versioning
 
 DocVault follows [Semantic Versioning](https://semver.org/):
+
 - MAJOR version for incompatible API changes
 - MINOR version for backwards-compatible functionality additions
 - PATCH version for backwards-compatible bug fixes
@@ -18,6 +19,7 @@ DocVault follows [Semantic Versioning](https://semver.org/):
 ### CHANGELOG.md Tracking
 
 **Critical**: All changes MUST be documented in CHANGELOG.md:
+
 - New features go under "Added"
 - Breaking changes go under "Changed" with BREAKING prefix
 - Bug fixes go under "Fixed"
@@ -26,6 +28,7 @@ DocVault follows [Semantic Versioning](https://semver.org/):
 - Security fixes go under "Security"
 
 When making changes:
+
 1. Update the version in `docvault/version.py`
 2. Add entry to CHANGELOG.md under "Unreleased" section
 3. Follow conventional commit format for commit messages
@@ -44,6 +47,7 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
 ### Available MCP Tools
 
 #### Document Management
+
 1. **scrape_document**: Adds documentation from a URL to the vault
    - Parameters: `url` (string), `depth` (integer/string, default: 1), `sections` (list), `filter_selector` (string), `depth_strategy` (string), `force_update` (boolean)
    - Returns: Document ID, title, and URL
@@ -65,6 +69,7 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
    - Returns: List of documents with their IDs, titles, URLs, and scrape dates
 
 #### Contextual Retrieval Tools
+
 6. **enable_contextual_retrieval**: Enable contextual retrieval for enhanced search accuracy
    - No parameters
    - Returns: Success status
@@ -90,6 +95,7 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
     - Returns: Similar content with similarity scores
 
 #### Organization and Navigation
+
 12. **add_tags**: Add tags to a document for better organization
     - Parameters: `document_id` (integer), `tags` (list of strings)
     - Returns: Success status
@@ -111,6 +117,7 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
     - Returns: Section paths and chunk numbers
 
 #### Utility Tools
+
 17. **check_freshness**: Check document freshness status
     - Parameters: `document_id` (integer, optional), `stale_only` (boolean)
     - Returns: Freshness status and recommendations

@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 class BaseExtractor(ABC):
     """Base class for all content extractors."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the extractor.
 
@@ -21,7 +21,7 @@ class BaseExtractor(ABC):
         self.config = config or {}
 
     @abstractmethod
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """
         Extract content from the parsed HTML.
 
@@ -34,7 +34,7 @@ class BaseExtractor(ABC):
         """
         pass
 
-    def extract_metadata(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def extract_metadata(self, soup: BeautifulSoup) -> dict[str, Any]:
         """
         Extract metadata from the page.
 
@@ -108,7 +108,7 @@ class BaseExtractor(ABC):
 
         return cleaned.strip()
 
-    def extract_code_blocks(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def extract_code_blocks(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """
         Extract code blocks from the content.
 
@@ -164,7 +164,7 @@ class BaseExtractor(ABC):
 
         return code_blocks
 
-    def extract_sections(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def extract_sections(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """
         Extract sections based on headers.
 
@@ -223,8 +223,8 @@ class BaseExtractor(ABC):
         return sections
 
     def segment_content(
-        self, segments: List[Dict[str, Any]], max_size: int = 8000
-    ) -> List[Dict[str, Any]]:
+        self, segments: list[dict[str, Any]], max_size: int = 8000
+    ) -> list[dict[str, Any]]:
         """
         Segment content into smaller chunks if needed.
 
@@ -254,7 +254,7 @@ class BaseExtractor(ABC):
 
         return sized_segments
 
-    def _split_text(self, text: str, max_size: int) -> List[str]:
+    def _split_text(self, text: str, max_size: int) -> list[str]:
         """
         Split text into chunks of maximum size.
 

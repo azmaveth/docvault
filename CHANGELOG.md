@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - **MCP Server Contextual Retrieval Tools**: New tools for managing contextual retrieval via MCP
   - `enable_contextual_retrieval` - Enable contextual retrieval for enhanced search accuracy
   - `disable_contextual_retrieval` - Disable contextual retrieval

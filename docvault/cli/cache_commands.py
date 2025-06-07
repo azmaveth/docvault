@@ -5,7 +5,6 @@ Cache management commands for DocVault CLI.
 import asyncio
 import json
 from datetime import datetime
-from typing import List
 
 import click
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -105,7 +104,7 @@ def check_updates(limit: int, status: str, format: str):
 )
 @click.option("--force", is_flag=True, help="Force update even if no changes detected")
 def update(
-    document_ids: List[int],
+    document_ids: list[int],
     all_stale: bool,
     all_outdated: bool,
     dry_run: bool,
@@ -128,7 +127,7 @@ def update(
             cursor.execute(
                 f"""
                     SELECT id, url, title, version, last_checked, staleness_status
-                    FROM documents 
+                    FROM documents
                     WHERE id IN ({placeholders})
                 """,
                 document_ids,

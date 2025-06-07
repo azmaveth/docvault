@@ -20,13 +20,13 @@ logger = get_logger(__name__)
 class LoggingConsole:
     """Console wrapper that logs messages and sanitizes output."""
 
-    def __init__(self, console: Optional[RichConsole] = None, sanitize: bool = True):
+    def __init__(self, console: RichConsole | None = None, sanitize: bool = True):
         self.console = console or _console
         self.logger = get_logger("docvault.console")
         # Enable sanitization by default, can be disabled via env var
         self.sanitize = sanitize and os.getenv("DOCVAULT_DISABLE_SANITIZATION") != "1"
 
-    def print(self, *args, style: Optional[str] = None, **kwargs):
+    def print(self, *args, style: str | None = None, **kwargs):
         """Print to console and log the message with sanitization."""
         # Convert args to string and sanitize if needed
         sanitized_args = []

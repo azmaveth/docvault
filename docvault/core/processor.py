@@ -26,7 +26,7 @@ def html_to_markdown(html_content: str) -> str:
     return markdown
 
 
-def extract_title(html_content: str) -> Optional[str]:
+def extract_title(html_content: str) -> str | None:
     """Extract title from HTML"""
     soup = BeautifulSoup(html_content, "html.parser")
     title_tag = soup.find("title")
@@ -42,7 +42,7 @@ def extract_title(html_content: str) -> Optional[str]:
     return None
 
 
-def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
+def segment_markdown(markdown_content: str) -> list[dict[str, Any]]:
     """
     Split markdown into segments with section hierarchy information.
 
@@ -69,7 +69,7 @@ def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
             self.title = title
             self.position = position
             self.parent = parent
-            self.children: List["Section"] = []
+            self.children: list[Section] = []
             self.counter = 1
 
             if parent:
@@ -87,10 +87,10 @@ def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
 
     # Split by headers
     header_pattern = r"^(#{1,6})\s+(.+)$"
-    segments: List[Dict[str, Any]] = []
+    segments: list[dict[str, Any]] = []
     current_segment = []
     current_type = "text"
-    current_section: Optional[Section] = None
+    current_section: Section | None = None
 
     lines = markdown_content.split("\n")
 
@@ -148,7 +148,7 @@ def segment_markdown(markdown_content: str) -> List[Dict[str, Any]]:
         )
 
     # Further process to separate code blocks and handle section inheritance
-    processed_segments: List[Dict[str, Any]] = []
+    processed_segments: list[dict[str, Any]] = []
     code_block_pattern = r"```.*?\n(.*?)```"
 
     for segment in segments:

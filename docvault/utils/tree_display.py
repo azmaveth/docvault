@@ -14,9 +14,9 @@ class TreeNode:
     title: str
     level: int
     path: str
-    parent_id: Optional[str] = None
-    children: List["TreeNode"] = None
-    metadata: Dict[str, Any] = None
+    parent_id: str | None = None
+    children: list["TreeNode"] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self):
         if self.children is None:
@@ -25,7 +25,7 @@ class TreeNode:
             self.metadata = {}
 
 
-def build_section_tree(sections: List[Dict[str, Any]]) -> List[TreeNode]:
+def build_section_tree(sections: list[dict[str, Any]]) -> list[TreeNode]:
     """
     Build a tree structure from flat section data.
 
@@ -75,11 +75,11 @@ def build_section_tree(sections: List[Dict[str, Any]]) -> List[TreeNode]:
 
 
 def render_tree(
-    nodes: List[TreeNode],
+    nodes: list[TreeNode],
     prefix: str = "",
-    is_last: List[bool] = None,
+    is_last: list[bool] = None,
     show_metadata: bool = False,
-) -> List[str]:
+) -> list[str]:
     """
     Render a tree structure as text lines.
 
@@ -134,8 +134,8 @@ def render_tree(
 
 
 def render_tree_with_style(
-    nodes: List[TreeNode], show_paths: bool = False, show_counts: bool = True
-) -> List[Tuple[str, str]]:
+    nodes: list[TreeNode], show_paths: bool = False, show_counts: bool = True
+) -> list[tuple[str, str]]:
     """
     Render a tree with Rich styling information.
 
@@ -147,7 +147,7 @@ def render_tree_with_style(
         node: TreeNode,
         prefix: str = "",
         is_last: bool = True,
-        parent_is_last: List[bool] = None,
+        parent_is_last: list[bool] = None,
     ):
         if parent_is_last is None:
             parent_is_last = []
@@ -196,7 +196,7 @@ def render_tree_with_style(
     return styled_lines
 
 
-def aggregate_section_data(sections_dict: Dict[str, List[Dict]]) -> Dict[str, Dict]:
+def aggregate_section_data(sections_dict: dict[str, list[dict]]) -> dict[str, dict]:
     """
     Aggregate data for sections (e.g., total match counts).
 

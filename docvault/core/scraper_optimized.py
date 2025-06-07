@@ -42,9 +42,9 @@ class OptimizedDocumentScraper:
         max_links: int = 10,
         strict_path: bool = True,
         force_update: bool = False,
-        sections: Optional[List[str]] = None,
+        sections: list[str] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Scrape a URL and store the document with optimized performance.
 
@@ -101,7 +101,7 @@ class OptimizedDocumentScraper:
                 "stats": self.stats.copy(),
             }
 
-    def _check_existing_document(self, url: str) -> Optional[Dict[str, Any]]:
+    def _check_existing_document(self, url: str) -> dict[str, Any] | None:
         """Check if document already exists in database."""
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -112,7 +112,7 @@ class OptimizedDocumentScraper:
         return None
 
     @performance_monitor("content_fetching")
-    async def _fetch_content(self, url: str) -> Optional[str]:
+    async def _fetch_content(self, url: str) -> str | None:
         """Fetch content from URL with optimized session handling."""
         try:
             session = await get_session()
@@ -131,7 +131,7 @@ class OptimizedDocumentScraper:
                     logger.error(f"HTTP {response.status} for {url}")
                     return None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(f"Timeout fetching {url}")
             return None
         except Exception as e:
@@ -140,8 +140,8 @@ class OptimizedDocumentScraper:
 
     @performance_monitor("content_processing")
     async def _process_content(
-        self, html_content: str, url: str, sections: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, html_content: str, url: str, sections: list[str] | None = None
+    ) -> dict[str, Any]:
         """Process HTML content into structured format."""
         with timer("html_processing"):
             # Parse and process the HTML
@@ -174,8 +174,8 @@ class OptimizedDocumentScraper:
     async def _store_document(
         self,
         url: str,
-        processed_content: Dict[str, Any],
-        existing_doc: Optional[Dict[str, Any]],
+        processed_content: dict[str, Any],
+        existing_doc: dict[str, Any] | None,
     ) -> int:
         """Store or update document in database."""
         # Save HTML and markdown files
@@ -225,7 +225,7 @@ class OptimizedDocumentScraper:
 
     @performance_monitor("segment_processing")
     async def _process_segments_batch(
-        self, document_id: int, segments: List[Dict[str, Any]]
+        self, document_id: int, segments: list[dict[str, Any]]
     ):
         """Process document segments in optimized batches."""
         if not segments:
@@ -312,7 +312,7 @@ class OptimizedDocumentScraper:
 
     def _extract_links(
         self, html_content: str, base_url: str, strict_path: bool
-    ) -> List[str]:
+    ) -> list[str]:
         """Extract valid links from HTML content."""
         # Implementation would parse HTML and extract links
         # This is a simplified version
@@ -364,7 +364,7 @@ class OptimizedDocumentScraper:
         # Remove duplicates and limit
         return list(dict.fromkeys(links))
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get scraping statistics."""
         return self.stats.copy()
 

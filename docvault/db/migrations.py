@@ -6,7 +6,8 @@ in a backward-compatible way.
 
 import logging
 import sqlite3
-from typing import Any, Callable, Dict, List, Tuple
+from collections.abc import Callable
+from typing import Any, Dict, List, Tuple
 
 from docvault import config
 
@@ -76,7 +77,7 @@ def migrate_schema() -> bool:
         current_version = get_schema_version(conn)
 
         # Define migrations
-        migrations: List[Tuple[int, MigrationFunc]] = [
+        migrations: list[tuple[int, MigrationFunc]] = [
             (1, _migrate_to_v1),  # Add section support
         ]
 
@@ -181,7 +182,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     logger.info("Applied migration: Added section support to document segments")
 
 
-def get_document_sections(document_id: int) -> List[Dict[str, Any]]:
+def get_document_sections(document_id: int) -> list[dict[str, Any]]:
     """Get the sections hierarchy for a document.
 
     Args:

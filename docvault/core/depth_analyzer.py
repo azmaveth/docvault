@@ -29,7 +29,7 @@ class LinkAnalysis:
     should_follow: bool
     priority: float  # 0.0 to 1.0
     reason: str
-    suggested_depth: Optional[int] = None
+    suggested_depth: int | None = None
 
 
 class DepthAnalyzer:
@@ -301,7 +301,7 @@ class DepthAnalyzer:
         # Both have versions - they should match
         return base_version == url_version
 
-    def _extract_version(self, path: str) -> Optional[str]:
+    def _extract_version(self, path: str) -> str | None:
         """Extract version identifier from path"""
         for pattern in self.version_patterns:
             match = re.search(pattern, path)
@@ -309,7 +309,7 @@ class DepthAnalyzer:
                 return match.group(0)
         return None
 
-    def analyze_content(self, content: str) -> Dict[str, float]:
+    def analyze_content(self, content: str) -> dict[str, float]:
         """
         Analyze page content to determine documentation quality.
 
@@ -372,8 +372,8 @@ class DepthAnalyzer:
         return scores
 
     def should_continue_crawling(
-        self, content_scores: Dict[str, float], current_depth: int
-    ) -> Tuple[bool, int]:
+        self, content_scores: dict[str, float], current_depth: int
+    ) -> tuple[bool, int]:
         """
         Determine if crawling should continue based on content analysis.
 
@@ -417,11 +417,11 @@ class DepthAnalyzer:
 
     def prioritize_links(
         self,
-        links: List[str],
+        links: list[str],
         base_url: str,
         current_depth: int,
-        max_links: Optional[int] = None,
-    ) -> List[str]:
+        max_links: int | None = None,
+    ) -> list[str]:
         """
         Prioritize and filter a list of links for crawling.
 

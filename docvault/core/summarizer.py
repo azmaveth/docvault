@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 class CodeSnippet:
     """Represents a code snippet found in documentation"""
 
-    language: Optional[str]
+    language: str | None
     code: str
     context: str  # Text around the code snippet
     line_number: int
@@ -28,11 +28,11 @@ class CodeSnippet:
 class Summary:
     """Represents a document summary"""
 
-    key_points: List[str]
-    code_snippets: List[CodeSnippet]
-    functions: List[Dict[str, str]]  # Function name -> signature
-    classes: List[Dict[str, str]]  # Class name -> description
-    important_sections: Dict[str, str]  # Section title -> brief content
+    key_points: list[str]
+    code_snippets: list[CodeSnippet]
+    functions: list[dict[str, str]]  # Function name -> signature
+    classes: list[dict[str, str]]  # Class name -> description
+    important_sections: dict[str, str]  # Section title -> brief content
     total_length: int
     summary_length: int
 
@@ -81,7 +81,7 @@ class DocumentSummarizer:
             ],
         }
 
-    def summarize(self, content: str, max_items: int = 10) -> Dict[str, any]:
+    def summarize(self, content: str, max_items: int = 10) -> dict[str, any]:
         """
         Generate a summary of the documentation content.
 
@@ -158,7 +158,7 @@ class DocumentSummarizer:
         result = " ".join(overview_lines)
         return result[:500] + "..." if len(result) > 500 else result
 
-    def _extract_functions(self, content: str, max_items: int) -> List[Dict[str, str]]:
+    def _extract_functions(self, content: str, max_items: int) -> list[dict[str, str]]:
         """Extract function/method signatures."""
         functions = []
         lines = content.split("\n")
@@ -195,7 +195,7 @@ class DocumentSummarizer:
 
         return functions
 
-    def _extract_classes(self, content: str, max_items: int) -> List[Dict[str, str]]:
+    def _extract_classes(self, content: str, max_items: int) -> list[dict[str, str]]:
         """Extract class definitions."""
         classes = []
         lines = content.split("\n")
@@ -226,7 +226,7 @@ class DocumentSummarizer:
 
         return classes
 
-    def _extract_parameters(self, content: str) -> Dict[str, List[Dict[str, str]]]:
+    def _extract_parameters(self, content: str) -> dict[str, list[dict[str, str]]]:
         """Extract parameter documentation."""
         parameters = {}
         current_function = None
@@ -262,7 +262,7 @@ class DocumentSummarizer:
 
         return parameters
 
-    def _extract_examples(self, content: str, max_items: int) -> List[Dict[str, str]]:
+    def _extract_examples(self, content: str, max_items: int) -> list[dict[str, str]]:
         """Extract code examples."""
         examples = []
 
@@ -282,7 +282,7 @@ class DocumentSummarizer:
 
         return examples
 
-    def _extract_key_concepts(self, content: str) -> List[str]:
+    def _extract_key_concepts(self, content: str) -> list[str]:
         """Extract key concepts and important terms."""
         # Look for emphasized terms
         concepts = set()
@@ -309,7 +309,7 @@ class DocumentSummarizer:
 
         return sorted(list(concepts))[:20]
 
-    def format_summary(self, summary: Dict[str, any], format: str = "text") -> str:
+    def format_summary(self, summary: dict[str, any], format: str = "text") -> str:
         """
         Format the summary for display.
 
@@ -412,7 +412,7 @@ class DocumentSummarizer:
 
             return "\n".join(output)
 
-    def highlight_query_terms(self, content: str, query_terms: List[str]) -> str:
+    def highlight_query_terms(self, content: str, query_terms: list[str]) -> str:
         """
         Highlight query terms in the content.
 
@@ -435,7 +435,7 @@ class DocumentSummarizer:
 
     def extract_relevant_snippets(
         self, content: str, query: str, window_size: int = 200
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Extract snippets around query matches.
 

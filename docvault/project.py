@@ -54,7 +54,7 @@ class ProjectManager:
     }
 
     @classmethod
-    def detect_project_type(cls, path: Union[str, Path]) -> str:
+    def detect_project_type(cls, path: str | Path) -> str:
         """Detect the project type based on files in the directory."""
         path = Path(path)
         if not path.is_dir():
@@ -97,7 +97,7 @@ class ProjectManager:
         return "unknown"
 
     @classmethod
-    def find_dependency_files(cls, path: Union[str, Path]) -> List[Path]:
+    def find_dependency_files(cls, path: str | Path) -> list[Path]:
         """Find all dependency files in the given directory."""
         path = Path(path)
         if not path.is_dir():
@@ -112,7 +112,7 @@ class ProjectManager:
         return found_files
 
     @classmethod
-    def parse_dependencies(cls, file_path: Union[str, Path]) -> List[Dependency]:
+    def parse_dependencies(cls, file_path: str | Path) -> list[Dependency]:
         """Parse dependencies from a project file."""
         file_path = Path(file_path)
         if not file_path.exists():
@@ -128,7 +128,7 @@ class ProjectManager:
             return []
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
                 deps = parser(cls, content)
 
@@ -143,7 +143,7 @@ class ProjectManager:
 
     # Parser methods for different file types
 
-    def parse_requirements_txt(self, content: str) -> List[Dependency]:
+    def parse_requirements_txt(self, content: str) -> list[Dependency]:
         """Parse Python requirements.txt file.
 
         Args:
@@ -206,7 +206,7 @@ class ProjectManager:
                 deps.append({"name": pkg, "version": version})
         return deps
 
-    def parse_pyproject_toml(self, content: str) -> List[Dependency]:
+    def parse_pyproject_toml(self, content: str) -> list[Dependency]:
         """Parse Python pyproject.toml file.
 
         Args:
@@ -327,7 +327,7 @@ class ProjectManager:
             console.print(f"[red]Error parsing pyproject.toml: {e}")
             return []
 
-    def parse_package_json(self, content: str) -> List[Dependency]:
+    def parse_package_json(self, content: str) -> list[Dependency]:
         """Parse Node.js package.json file.
 
         Args:
@@ -399,13 +399,13 @@ class ProjectManager:
     @classmethod
     async def import_documentation(
         cls,
-        path: Union[str, Path],
-        project_type: Optional[str] = None,
+        path: str | Path,
+        project_type: str | None = None,
         include_dev: bool = False,
         force: bool = False,
-        skip_existing: Optional[bool] = None,
+        skip_existing: bool | None = None,
         verbose: int = 0,
-    ) -> Dict[str, List[Dict]]:
+    ) -> dict[str, list[dict]]:
         """Import documentation for all dependencies in a project.
 
         Args:
@@ -440,7 +440,7 @@ class ProjectManager:
             console.print(f"  - {dep_file.relative_to(path)}")
 
         # Parse all dependencies
-        all_deps: List[Dependency] = []
+        all_deps: list[Dependency] = []
         for dep_file in dep_files:
             try:
                 deps = cls.parse_dependencies(dep_file)

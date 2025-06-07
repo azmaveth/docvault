@@ -21,8 +21,8 @@ class QueryLogger:
     def log_query(
         self,
         query: str,
-        params: Optional[Tuple[Any, ...]] = None,
-        duration: Optional[float] = None,
+        params: tuple[Any, ...] | None = None,
+        duration: float | None = None,
     ):
         """Log a SQL query."""
         if not self.enabled:
@@ -109,7 +109,7 @@ def enable_query_logging(connection: sqlite3.Connection):
 
 
 def configure_sql_logging(
-    enabled: bool = True, log_params: bool = False, log_file: Optional[str] = None
+    enabled: bool = True, log_params: bool = False, log_file: str | None = None
 ):
     """Configure SQL query logging."""
     query_logger.enabled = enabled

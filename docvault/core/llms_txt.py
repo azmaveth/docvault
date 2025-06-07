@@ -17,7 +17,7 @@ class LLMsResource:
 
     title: str
     url: str
-    description: Optional[str] = None
+    description: str | None = None
     is_optional: bool = False
 
 
@@ -26,11 +26,11 @@ class LLMsDocument:
     """Represents a parsed llms.txt document."""
 
     title: str
-    summary: Optional[str] = None
-    introduction: Optional[str] = None
-    sections: Dict[str, List[LLMsResource]] = field(default_factory=dict)
+    summary: str | None = None
+    introduction: str | None = None
+    sections: dict[str, list[LLMsResource]] = field(default_factory=dict)
     raw_content: str = ""
-    source_url: Optional[str] = None
+    source_url: str | None = None
 
 
 class LLMsParser:
@@ -42,7 +42,7 @@ class LLMsParser:
         )
         self.header_pattern = re.compile(r"^#+\s+(.+)$")
 
-    def parse(self, content: str, source_url: Optional[str] = None) -> LLMsDocument:
+    def parse(self, content: str, source_url: str | None = None) -> LLMsDocument:
         """
         Parse an llms.txt file content.
 
@@ -139,7 +139,7 @@ class LLMsParser:
 
         return doc
 
-    def validate(self, doc: LLMsDocument) -> Tuple[bool, List[str]]:
+    def validate(self, doc: LLMsDocument) -> tuple[bool, list[str]]:
         """
         Validate an LLMsDocument according to the specification.
 
@@ -176,8 +176,8 @@ class LLMsGenerator:
     def generate(
         self,
         title: str,
-        documents: List[Dict],
-        summary: Optional[str] = None,
+        documents: list[dict],
+        summary: str | None = None,
         include_optional: bool = True,
     ) -> str:
         """
@@ -232,7 +232,7 @@ class LLMsGenerator:
         return "\n".join(lines)
 
 
-def detect_llms_txt(url: str) -> Optional[str]:
+def detect_llms_txt(url: str) -> str | None:
     """
     Detect if a website has an llms.txt file.
 

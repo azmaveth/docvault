@@ -16,9 +16,9 @@ from docvault.db import operations
 from docvault.db.batch_operations import batch_search_segments
 
 # Global session and cache
-_session: Optional[aiohttp.ClientSession] = None
-_embedding_cache: Dict[str, bytes] = {}
-_cache_timestamps: Dict[str, float] = {}
+_session: aiohttp.ClientSession | None = None
+_embedding_cache: dict[str, bytes] = {}
+_cache_timestamps: dict[str, float] = {}
 CACHE_TTL = 3600  # 1 hour cache TTL
 
 logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ async def generate_embeddings(text: str) -> bytes:
 
                 break
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning(f"Timeout generating embedding (attempt {attempt + 1})")
                 if attempt == 2:
                     embedding = np.zeros(384, dtype=np.float32).tobytes()
@@ -154,8 +154,8 @@ async def generate_embeddings(text: str) -> bytes:
 
 
 async def generate_embeddings_batch(
-    texts: List[str], batch_size: int = 10
-) -> List[bytes]:
+    texts: list[str], batch_size: int = 10
+) -> list[bytes]:
     """
     Generate embeddings for multiple texts in batches for better performance.
 
@@ -195,13 +195,13 @@ async def generate_embeddings_batch(
 
 
 async def search(
-    query: Optional[str] = None,
+    query: str | None = None,
     limit: int = 5,
     text_only: bool = False,
     min_score: float = 0.0,
-    doc_filter: Optional[Dict[str, Any]] = None,
-    document_ids: Optional[List[int]] = None,
-) -> List[Dict[str, Any]]:
+    doc_filter: dict[str, Any] | None = None,
+    document_ids: list[int] | None = None,
+) -> list[dict[str, Any]]:
     """
     Search for documents using optimized semantic search with metadata filtering.
 
@@ -321,7 +321,7 @@ async def search(
         return []
 
 
-def get_cache_stats() -> Dict[str, Any]:
+def get_cache_stats() -> dict[str, Any]:
     """Get embedding cache statistics."""
     current_time = time.time()
     valid_entries = sum(

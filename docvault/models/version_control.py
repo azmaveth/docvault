@@ -15,7 +15,7 @@ from docvault import config
 logger = logging.getLogger(__name__)
 
 
-def extract_version_from_url(url: str) -> Optional[str]:
+def extract_version_from_url(url: str) -> str | None:
     """Extract version information from a URL.
 
     Args:
@@ -40,7 +40,7 @@ def extract_version_from_url(url: str) -> Optional[str]:
     return None
 
 
-def check_for_updates(document_id: int) -> Dict[str, Any]:
+def check_for_updates(document_id: int) -> dict[str, Any]:
     """Check if updates are available for a document.
 
     Args:
@@ -143,7 +143,7 @@ def check_for_updates(document_id: int) -> Dict[str, Any]:
         conn.close()
 
 
-def _perform_update_check(current_url: str, base_url: str) -> Dict[str, Any]:
+def _perform_update_check(current_url: str, base_url: str) -> dict[str, Any]:
     """Perform the actual update check by analyzing the website.
 
     Args:
@@ -175,7 +175,7 @@ def _perform_update_check(current_url: str, base_url: str) -> Dict[str, Any]:
         return {"error": str(e), "needs_update": False}
 
 
-def _check_github_releases(base_url: str) -> Dict[str, Any]:
+def _check_github_releases(base_url: str) -> dict[str, Any]:
     """Check GitHub releases for latest version."""
     # Extract owner/repo from URL
     match = re.search(r"github\.com/([^/]+)/([^/]+)", base_url)
@@ -203,7 +203,7 @@ def _check_github_releases(base_url: str) -> Dict[str, Any]:
     return {"error": "Could not check GitHub releases", "needs_update": False}
 
 
-def _check_docs_site_versions(base_url: str) -> Dict[str, Any]:
+def _check_docs_site_versions(base_url: str) -> dict[str, Any]:
     """Check documentation site for version information."""
     try:
         response = requests.get(base_url, timeout=10)
@@ -251,7 +251,7 @@ def _check_docs_site_versions(base_url: str) -> Dict[str, Any]:
     return {"error": "No version information found", "needs_update": False}
 
 
-def _check_generic_versions(current_url: str, base_url: str) -> Dict[str, Any]:
+def _check_generic_versions(current_url: str, base_url: str) -> dict[str, Any]:
     """Generic version checking by analyzing URL patterns."""
     current_version = extract_version_from_url(current_url)
 
@@ -295,7 +295,7 @@ def _check_generic_versions(current_url: str, base_url: str) -> Dict[str, Any]:
     return {"needs_update": False, "latest_version": current_version}
 
 
-def compare_versions(doc_id: int, old_version: str, new_version: str) -> Dict[str, Any]:
+def compare_versions(doc_id: int, old_version: str, new_version: str) -> dict[str, Any]:
     """Compare two versions of a document.
 
     Args:
@@ -336,13 +336,13 @@ def compare_versions(doc_id: int, old_version: str, new_version: str) -> Dict[st
 
         # Read the content of both versions
         try:
-            with open(old_doc["markdown_path"], "r", encoding="utf-8") as f:
+            with open(old_doc["markdown_path"], encoding="utf-8") as f:
                 old_content = f.read()
         except Exception:
             old_content = ""
 
         try:
-            with open(new_doc["markdown_path"], "r", encoding="utf-8") as f:
+            with open(new_doc["markdown_path"], encoding="utf-8") as f:
                 new_content = f.read()
         except Exception:
             new_content = ""
@@ -409,7 +409,7 @@ def compare_versions(doc_id: int, old_version: str, new_version: str) -> Dict[st
         conn.close()
 
 
-def _generate_change_summary(added_lines: List[str], removed_lines: List[str]) -> str:
+def _generate_change_summary(added_lines: list[str], removed_lines: list[str]) -> str:
     """Generate a human-readable summary of changes."""
     summary_parts = []
 
@@ -436,7 +436,7 @@ def _generate_change_summary(added_lines: List[str], removed_lines: List[str]) -
     )
 
 
-def get_documents_needing_updates() -> List[Dict[str, Any]]:
+def get_documents_needing_updates() -> list[dict[str, Any]]:
     """Get all documents that need updates.
 
     Returns:
@@ -462,7 +462,7 @@ def get_documents_needing_updates() -> List[Dict[str, Any]]:
         conn.close()
 
 
-def get_version_history(document_id: int) -> List[Dict[str, Any]]:
+def get_version_history(document_id: int) -> list[dict[str, Any]]:
     """Get version history for a document.
 
     Args:

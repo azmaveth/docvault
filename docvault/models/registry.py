@@ -14,19 +14,19 @@ logger = logging.getLogger(__name__)
 class DocumentationSource:
     """Represents a documentation source (e.g., Python, Elixir, Node.js)."""
 
-    id: Optional[int] = None
+    id: int | None = None
     name: str = ""
     package_manager: str = ""
     base_url: str = ""
     version_url_template: str = ""
     latest_version_url: str = ""
     is_active: bool = True
-    last_checked: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    last_checked: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     @classmethod
-    def from_row(cls, row: Tuple) -> "DocumentationSource":
+    def from_row(cls, row: tuple) -> "DocumentationSource":
         """Create a DocumentationSource from a database row."""
         return cls(
             id=row[0],
@@ -46,23 +46,23 @@ class DocumentationSource:
 class LibraryEntry:
     """Represents a library entry in the documentation registry."""
 
-    id: Optional[int] = None
+    id: int | None = None
     name: str = ""
     version: str = ""
     doc_url: str = ""
-    source_id: Optional[int] = None
-    package_name: Optional[str] = None
-    latest_version: Optional[str] = None
-    description: Optional[str] = None
-    homepage_url: Optional[str] = None
-    repository_url: Optional[str] = None
+    source_id: int | None = None
+    package_name: str | None = None
+    latest_version: str | None = None
+    description: str | None = None
+    homepage_url: str | None = None
+    repository_url: str | None = None
     is_available: bool = True
-    last_checked: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    last_checked: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     @classmethod
-    def from_row(cls, row: Tuple) -> "LibraryEntry":
+    def from_row(cls, row: tuple) -> "LibraryEntry":
         """Create a LibraryEntry from a database row."""
         return cls(
             id=row[0],
@@ -122,7 +122,7 @@ def add_documentation_source(
         raise
 
 
-def get_documentation_source(source_id: int) -> Optional[DocumentationSource]:
+def get_documentation_source(source_id: int) -> DocumentationSource | None:
     """Get a documentation source by ID."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -139,7 +139,7 @@ def get_documentation_source(source_id: int) -> Optional[DocumentationSource]:
     return DocumentationSource.from_row(row)
 
 
-def list_documentation_sources(active_only: bool = True) -> List[DocumentationSource]:
+def list_documentation_sources(active_only: bool = True) -> list[DocumentationSource]:
     """List all documentation sources."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -159,12 +159,12 @@ def add_library_entry(
     name: str,
     version: str,
     doc_url: str,
-    source_id: Optional[int] = None,
-    package_name: Optional[str] = None,
-    latest_version: Optional[str] = None,
-    description: Optional[str] = None,
-    homepage_url: Optional[str] = None,
-    repository_url: Optional[str] = None,
+    source_id: int | None = None,
+    package_name: str | None = None,
+    latest_version: str | None = None,
+    description: str | None = None,
+    homepage_url: str | None = None,
+    repository_url: str | None = None,
     is_available: bool = True,
 ) -> LibraryEntry:
     """Add a new library entry to the registry."""
@@ -217,8 +217,8 @@ def add_library_entry(
 
 
 def find_library(
-    name: str, version: Optional[str] = None, source_id: Optional[int] = None
-) -> Optional[LibraryEntry]:
+    name: str, version: str | None = None, source_id: int | None = None
+) -> LibraryEntry | None:
     """Find a library by name and optional version/source."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -252,8 +252,8 @@ def find_library(
 
 
 def search_libraries(
-    query: str, source_id: Optional[int] = None, limit: int = 10
-) -> List[LibraryEntry]:
+    query: str, source_id: int | None = None, limit: int = 10
+) -> list[LibraryEntry]:
     """Search for libraries matching the query."""
     conn = get_connection()
     cursor = conn.cursor()

@@ -1,14 +1,15 @@
 """Decorators for automatic input validation in CLI commands."""
 
 import functools
-from typing import Callable, Dict
+from collections.abc import Callable
+from typing import Dict
 
 import click
 
 from docvault.utils.validators import ValidationError, Validators
 
 
-def validate_inputs(**validators: Dict[str, Callable]) -> Callable:
+def validate_inputs(**validators: dict[str, Callable]) -> Callable:
     """Decorator to validate function inputs automatically.
 
     Usage:

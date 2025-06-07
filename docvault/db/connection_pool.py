@@ -4,9 +4,10 @@ Database connection pool for improved performance.
 
 import sqlite3
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
 from queue import Empty, Full, Queue
-from typing import Generator, Optional
+from typing import Optional
 
 from docvault import config
 
@@ -105,7 +106,7 @@ class ConnectionPool:
 
 
 # Global connection pool instance
-_pool: Optional[ConnectionPool] = None
+_pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
 
 

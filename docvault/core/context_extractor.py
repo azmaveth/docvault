@@ -45,11 +45,11 @@ class CommonPitfall:
 class ContextualInfo:
     """Container for all contextual information extracted from documentation."""
 
-    examples: List[CodeExample]
-    best_practices: List[BestPractice]
-    pitfalls: List[CommonPitfall]
-    related_concepts: List[str]
-    prerequisites: List[str]
+    examples: list[CodeExample]
+    best_practices: list[BestPractice]
+    pitfalls: list[CommonPitfall]
+    related_concepts: list[str]
+    prerequisites: list[str]
 
 
 class ContextExtractor:
@@ -116,7 +116,7 @@ class ContextExtractor:
             prerequisites=prerequisites,
         )
 
-    def _extract_code_examples(self, content: str, section: str) -> List[CodeExample]:
+    def _extract_code_examples(self, content: str, section: str) -> list[CodeExample]:
         """Extract code examples from content."""
         examples = []
 
@@ -176,7 +176,7 @@ class ContextExtractor:
 
         return examples
 
-    def _extract_best_practices(self, content: str, section: str) -> List[BestPractice]:
+    def _extract_best_practices(self, content: str, section: str) -> list[BestPractice]:
         """Extract best practices and recommendations."""
         practices = []
 
@@ -210,7 +210,7 @@ class ContextExtractor:
 
         return practices
 
-    def _extract_pitfalls(self, content: str, section: str) -> List[CommonPitfall]:
+    def _extract_pitfalls(self, content: str, section: str) -> list[CommonPitfall]:
         """Extract warnings, pitfalls, and common mistakes."""
         pitfalls = []
 
@@ -245,7 +245,7 @@ class ContextExtractor:
 
         return pitfalls
 
-    def _extract_related_concepts(self, content: str) -> List[str]:
+    def _extract_related_concepts(self, content: str) -> list[str]:
         """Extract related concepts and cross-references."""
         concepts = set()
 
@@ -273,7 +273,7 @@ class ContextExtractor:
 
         return list(concepts)[:10]  # Limit to prevent noise
 
-    def _extract_prerequisites(self, content: str) -> List[str]:
+    def _extract_prerequisites(self, content: str) -> list[str]:
         """Extract prerequisites and dependencies."""
         prerequisites = set()
 
@@ -427,7 +427,7 @@ class ContextExtractor:
         return "No solution provided"
 
 
-def extract_usage_patterns(content: str) -> List[Dict[str, Any]]:
+def extract_usage_patterns(content: str) -> list[dict[str, Any]]:
     """Extract common usage patterns from documentation.
 
     Args:

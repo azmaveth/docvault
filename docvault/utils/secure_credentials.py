@@ -22,7 +22,7 @@ class CredentialError(Exception):
 class SecureCredentialManager:
     """Manages secure storage and retrieval of credentials."""
 
-    def __init__(self, key_file: Optional[Path] = None):
+    def __init__(self, key_file: Path | None = None):
         """Initialize the credential manager.
 
         Args:
@@ -92,7 +92,7 @@ class SecureCredentialManager:
         # Save encrypted
         self._save_credentials(credentials)
 
-    def get_credential(self, name: str, category: str = "default") -> Optional[str]:
+    def get_credential(self, name: str, category: str = "default") -> str | None:
         """Retrieve a credential.
 
         Args:
@@ -133,7 +133,7 @@ class SecureCredentialManager:
 
         return False
 
-    def list_credentials(self, category: Optional[str] = None) -> Dict[str, list]:
+    def list_credentials(self, category: str | None = None) -> dict[str, list]:
         """List stored credentials (names only, not values).
 
         Args:
@@ -152,7 +152,7 @@ class SecureCredentialManager:
         else:
             return {cat: list(creds.keys()) for cat, creds in credentials.items()}
 
-    def _load_credentials(self) -> Dict[str, Dict[str, str]]:
+    def _load_credentials(self) -> dict[str, dict[str, str]]:
         """Load and decrypt credentials from file."""
         if not self.credentials_file.exists():
             return {}
@@ -165,7 +165,7 @@ class SecureCredentialManager:
         except Exception as e:
             raise CredentialError(f"Failed to load credentials: {e}")
 
-    def _save_credentials(self, credentials: Dict[str, Dict[str, str]]):
+    def _save_credentials(self, credentials: dict[str, dict[str, str]]):
         """Encrypt and save credentials to file."""
         try:
             cipher = self._get_cipher()
@@ -228,8 +228,8 @@ class SecureCredentialManager:
 
 # Environment variable integration
 def get_credential_from_env_or_store(
-    name: str, env_var: str, category: str = "api_keys", prompt: Optional[str] = None
-) -> Optional[str]:
+    name: str, env_var: str, category: str = "api_keys", prompt: str | None = None
+) -> str | None:
     """Get credential from environment variable or secure store.
 
     Checks environment variable first, then secure store.
@@ -269,7 +269,7 @@ def get_credential_from_env_or_store(
 
 
 # Convenience functions for common credentials
-def get_github_token() -> Optional[str]:
+def get_github_token() -> str | None:
     """Get GitHub token from env or secure store."""
     return get_credential_from_env_or_store(
         "github_token",
@@ -279,7 +279,7 @@ def get_github_token() -> Optional[str]:
     )
 
 
-def get_openai_api_key() -> Optional[str]:
+def get_openai_api_key() -> str | None:
     """Get OpenAI API key from env or secure store."""
     return get_credential_from_env_or_store(
         "openai_api_key",
@@ -289,7 +289,7 @@ def get_openai_api_key() -> Optional[str]:
     )
 
 
-def get_database_password() -> Optional[str]:
+def get_database_password() -> str | None:
     """Get database password from env or secure store."""
     return get_credential_from_env_or_store(
         "database_password", "DB_PASSWORD", "database"

@@ -9,7 +9,7 @@ from docvault import config
 logger = logging.getLogger(__name__)
 
 
-def create_tag(name: str, description: Optional[str] = None) -> int:
+def create_tag(name: str, description: str | None = None) -> int:
     """Create a new tag.
 
     Args:
@@ -37,7 +37,7 @@ def create_tag(name: str, description: Optional[str] = None) -> int:
         conn.close()
 
 
-def get_tag(name: str) -> Optional[Dict[str, Any]]:
+def get_tag(name: str) -> dict[str, Any] | None:
     """Get a tag by name.
 
     Args:
@@ -57,7 +57,7 @@ def get_tag(name: str) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def list_tags() -> List[Dict[str, Any]]:
+def list_tags() -> list[dict[str, Any]]:
     """List all tags with their document counts.
 
     Returns:
@@ -173,7 +173,7 @@ def remove_tag_from_document(document_id: int, tag_name: str) -> bool:
         conn.close()
 
 
-def get_document_tags(document_id: int) -> List[str]:
+def get_document_tags(document_id: int) -> list[str]:
     """Get all tags for a document.
 
     Args:
@@ -200,7 +200,7 @@ def get_document_tags(document_id: int) -> List[str]:
         conn.close()
 
 
-def get_documents_by_tag(tag_name: str) -> List[Dict[str, Any]]:
+def get_documents_by_tag(tag_name: str) -> list[dict[str, Any]]:
     """Get all documents with a specific tag.
 
     Args:
@@ -230,8 +230,8 @@ def get_documents_by_tag(tag_name: str) -> List[Dict[str, Any]]:
 
 
 def search_documents_by_tags(
-    tags: List[str], mode: str = "any"
-) -> List[Dict[str, Any]]:
+    tags: list[str], mode: str = "any"
+) -> list[dict[str, Any]]:
     """Search documents by multiple tags.
 
     Args:

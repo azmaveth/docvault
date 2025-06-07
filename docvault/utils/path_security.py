@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def validate_path(
-    path: Union[str, Path],
-    allowed_base_paths: Optional[List[Union[str, Path]]] = None,
+    path: str | Path,
+    allowed_base_paths: list[str | Path] | None = None,
     allow_absolute: bool = False,
 ) -> Path:
     """
@@ -186,8 +186,8 @@ def validate_filename(filename: str) -> str:
 
 def validate_url_path(
     url: str,
-    allowed_domains: Optional[List[str]] = None,
-    blocked_domains: Optional[List[str]] = None,
+    allowed_domains: list[str] | None = None,
+    blocked_domains: list[str] | None = None,
 ) -> str:
     """
     Validate a URL to ensure it's safe to fetch.
@@ -312,7 +312,7 @@ def validate_url_path(
 
 
 def get_safe_path(
-    base_dir: Union[str, Path], user_path: str, create_dirs: bool = False
+    base_dir: str | Path, user_path: str, create_dirs: bool = False
 ) -> Path:
     """
     Safely join a user-provided path with a base directory.

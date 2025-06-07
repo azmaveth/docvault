@@ -10,7 +10,7 @@ from .base import BaseExtractor
 class GenericExtractor(BaseExtractor):
     """Generic extractor for unknown documentation types."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """Extract content using generic patterns."""
         # Extract metadata
         metadata = self.extract_metadata(soup)
@@ -53,7 +53,7 @@ class GenericExtractor(BaseExtractor):
         body = soup.find("body")
         return self._clean_content(body) if body else ""
 
-    def _extract_code_blocks(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_code_blocks(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract code blocks from the page."""
         code_blocks = []
 
@@ -78,7 +78,7 @@ class GenericExtractor(BaseExtractor):
 
         return code_blocks
 
-    def _extract_tables(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_tables(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract tables from the page."""
         tables = []
 

@@ -12,7 +12,7 @@ from docvault.db import operations
 
 
 # Legacy handler functions - no longer used directly but kept for reference and backward compatibility
-async def handle_scrape_document(params: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_scrape_document(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for scrape_document tool (Legacy)"""
     url = params["url"]
     depth = params.get("depth", 1)
@@ -32,7 +32,7 @@ async def handle_scrape_document(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-async def handle_search_documents(params: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_search_documents(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for search_documents tool (Legacy)"""
     query = params["query"]
     limit = params.get("limit", 5)
@@ -60,7 +60,7 @@ async def handle_search_documents(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-async def handle_read_document(params: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_read_document(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for read_document tool (Legacy)"""
     document_id = params["document_id"]
     format = params.get("format", "markdown")
@@ -88,7 +88,7 @@ async def handle_read_document(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-async def handle_lookup_library_docs(params: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_lookup_library_docs(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for lookup_library_docs tool (Legacy)"""
     library_name = params["library_name"]
     version = params.get("version", "latest")
@@ -115,7 +115,7 @@ async def handle_lookup_library_docs(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-async def handle_list_documents(params: Dict[str, Any]) -> Dict[str, Any]:
+async def handle_list_documents(params: dict[str, Any]) -> dict[str, Any]:
     """Handler for list_documents tool (Legacy)"""
     filter_text = params.get("filter", "")
     limit = params.get("limit", 20)

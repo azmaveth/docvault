@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 def create_collection(
     name: str,
-    description: Optional[str] = None,
-    default_tags: Optional[List[str]] = None,
+    description: str | None = None,
+    default_tags: list[str] | None = None,
 ) -> int:
     """Create a new collection.
 
@@ -59,7 +59,7 @@ def create_collection(
             raise ValueError(f"Collection '{name}' already exists")
 
 
-def get_collection(collection_id: int) -> Optional[Dict[str, Any]]:
+def get_collection(collection_id: int) -> dict[str, Any] | None:
     """Get a collection by ID.
 
     Args:
@@ -90,7 +90,7 @@ def get_collection(collection_id: int) -> Optional[Dict[str, Any]]:
         return None
 
 
-def get_collection_by_name(name: str) -> Optional[Dict[str, Any]]:
+def get_collection_by_name(name: str) -> dict[str, Any] | None:
     """Get a collection by name.
 
     Args:
@@ -121,7 +121,7 @@ def get_collection_by_name(name: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def list_collections(active_only: bool = True) -> List[Dict[str, Any]]:
+def list_collections(active_only: bool = True) -> list[dict[str, Any]]:
     """List all collections.
 
     Args:
@@ -162,8 +162,8 @@ def list_collections(active_only: bool = True) -> List[Dict[str, Any]]:
 def add_document_to_collection(
     collection_id: int,
     document_id: int,
-    position: Optional[int] = None,
-    notes: Optional[str] = None,
+    position: int | None = None,
+    notes: str | None = None,
 ) -> bool:
     """Add a document to a collection.
 
@@ -246,7 +246,7 @@ def remove_document_from_collection(collection_id: int, document_id: int) -> boo
 
 def get_collection_documents(
     collection_id: int, include_content: bool = False
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get all documents in a collection.
 
     Args:
@@ -281,7 +281,7 @@ def get_collection_documents(
             doc = dict(row)
             if include_content and doc.get("markdown_path"):
                 try:
-                    with open(doc["markdown_path"], "r") as f:
+                    with open(doc["markdown_path"]) as f:
                         doc["content"] = f.read()
                 except Exception as e:
                     logger.warning(f"Could not read content for doc {doc['id']}: {e}")
@@ -291,7 +291,7 @@ def get_collection_documents(
         return documents
 
 
-def get_document_collections(document_id: int) -> List[Dict[str, Any]]:
+def get_document_collections(document_id: int) -> list[dict[str, Any]]:
     """Get all collections containing a document.
 
     Args:
@@ -324,10 +324,10 @@ def get_document_collections(document_id: int) -> List[Dict[str, Any]]:
 
 def update_collection(
     collection_id: int,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    default_tags: Optional[List[str]] = None,
-    is_active: Optional[bool] = None,
+    name: str | None = None,
+    description: str | None = None,
+    default_tags: list[str] | None = None,
+    is_active: bool | None = None,
 ) -> bool:
     """Update collection properties.
 
@@ -403,7 +403,7 @@ def delete_collection(collection_id: int) -> bool:
 
 
 def reorder_collection_documents(
-    collection_id: int, document_positions: List[Tuple[int, int]]
+    collection_id: int, document_positions: list[tuple[int, int]]
 ) -> bool:
     """Reorder documents in a collection.
 
@@ -442,10 +442,10 @@ def reorder_collection_documents(
 
 def search_documents_by_collection(
     collection_id: int,
-    query: Optional[str] = None,
-    tags: Optional[List[str]] = None,
+    query: str | None = None,
+    tags: list[str] | None = None,
     tag_mode: str = "any",
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Search documents within a collection.
 
     Args:

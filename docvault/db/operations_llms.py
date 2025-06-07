@@ -10,9 +10,9 @@ from .operations import get_connection
 def add_llms_txt_metadata(
     document_id: int,
     llms_title: str,
-    llms_summary: Optional[str] = None,
-    llms_introduction: Optional[str] = None,
-    llms_sections: Optional[str] = None,  # JSON string
+    llms_summary: str | None = None,
+    llms_introduction: str | None = None,
+    llms_sections: str | None = None,  # JSON string
 ) -> int:
     """Add llms.txt metadata for a document."""
     conn = get_connection()
@@ -38,7 +38,7 @@ def add_llms_txt_resource(
     section: str,
     title: str,
     url: str,
-    description: Optional[str] = None,
+    description: str | None = None,
     is_optional: bool = False,
 ) -> int:
     """Add an llms.txt resource entry."""
@@ -60,7 +60,7 @@ def add_llms_txt_resource(
     return resource_id
 
 
-def get_llms_txt_metadata(document_id: int) -> Optional[Dict[str, Any]]:
+def get_llms_txt_metadata(document_id: int) -> dict[str, Any] | None:
     """Get llms.txt metadata for a document."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -81,7 +81,7 @@ def get_llms_txt_metadata(document_id: int) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_llms_txt_resources(document_id: int) -> List[Dict[str, Any]]:
+def get_llms_txt_resources(document_id: int) -> list[dict[str, Any]]:
     """Get all llms.txt resources for a document."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -101,7 +101,7 @@ def get_llms_txt_resources(document_id: int) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def search_llms_txt_resources(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+def search_llms_txt_resources(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """Search llms.txt resources by title or description."""
     conn = get_connection()
     cursor = conn.cursor()
@@ -124,7 +124,7 @@ def search_llms_txt_resources(query: str, limit: int = 10) -> List[Dict[str, Any
     return [dict(row) for row in rows]
 
 
-def get_documents_with_llms_txt(limit: int = 20) -> List[Dict[str, Any]]:
+def get_documents_with_llms_txt(limit: int = 20) -> list[dict[str, Any]]:
     """Get all documents that have llms.txt files."""
     conn = get_connection()
     cursor = conn.cursor()

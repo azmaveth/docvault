@@ -32,7 +32,7 @@ def get_scraper():
 class WebScraper:
     """Web scraper for fetching documentation"""
 
-    def __init__(self, depth_strategy: Union[str, DepthStrategy] = DepthStrategy.AUTO):
+    def __init__(self, depth_strategy: str | DepthStrategy = DepthStrategy.AUTO):
         import os
 
         from docvault import config
@@ -77,8 +77,8 @@ class WebScraper:
     def _filter_content_sections(
         self,
         html_content: str,
-        sections: Optional[list] = None,
-        filter_selector: Optional[str] = None,
+        sections: list | None = None,
+        filter_selector: str | None = None,
     ) -> str:
         """Filter HTML content based on section headings or CSS selectors"""
         if not sections and not filter_selector:
@@ -167,16 +167,16 @@ class WebScraper:
     async def scrape_url(
         self,
         url: str,
-        depth: Union[int, str] = "auto",
+        depth: int | str = "auto",
         is_library_doc: bool = False,
-        library_id: Optional[int] = None,
-        max_links: Optional[int] = None,
+        library_id: int | None = None,
+        max_links: int | None = None,
         strict_path: bool = True,
         force_update: bool = False,
-        sections: Optional[list] = None,
-        filter_selector: Optional[str] = None,
-        depth_strategy: Optional[Union[str, DepthStrategy]] = None,
-    ) -> Dict[str, Any]:
+        sections: list | None = None,
+        filter_selector: str | None = None,
+        depth_strategy: str | DepthStrategy | None = None,
+    ) -> dict[str, Any]:
         """
         Scrape a URL and store the content
 
@@ -907,7 +907,7 @@ class WebScraper:
                             if response.status != 404:
                                 self.logger.warning(msg)
                             error_detail = msg
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_detail = f"Request timed out after {config.REQUEST_TIMEOUT} seconds"
             self.logger.debug(f"Timeout fetching URL: {url}")
         except aiohttp.ClientConnectorError as e:
@@ -945,12 +945,12 @@ class WebScraper:
         html_content: str,
         depth: int,
         is_library_doc: bool,
-        library_id: Optional[int],
-        max_links: Optional[int] = None,
+        library_id: int | None,
+        max_links: int | None = None,
         strict_path: bool = True,
         force_update: bool = False,
-        sections: Optional[list] = None,
-        filter_selector: Optional[str] = None,
+        sections: list | None = None,
+        filter_selector: str | None = None,
         use_smart_depth: bool = False,
     ) -> None:
         """Extract and scrape links from HTML content"""
@@ -1127,7 +1127,7 @@ class WebScraper:
                             filter_selector=filter_selector,
                         )
 
-    async def _fetch_github_readme(self, owner: str, repo: str) -> Optional[str]:
+    async def _fetch_github_readme(self, owner: str, repo: str) -> str | None:
         """Fetch README.md content from GitHub API (base64-encoded)."""
         api_url = f"https://api.github.com/repos/{owner}/{repo}/readme"
         headers = {}
@@ -1147,7 +1147,7 @@ class WebScraper:
         self,
         owner: str,
         repo: str,
-        library_id: Optional[int],
+        library_id: int | None,
         is_library_doc: bool,
         force_update: bool = False,
     ):
@@ -1228,7 +1228,7 @@ class WebScraper:
                     )
                     self.stats["segments_created"] += 1
 
-    def _clean_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def _clean_metadata(self, metadata: dict[str, Any]) -> dict[str, Any]:
         """Clean metadata to ensure it's JSON serializable."""
         if not metadata:
             return {}
@@ -1249,7 +1249,7 @@ class WebScraper:
 
         return cleaned
 
-    def _openapi_to_markdown(self, spec: Dict[str, Any]) -> str:
+    def _openapi_to_markdown(self, spec: dict[str, Any]) -> str:
         md = f"# {spec.get('info', {}).get('title', '')}\n\n"
         md += spec.get("info", {}).get("description", "") + "\n\n"
         for path, methods in spec.get("paths", {}).items():
@@ -1286,12 +1286,12 @@ async def scrape_url(
     url: str,
     depth: int = 1,
     is_library_doc: bool = False,
-    library_id: Optional[int] = None,
-    max_links: Optional[int] = None,
+    library_id: int | None = None,
+    max_links: int | None = None,
     strict_path: bool = True,
-    sections: Optional[list] = None,
-    filter_selector: Optional[str] = None,
-) -> Dict[str, Any]:
+    sections: list | None = None,
+    filter_selector: str | None = None,
+) -> dict[str, Any]:
     """Scrape a URL and store the content"""
     return await scraper.scrape_url(
         url,

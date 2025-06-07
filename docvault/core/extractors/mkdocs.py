@@ -10,7 +10,7 @@ from .base import BaseExtractor
 class MkDocsExtractor(BaseExtractor):
     """Extractor specialized for MkDocs documentation."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """Extract content from MkDocs documentation."""
         metadata = self.extract_metadata(soup)
 
@@ -49,7 +49,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return {"content": content, "metadata": metadata}
 
-    def _extract_navigation(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_navigation(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract MkDocs navigation structure."""
         nav_items = []
 
@@ -73,7 +73,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return nav_items
 
-    def _parse_nav_tree(self, nav_element: Tag) -> List[Dict[str, Any]]:
+    def _parse_nav_tree(self, nav_element: Tag) -> list[dict[str, Any]]:
         """Parse navigation tree recursively."""
         items = []
 
@@ -101,7 +101,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return items
 
-    def _extract_search_index(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_search_index(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract search index information."""
         search_info = {}
 
@@ -123,7 +123,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return search_info
 
-    def _extract_theme_info(self, soup: BeautifulSoup) -> Dict[str, str]:
+    def _extract_theme_info(self, soup: BeautifulSoup) -> dict[str, str]:
         """Extract MkDocs theme information."""
         theme_info = {}
 
@@ -153,7 +153,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return theme_info
 
-    def _extract_page_metadata(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_page_metadata(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract page-level metadata."""
         metadata = {}
 
@@ -203,7 +203,7 @@ class MkDocsExtractor(BaseExtractor):
         body = soup.find("body")
         return self._clean_content(body) if body else ""
 
-    def _extract_code_examples(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_code_examples(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract code examples with language information."""
         code_examples = []
 
@@ -252,7 +252,7 @@ class MkDocsExtractor(BaseExtractor):
 
         return code_examples
 
-    def _extract_admonitions(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_admonitions(self, soup: BeautifulSoup) -> list[dict[str, str]]:
         """Extract admonitions (notes, warnings, tips, etc.)."""
         admonitions = []
 

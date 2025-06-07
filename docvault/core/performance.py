@@ -5,13 +5,14 @@ Performance monitoring and profiling utilities.
 import functools
 import logging
 import time
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 # Global performance stats
-_performance_stats: Dict[str, Dict[str, Any]] = {}
+_performance_stats: dict[str, dict[str, Any]] = {}
 
 
 @contextmanager
@@ -31,7 +32,7 @@ def timer(operation_name: str) -> Generator[None, None, None]:
         record_timing(operation_name, duration)
 
 
-def performance_monitor(operation_name: Optional[str] = None):
+def performance_monitor(operation_name: str | None = None):
     """
     Decorator for monitoring function performance.
 
@@ -98,7 +99,7 @@ def record_timing(operation: str, duration: float):
         logger.warning(f"Slow operation detected: {operation} took {duration:.2f}s")
 
 
-def get_performance_stats() -> Dict[str, Dict[str, Any]]:
+def get_performance_stats() -> dict[str, dict[str, Any]]:
     """Get all recorded performance statistics."""
     return _performance_stats.copy()
 

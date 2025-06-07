@@ -16,9 +16,9 @@ class SectionNode:
     section_title: str
     section_level: int
     section_path: str
-    parent_segment_id: Optional[int]
+    parent_segment_id: int | None
     content_preview: str
-    children: List["SectionNode"] = None
+    children: list["SectionNode"] = None
 
     def __post_init__(self):
         if self.children is None:
@@ -34,7 +34,7 @@ class SectionNavigator:
         self._sections_cache = None
         self._root_sections = None
 
-    def get_table_of_contents(self) -> List[SectionNode]:
+    def get_table_of_contents(self) -> list[SectionNode]:
         """
         Get the table of contents as a hierarchical tree structure.
 
@@ -75,7 +75,7 @@ class SectionNavigator:
         self._root_sections = root_sections
         return root_sections
 
-    def get_section_by_path(self, section_path: str) -> Optional[SectionNode]:
+    def get_section_by_path(self, section_path: str) -> SectionNode | None:
         """
         Get a section by its path (e.g., "1.2.3").
 
@@ -91,7 +91,7 @@ class SectionNavigator:
                 return section
         return None
 
-    def get_section_children(self, id: int) -> List[SectionNode]:
+    def get_section_children(self, id: int) -> list[SectionNode]:
         """
         Get all direct children of a section.
 
@@ -106,7 +106,7 @@ class SectionNavigator:
         self._sort_sections_by_path(children)
         return children
 
-    def get_section_ancestors(self, id: int) -> List[SectionNode]:
+    def get_section_ancestors(self, id: int) -> list[SectionNode]:
         """
         Get all ancestors of a section (from root to parent).
 
@@ -131,7 +131,7 @@ class SectionNavigator:
 
         return ancestors
 
-    def get_section_siblings(self, id: int) -> List[SectionNode]:
+    def get_section_siblings(self, id: int) -> list[SectionNode]:
         """
         Get all sibling sections (same parent).
 
@@ -155,7 +155,7 @@ class SectionNavigator:
         self._sort_sections_by_path(siblings)
         return siblings
 
-    def get_section_subtree(self, id: int) -> Optional[SectionNode]:
+    def get_section_subtree(self, id: int) -> SectionNode | None:
         """
         Get a section with all its descendants as a subtree.
 
@@ -172,7 +172,7 @@ class SectionNavigator:
         sections_map = {s.id: s for s in self._get_all_sections_flat()}
         return sections_map.get(id)
 
-    def find_sections_by_title(self, title_pattern: str) -> List[SectionNode]:
+    def find_sections_by_title(self, title_pattern: str) -> list[SectionNode]:
         """
         Find sections whose titles match a pattern (case-insensitive).
 
@@ -193,7 +193,7 @@ class SectionNavigator:
         self._sort_sections_by_path(matches)
         return matches
 
-    def _fetch_all_sections(self) -> List[Dict]:
+    def _fetch_all_sections(self) -> list[dict]:
         """Fetch all sections from database."""
         if self._sections_cache is not None:
             return self._sections_cache
@@ -219,7 +219,7 @@ class SectionNavigator:
             self._sections_cache = [dict(row) for row in cursor.fetchall()]
             return self._sections_cache
 
-    def _get_all_sections_flat(self) -> List[SectionNode]:
+    def _get_all_sections_flat(self) -> list[SectionNode]:
         """Get all sections as a flat list."""
         # Ensure TOC is built
         self.get_table_of_contents()
@@ -227,7 +227,7 @@ class SectionNavigator:
         # Flatten the tree
         sections = []
 
-        def traverse(nodes: List[SectionNode]):
+        def traverse(nodes: list[SectionNode]):
             for node in nodes:
                 sections.append(node)
                 if node.children:
@@ -255,12 +255,12 @@ class SectionNavigator:
 
         return preview
 
-    def _sort_sections_by_path(self, sections: List[SectionNode]) -> None:
+    def _sort_sections_by_path(self, sections: list[SectionNode]) -> None:
         """Sort sections by their path for consistent ordering."""
         sections.sort(key=lambda s: [int(p) for p in s.section_path.split(".")])
 
 
-def get_document_toc(document_id: int) -> List[Dict]:
+def get_document_toc(document_id: int) -> list[dict]:
     """
     Get table of contents for a document as a structured dictionary.
 
@@ -273,7 +273,7 @@ def get_document_toc(document_id: int) -> List[Dict]:
     navigator = SectionNavigator(document_id)
     toc_nodes = navigator.get_table_of_contents()
 
-    def node_to_dict(node: SectionNode) -> Dict:
+    def node_to_dict(node: SectionNode) -> dict:
         return {
             "id": node.id,
             "title": node.section_title,
@@ -286,7 +286,7 @@ def get_document_toc(document_id: int) -> List[Dict]:
     return [node_to_dict(node) for node in toc_nodes]
 
 
-def get_section_content(document_id: int, section_path: str) -> Optional[Dict]:
+def get_section_content(document_id: int, section_path: str) -> dict | None:
     """
     Get full content of a section and its children.
 

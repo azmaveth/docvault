@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 def batch_insert_segments(
-    document_id: int, segments: List[Dict[str, Any]], batch_size: int = 100
-) -> List[int]:
+    document_id: int, segments: list[dict[str, Any]], batch_size: int = 100
+) -> list[int]:
     """
     Insert document segments in batches for better performance.
 
@@ -103,7 +103,7 @@ def batch_insert_segments(
 
 
 def batch_update_embeddings(
-    segment_embeddings: List[Tuple[int, List[float]]], batch_size: int = 100
+    segment_embeddings: list[tuple[int, list[float]]], batch_size: int = 100
 ) -> int:
     """
     Update embeddings for multiple segments in batches.
@@ -144,7 +144,7 @@ def batch_update_embeddings(
     return updated_count
 
 
-def batch_delete_segments(segment_ids: List[int], batch_size: int = 100) -> int:
+def batch_delete_segments(segment_ids: list[int], batch_size: int = 100) -> int:
     """
     Delete multiple segments in batches.
 
@@ -188,11 +188,11 @@ def batch_delete_segments(segment_ids: List[int], batch_size: int = 100) -> int:
 
 
 def batch_search_segments(
-    query_vector: List[float],
+    query_vector: list[float],
     limit: int = 20,
-    document_ids: Optional[List[int]] = None,
+    document_ids: list[int] | None = None,
     min_similarity: float = 0.0,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Perform batch vector search with optimized query.
 

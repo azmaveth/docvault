@@ -13,14 +13,14 @@ class QueryBuilder:
     """Secure SQL query builder that prevents SQL injection."""
 
     def __init__(self):
-        self.select_columns: List[str] = []
-        self.from_table: Optional[str] = None
-        self.joins: List[str] = []
-        self.where_conditions: List[str] = []
-        self.group_by_columns: List[str] = []
-        self.order_by_columns: List[str] = []
-        self.limit_value: Optional[int] = None
-        self.parameters: List[Any] = []
+        self.select_columns: list[str] = []
+        self.from_table: str | None = None
+        self.joins: list[str] = []
+        self.where_conditions: list[str] = []
+        self.group_by_columns: list[str] = []
+        self.order_by_columns: list[str] = []
+        self.limit_value: int | None = None
+        self.parameters: list[Any] = []
 
     def select(self, *columns: str) -> "QueryBuilder":
         """Add SELECT columns."""
@@ -43,7 +43,7 @@ class QueryBuilder:
         self.parameters.extend(params)
         return self
 
-    def where_in(self, column: str, values: List[Any]) -> "QueryBuilder":
+    def where_in(self, column: str, values: list[Any]) -> "QueryBuilder":
         """Add WHERE IN condition."""
         if values:
             placeholders = ",".join(["?" for _ in values])
@@ -72,7 +72,7 @@ class QueryBuilder:
         self.limit_value = limit
         return self
 
-    def build(self) -> Tuple[str, List[Any]]:
+    def build(self) -> tuple[str, list[Any]]:
         """Build the SQL query and return (query, parameters)."""
         if not self.select_columns:
             raise ValueError("No SELECT columns specified")
@@ -117,8 +117,8 @@ class FilterBuilder:
     """Build WHERE clause filters safely."""
 
     def __init__(self):
-        self.conditions: List[str] = []
-        self.parameters: List[Any] = []
+        self.conditions: list[str] = []
+        self.parameters: list[Any] = []
 
     def add_condition(self, condition: str, *params: Any) -> "FilterBuilder":
         """Add a condition with parameters."""
@@ -126,7 +126,7 @@ class FilterBuilder:
         self.parameters.extend(params)
         return self
 
-    def add_in_condition(self, column: str, values: List[Any]) -> "FilterBuilder":
+    def add_in_condition(self, column: str, values: list[Any]) -> "FilterBuilder":
         """Add IN condition."""
         if values:
             placeholders = ",".join(["?" for _ in values])
@@ -150,11 +150,11 @@ class FilterBuilder:
         self.parameters.append(date)
         return self
 
-    def build(self) -> Tuple[List[str], List[Any]]:
+    def build(self) -> tuple[list[str], list[Any]]:
         """Return conditions and parameters."""
         return self.conditions, self.parameters
 
-    def build_clause(self) -> Tuple[str, List[Any]]:
+    def build_clause(self) -> tuple[str, list[Any]]:
         """Build WHERE clause string and parameters."""
         if not self.conditions:
             return "", []
@@ -191,8 +191,8 @@ def validate_sort_direction(direction: str) -> str:
 
 
 def build_document_filter(
-    doc_filter: Optional[Dict[str, Any]],
-) -> Tuple[List[str], List[Any]]:
+    doc_filter: dict[str, Any] | None,
+) -> tuple[list[str], list[Any]]:
     """
     Build filter conditions and parameters from document filter dict.
     Returns (conditions, parameters) tuple.

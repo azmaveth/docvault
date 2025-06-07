@@ -180,7 +180,7 @@ class ContextualChunkProcessor:
                 cursor = conn.execute(
                     """
                     INSERT INTO document_segments
-                    (document_id, content, section_title, section_path, 
+                    (document_id, content, section_title, section_path,
                      chunk_index, metadata)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """,

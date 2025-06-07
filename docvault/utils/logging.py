@@ -11,8 +11,8 @@ from docvault import config
 
 
 def setup_logging(
-    level: Optional[str] = None,
-    log_file: Optional[str] = None,
+    level: str | None = None,
+    log_file: str | None = None,
     quiet: bool = False,
     verbose: bool = False,
 ) -> None:

@@ -110,7 +110,7 @@ class TerminalSanitizer:
         self.strict_mode = strict_mode
         self._safe_sequences = self._build_safe_sequences()
 
-    def _build_safe_sequences(self) -> Set[str]:
+    def _build_safe_sequences(self) -> set[str]:
         """Build the set of allowed sequences based on settings."""
         if self.strict_mode:
             return set()
@@ -182,7 +182,7 @@ class TerminalSanitizer:
         return ANSI_ESCAPE_PATTERN.sub(replace_sequence, text)
 
     def sanitize_for_display(
-        self, text: str, max_length: Optional[int] = None, truncate_marker: str = "..."
+        self, text: str, max_length: int | None = None, truncate_marker: str = "..."
     ) -> str:
         """Sanitize text and optionally truncate for safe display.
 
@@ -266,7 +266,7 @@ def sanitize_output(text: str, strict: bool = False) -> str:
 
 
 def sanitize_for_display(
-    text: str, max_length: Optional[int] = None, strict: bool = False
+    text: str, max_length: int | None = None, strict: bool = False
 ) -> str:
     """Sanitize and optionally truncate text for display.
 

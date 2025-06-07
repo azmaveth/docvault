@@ -11,7 +11,7 @@ from .base import BaseExtractor
 class OpenAPIExtractor(BaseExtractor):
     """Extractor specialized for OpenAPI/Swagger documentation."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """Extract content from OpenAPI/Swagger documentation."""
         metadata = self.extract_metadata(soup)
 
@@ -50,7 +50,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return {"content": content, "metadata": metadata}
 
-    def _extract_api_spec(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_api_spec(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract OpenAPI specification information."""
         spec_info = {}
 
@@ -99,7 +99,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return spec_info
 
-    def _extract_base_url(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_base_url(self, soup: BeautifulSoup) -> str | None:
         """Extract API base URL."""
         # Look for base URL in various places
         base_url_patterns = [
@@ -129,7 +129,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return None
 
-    def _extract_interactive_elements(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_interactive_elements(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract information about interactive API elements."""
         interactive = {}
 
@@ -162,7 +162,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return interactive
 
-    def _extract_auth_info(self, soup: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_auth_info(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract authentication information."""
         auth_info = {}
         auth_methods = []
@@ -210,7 +210,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return auth_info
 
-    def _extract_endpoints(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_endpoints(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract API endpoints."""
         endpoints = []
 
@@ -281,7 +281,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return endpoints
 
-    def _extract_parameters(self, container: Tag) -> List[Dict[str, str]]:
+    def _extract_parameters(self, container: Tag) -> list[dict[str, str]]:
         """Extract parameters from an endpoint container."""
         parameters = []
 
@@ -322,7 +322,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return parameters
 
-    def _extract_responses(self, container: Tag) -> Dict[str, str]:
+    def _extract_responses(self, container: Tag) -> dict[str, str]:
         """Extract response codes and descriptions."""
         responses = {}
 
@@ -343,7 +343,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return responses
 
-    def _extract_schemas(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_schemas(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract schema/model definitions."""
         schemas = []
 
@@ -380,7 +380,7 @@ class OpenAPIExtractor(BaseExtractor):
 
         return schemas
 
-    def _extract_schema_properties(self, section: Tag) -> List[Dict[str, str]]:
+    def _extract_schema_properties(self, section: Tag) -> list[dict[str, str]]:
         """Extract properties from a schema section."""
         properties = []
 
@@ -421,7 +421,7 @@ class OpenAPIExtractor(BaseExtractor):
         body = soup.find("body")
         return self._clean_content(body) if body else ""
 
-    def _extract_code_samples(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_code_samples(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract code samples from API documentation."""
         code_samples = []
 

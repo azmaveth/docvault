@@ -12,7 +12,7 @@ from .base import BaseExtractor
 class NextJSExtractor(BaseExtractor):
     """Extractor for Next.js-based documentation sites with MDX content."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """
         Extract content from Next.js documentation site.
 
@@ -59,7 +59,7 @@ class NextJSExtractor(BaseExtractor):
 
         return {"content": content, "metadata": metadata}
 
-    def _extract_from_next_data(self, soup: BeautifulSoup) -> Optional[Dict[str, Any]]:
+    def _extract_from_next_data(self, soup: BeautifulSoup) -> dict[str, Any] | None:
         """
         Extract content from __NEXT_DATA__ script.
 
@@ -118,9 +118,7 @@ class NextJSExtractor(BaseExtractor):
 
         return None
 
-    def _extract_mdx_content(
-        self, page_props: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_mdx_content(self, page_props: dict[str, Any]) -> dict[str, Any] | None:
         """
         Extract content from MDX source.
 
@@ -304,8 +302,8 @@ class NextJSExtractor(BaseExtractor):
         )
 
     def _extract_table_of_contents(
-        self, page_props: Dict[str, Any]
-    ) -> Optional[List[Dict[str, Any]]]:
+        self, page_props: dict[str, Any]
+    ) -> list[dict[str, Any]] | None:
         """
         Extract table of contents from page properties.
 
@@ -337,8 +335,8 @@ class NextJSExtractor(BaseExtractor):
         return None
 
     def _extract_code_examples(
-        self, page_props: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, page_props: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """
         Extract code examples from page properties.
 
@@ -419,7 +417,7 @@ class NextJSExtractor(BaseExtractor):
 
     def _extract_navigation_structure(
         self, soup: BeautifulSoup
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Extract navigation structure from the page.
 
@@ -448,7 +446,7 @@ class NextJSExtractor(BaseExtractor):
 
         return navigation if navigation else None
 
-    def _extract_code_blocks(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    def _extract_code_blocks(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """
         Extract code blocks from static HTML.
 

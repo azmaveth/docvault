@@ -37,18 +37,18 @@ class RateLimitConfig:
 class RateLimiter:
     """Thread-safe rate limiter with domain-specific and global limits."""
 
-    def __init__(self, config: Optional[RateLimitConfig] = None):
+    def __init__(self, config: RateLimitConfig | None = None):
         self.config = config or RateLimitConfig()
-        self._domain_requests: Dict[str, deque] = defaultdict(
+        self._domain_requests: dict[str, deque] = defaultdict(
             lambda: deque(maxlen=1000)
         )
         self._global_requests = deque(maxlen=10000)
-        self._burst_tracker: Dict[str, int] = defaultdict(int)
-        self._cooldowns: Dict[str, datetime] = {}
+        self._burst_tracker: dict[str, int] = defaultdict(int)
+        self._cooldowns: dict[str, datetime] = {}
         self._lock = asyncio.Lock()
         self._semaphore = asyncio.Semaphore(self.config.max_concurrent_requests)
 
-    async def wait_if_needed(self, domain: str) -> Optional[float]:
+    async def wait_if_needed(self, domain: str) -> float | None:
         """
         Calculate wait time if rate limited.
 
@@ -94,7 +94,7 @@ class RateLimiter:
 
             return None
 
-    async def check_rate_limit(self, domain: str) -> tuple[bool, Optional[str]]:
+    async def check_rate_limit(self, domain: str) -> tuple[bool, str | None]:
         """Check if a request to the domain is allowed.
 
         Returns:
@@ -208,12 +208,12 @@ class RateLimiter:
 class ResourceMonitor:
     """Monitor and enforce resource usage limits."""
 
-    def __init__(self, config: Optional[RateLimitConfig] = None):
+    def __init__(self, config: RateLimitConfig | None = None):
         self.config = config or RateLimitConfig()
-        self._start_times: Dict[str, float] = {}
+        self._start_times: dict[str, float] = {}
         self._lock = asyncio.Lock()
 
-    async def check_memory_usage(self) -> tuple[bool, Optional[str]]:
+    async def check_memory_usage(self) -> tuple[bool, str | None]:
         """Check if memory usage is within limits."""
         try:
             import psutil
@@ -241,7 +241,7 @@ class ResourceMonitor:
         async with self._lock:
             self._start_times[operation_id] = time.time()
 
-    async def check_timeout(self, operation_id: str) -> tuple[bool, Optional[str]]:
+    async def check_timeout(self, operation_id: str) -> tuple[bool, str | None]:
         """Check if an operation has exceeded time limit."""
         async with self._lock:
             if operation_id not in self._start_times:
@@ -263,8 +263,8 @@ class ResourceMonitor:
 
 
 # Global instances
-_rate_limiter: Optional[RateLimiter] = None
-_resource_monitor: Optional[ResourceMonitor] = None
+_rate_limiter: RateLimiter | None = None
+_resource_monitor: ResourceMonitor | None = None
 
 
 def get_rate_limiter() -> RateLimiter:

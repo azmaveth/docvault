@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import click
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -45,7 +45,7 @@ PACKAGE_MANAGER_ALIASES = {
 }
 
 
-def get_package_manager_info(alias: str) -> Tuple[str, str]:
+def get_package_manager_info(alias: str) -> tuple[str, str]:
     """Get package manager name and display name from alias."""
     pm = PACKAGE_MANAGER_ALIASES.get(alias.lower())
     if not pm:
@@ -67,9 +67,9 @@ def get_package_manager_info(alias: str) -> Tuple[str, str]:
 async def quick_add_package(
     package_manager: str,
     package_name: str,
-    version: Optional[str] = None,
+    version: str | None = None,
     force: bool = False,
-) -> Optional[Dict]:
+) -> dict | None:
     """Quick add a package from a specific package manager."""
     # Get documentation source by package manager
     sources = list_documentation_sources(active_only=True)

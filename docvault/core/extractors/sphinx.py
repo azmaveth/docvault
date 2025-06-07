@@ -13,7 +13,7 @@ from .base import BaseExtractor
 class SphinxExtractor(BaseExtractor):
     """Extractor specialized for Sphinx documentation."""
 
-    def extract(self, soup: BeautifulSoup, url: str) -> Dict[str, Any]:
+    def extract(self, soup: BeautifulSoup, url: str) -> dict[str, Any]:
         """
         Extract content from Sphinx documentation.
 
@@ -53,7 +53,7 @@ class SphinxExtractor(BaseExtractor):
 
         return {"content": content, "metadata": metadata}
 
-    def extract_navigation(self, soup: BeautifulSoup) -> Optional[Dict[str, Any]]:
+    def extract_navigation(self, soup: BeautifulSoup) -> dict[str, Any] | None:
         """
         Extract Sphinx navigation/TOC.
 
@@ -81,8 +81,8 @@ class SphinxExtractor(BaseExtractor):
         return None
 
     def _extract_api_elements(
-        self, content: BeautifulSoup, metadata: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, content: BeautifulSoup, metadata: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Extract API documentation elements."""
         segments = []
 
@@ -150,8 +150,8 @@ class SphinxExtractor(BaseExtractor):
         return segments
 
     def _extract_sphinx_sections(
-        self, content: BeautifulSoup, metadata: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, content: BeautifulSoup, metadata: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Extract regular content sections."""
         segments = []
 
@@ -207,8 +207,8 @@ class SphinxExtractor(BaseExtractor):
         return segments
 
     def _extract_code_examples(
-        self, content: BeautifulSoup, metadata: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, content: BeautifulSoup, metadata: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Extract code examples with language detection."""
         segments = []
 
@@ -251,8 +251,8 @@ class SphinxExtractor(BaseExtractor):
         return segments
 
     def _extract_admonitions(
-        self, content: BeautifulSoup, metadata: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, content: BeautifulSoup, metadata: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Extract warnings, notes, and other admonitions."""
         segments = []
 
@@ -299,7 +299,7 @@ class SphinxExtractor(BaseExtractor):
 
         return segments
 
-    def _extract_toc_tree(self, toc_elem: BeautifulSoup) -> Dict[str, Any]:
+    def _extract_toc_tree(self, toc_elem: BeautifulSoup) -> dict[str, Any]:
         """Extract table of contents tree."""
         links = []
 
@@ -339,7 +339,7 @@ class SphinxExtractor(BaseExtractor):
 
         return signature.strip()
 
-    def _extract_parameters(self, desc_elem: BeautifulSoup) -> List[Dict[str, str]]:
+    def _extract_parameters(self, desc_elem: BeautifulSoup) -> list[dict[str, str]]:
         """Extract parameter information from description."""
         params = []
 
@@ -377,9 +377,7 @@ class SphinxExtractor(BaseExtractor):
 
         return params
 
-    def _extract_return_info(
-        self, desc_elem: BeautifulSoup
-    ) -> Optional[Dict[str, str]]:
+    def _extract_return_info(self, desc_elem: BeautifulSoup) -> dict[str, str] | None:
         """Extract return type information."""
         # Look for return type in field list
         field_list = desc_elem.select_one("dl.field-list")

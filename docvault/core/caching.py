@@ -6,7 +6,7 @@ and smart caching strategies.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
@@ -47,7 +47,7 @@ class CacheConfig:
 class CacheManager:
     """Manages document caching and freshness."""
 
-    def __init__(self, config: Optional[CacheConfig] = None):
+    def __init__(self, config: CacheConfig | None = None):
         self.config = config or CacheConfig()
         self.logger = logging.getLogger(__name__)
 
@@ -58,9 +58,9 @@ class CacheManager:
 
         # Ensure timezone awareness
         if last_checked.tzinfo is None:
-            last_checked = last_checked.replace(tzinfo=timezone.utc)
+            last_checked = last_checked.replace(tzinfo=UTC)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         age = now - last_checked
 
         if age < self.config.fresh_threshold:
@@ -117,8 +117,8 @@ class CacheManager:
             return status
 
     def get_stale_documents(
-        self, status: Optional[StalenessStatus] = None, limit: Optional[int] = None
-    ) -> List[Dict]:
+        self, status: StalenessStatus | None = None, limit: int | None = None
+    ) -> list[dict]:
         """Get documents by staleness status."""
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -162,7 +162,7 @@ class CacheManager:
 
             return documents
 
-    async def check_for_updates(self, document_id: int) -> Tuple[bool, Optional[str]]:
+    async def check_for_updates(self, document_id: int) -> tuple[bool, str | None]:
         """
         Check if a document has updates available.
 
@@ -240,7 +240,7 @@ class CacheManager:
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             cursor.execute(
                 """
                 UPDATE documents 
@@ -255,15 +255,15 @@ class CacheManager:
     def mark_as_updated(
         self,
         document_id: int,
-        etag: Optional[str] = None,
-        last_modified: Optional[str] = None,
-        content_hash: Optional[str] = None,
+        etag: str | None = None,
+        last_modified: str | None = None,
+        content_hash: str | None = None,
     ):
         """Mark a document as updated with new metadata."""
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Build update query dynamically
             updates = ["last_checked = ?", "staleness_status = ?", "updated_at = ?"]
@@ -304,7 +304,7 @@ class CacheManager:
 
             conn.commit()
 
-    def get_cache_statistics(self) -> Dict:
+    def get_cache_statistics(self) -> dict:
         """Get cache statistics."""
         with get_connection() as conn:
             cursor = conn.cursor()

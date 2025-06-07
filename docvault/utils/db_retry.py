@@ -5,7 +5,8 @@ import functools
 import logging
 import sqlite3
 import time
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 logger = logging.getLogger(__name__)
 

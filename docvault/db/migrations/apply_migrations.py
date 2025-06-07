@@ -26,7 +26,7 @@ def get_migration_files(migration_dir):
 def apply_migration(conn, migration_file):
     """Apply a single migration file."""
     print(f"Applying migration: {migration_file}")
-    with open(migration_file, "r") as f:
+    with open(migration_file) as f:
         sql = f.read()
 
     try:

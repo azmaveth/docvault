@@ -111,7 +111,7 @@ class Validators:
         return cls.validate_identifier(category, "category")[: cls.MAX_CATEGORY_LENGTH]
 
     @classmethod
-    def validate_document_id(cls, doc_id: Union[str, int]) -> int:
+    def validate_document_id(cls, doc_id: str | int) -> int:
         """Validate a document ID.
 
         Args:
@@ -132,7 +132,7 @@ class Validators:
             raise ValidationError("Invalid document ID format")
 
     @classmethod
-    def validate_file_path(cls, path: Union[str, Path]) -> Path:
+    def validate_file_path(cls, path: str | Path) -> Path:
         """Validate a file path for security.
 
         Args:
@@ -258,8 +258,8 @@ class Validators:
         cls,
         value: Any,
         name: str = "value",
-        min_val: Optional[int] = None,
-        max_val: Optional[int] = None,
+        min_val: int | None = None,
+        max_val: int | None = None,
     ) -> int:
         """Validate an integer value with optional bounds.
 
@@ -290,8 +290,8 @@ class Validators:
 
     @classmethod
     def validate_list_of(
-        cls, items: List[Any], validator_func, name: str = "items"
-    ) -> List[Any]:
+        cls, items: list[Any], validator_func, name: str = "items"
+    ) -> list[Any]:
         """Validate a list of items using a validator function.
 
         Args:
@@ -318,7 +318,7 @@ class Validators:
         return validated
 
     @classmethod
-    def sanitize_for_display(cls, text: str, max_length: Optional[int] = None) -> str:
+    def sanitize_for_display(cls, text: str, max_length: int | None = None) -> str:
         """Sanitize text for safe display.
 
         Args:
@@ -345,7 +345,7 @@ class Validators:
 
 
 def validate_search_input(
-    query: str, tags: Optional[List[str]] = None, limit: Optional[int] = None
+    query: str, tags: list[str] | None = None, limit: int | None = None
 ) -> dict:
     """Validate search command inputs.
 
@@ -379,9 +379,7 @@ def validate_search_input(
     return result
 
 
-def validate_document_operation(
-    doc_id: Union[str, int], operation: str = "access"
-) -> int:
+def validate_document_operation(doc_id: str | int, operation: str = "access") -> int:
     """Validate inputs for document operations.
 
     Args:
@@ -398,7 +396,7 @@ def validate_document_operation(
 
 
 def validate_tag_operation(
-    doc_id: Union[str, int], tags: List[str], operation: str = "tag"
+    doc_id: str | int, tags: list[str], operation: str = "tag"
 ) -> tuple:
     """Validate inputs for tag operations.
 

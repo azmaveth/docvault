@@ -108,7 +108,7 @@ class DocTypeDetector:
         """Initialize the detector."""
         self._cache = {}
 
-    def detect(self, url: str, html_content: str) -> Tuple[DocType, float]:
+    def detect(self, url: str, html_content: str) -> tuple[DocType, float]:
         """
         Detect documentation type from URL and HTML content.
 
@@ -160,7 +160,7 @@ class DocTypeDetector:
         self._cache[cache_key] = result
         return result
 
-    def _detect_by_url(self, url: str) -> Optional[DocType]:
+    def _detect_by_url(self, url: str) -> DocType | None:
         """Detect documentation type by URL patterns."""
         url_lower = url.lower()
 
@@ -171,7 +171,7 @@ class DocTypeDetector:
 
         return None
 
-    def _detect_by_html_signatures(self, soup: BeautifulSoup) -> Optional[DocType]:
+    def _detect_by_html_signatures(self, soup: BeautifulSoup) -> DocType | None:
         """Detect documentation type by HTML signatures."""
         for doc_type, signatures in self.HTML_SIGNATURES.items():
             matches = 0
@@ -185,7 +185,7 @@ class DocTypeDetector:
 
         return None
 
-    def _detect_by_content_patterns(self, html_content: str) -> Optional[DocType]:
+    def _detect_by_content_patterns(self, html_content: str) -> DocType | None:
         """Detect documentation type by content patterns."""
         for doc_type, patterns in self.CONTENT_PATTERNS.items():
             matches = 0
@@ -219,7 +219,7 @@ class DocTypeDetector:
         # If we have multiple indicators, it's likely API documentation
         return sum(bool(indicator) for indicator in api_indicators) >= 3
 
-    def get_extractor_config(self, doc_type: DocType) -> Dict[str, any]:
+    def get_extractor_config(self, doc_type: DocType) -> dict[str, any]:
         """
         Get configuration for specialized extractors based on doc type.
 
@@ -288,7 +288,7 @@ class DocTypeDetector:
 
         return configs.get(doc_type, configs[DocType.GENERIC])
 
-    def get_content_patterns(self, doc_type: DocType) -> Dict[str, List[str]]:
+    def get_content_patterns(self, doc_type: DocType) -> dict[str, list[str]]:
         """
         Get content patterns to look for based on doc type.
 

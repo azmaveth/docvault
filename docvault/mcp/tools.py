@@ -84,7 +84,7 @@ LIST_DOCUMENTS_SCHEMA = {
 
 
 # New function to create a ToolResult from a legacy handler response
-def create_tool_result(response: Dict[str, Any]) -> types.ToolResult:
+def create_tool_result(response: dict[str, Any]) -> types.ToolResult:
     """Convert a legacy handler response to a ToolResult object"""
     success = response.get("success", False)
 
