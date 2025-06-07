@@ -33,6 +33,7 @@ from docvault.cli.commands import (
     suggest_cmd,
     version_cmd,
 )
+from docvault.cli.context_commands import context_group
 from docvault.cli.credential_commands import credentials as credentials_cmd
 from docvault.cli.freshness_commands import check_document_freshness, freshness_check
 from docvault.cli.llms_commands import llms_commands
@@ -260,6 +261,9 @@ def register_commands(main):
     # Add freshness commands
     main.add_command(freshness_check, name="freshness")
     main.add_command(check_document_freshness, name="check-freshness")
+
+    # Add contextual retrieval commands
+    main.add_command(context_group, name="context")
 
 
 # All command aliases are registered manually above to ensure compatibility with Click <8.1.0 and for explicit aliasing.

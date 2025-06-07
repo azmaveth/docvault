@@ -570,3 +570,76 @@ Most CLI UX improvements have been completed. Remaining nice-to-have features:
   - [x] Support multiple output formats (console, JSON)
   - [x] Enable parallel test execution for faster runs
   - [x] Create shell script wrapper for easy test execution
+
+## Contextual Retrieval Implementation
+
+- [x] **Implement Contextual Retrieval for Enhanced RAG**: Improve retrieval accuracy by adding context to chunks before embedding [2025-06-06]
+  - [x] Add LLM integration for context generation (Claude API or local LLM)
+    - [x] Created llm_context.py with support for Ollama, OpenAI, and Anthropic
+    - [x] Implemented context caching and batch processing
+    - [x] Added configurable prompt templates for different document types
+  - [x] Modify chunk processing pipeline to generate contextual descriptions
+    - [x] Created ContextualChunkProcessor that integrates with existing pipeline
+    - [x] Implemented hierarchical context generation using document structure
+    - [x] Added semantic role detection (code example, API reference, etc.)
+  - [x] Update embedding generation to use contextualized chunks
+    - [x] Modified processor to prepend context before embedding
+    - [x] Store contextualized embeddings separately from original
+  - [x] Store both original and contextualized content in database
+    - [x] Keep original content intact for fallback
+    - [x] Store contextualized embeddings in context_embedding column
+  - [x] Add database columns for contextual descriptions and metadata
+    - [x] Added context_description, context_metadata, context_embedding columns
+    - [x] Created chunk_relationships and context_templates tables
+    - [x] Implemented migration as v9 in migration system
+  - [x] Implement hybrid approach: context in embeddings + metadata storage
+    - [x] Context included in embeddings for better semantic search
+    - [x] Context stored as metadata for filtering and navigation
+    - [x] Created separate metadata embeddings table for similarity search
+  - [x] Create hierarchical context using DocVault's section structure
+    - [x] Build section hierarchy from document structure
+    - [x] Include parent sections in context for better understanding
+  - [x] Add semantic role context (code example, parameter docs, etc.)
+    - [x] Detect content type and assign semantic roles
+    - [x] Use role-specific prompt templates for context generation
+  - [x] Implement metadata similarity search for finding related chunks
+    - [x] find_similar_by_metadata method in ContextualChunkProcessor
+    - [x] CLI command `dv context similar` for finding related content
+  - [x] Add configuration options for context generation (LLM model, prompt templates)
+    - [x] Configurable via `dv context config` command
+    - [x] Support for different providers and models
+    - [x] Customizable batch size and token limits
+  - [ ] Create benchmarks to measure retrieval improvement
+  - [x] Add "More Like This" feature using metadata similarity
+    - [x] Implemented in find_similar_by_metadata method
+    - [x] Can filter by semantic role
+  - [x] Enable cross-document navigation based on context similarity
+    - [x] Metadata similarity works across all documents
+    - [x] Returns document IDs for navigation
+  - [ ] Build learning paths using progressive complexity metadata
+  - [ ] Create topic clustering across documents
+  - Reference: https://www.anthropic.com/engineering/contextual-retrieval
+
+## Knowledge Graph Integration (Low Priority)
+
+- [ ] **Add Knowledge Graph for Relationship Discovery**: Enhance DocVault with explicit entity relationships and graph-based navigation
+  - [ ] Phase 1: Basic Infrastructure
+    - [ ] Add knowledge_nodes and knowledge_edges tables to schema
+    - [ ] Create indices for efficient graph traversal
+    - [ ] Implement basic relationship extraction during scraping (function calls, cross-references)
+    - [ ] Add `--related` flag to search command for finding related content
+    - [ ] Extract "See also" sections as explicit relationships
+  - [ ] Phase 2: Entity Recognition (if Phase 1 proves valuable)
+    - [ ] Extract entities: functions, classes, concepts, errors
+    - [ ] Build relationship types: calls, inherits, implements, throws, related-to
+    - [ ] Add "find similar" feature across documents
+    - [ ] Implement `dv graph` command for relationship queries
+  - [ ] Phase 3: Advanced Features (only if actively used)
+    - [ ] Learning path generation based on prerequisites
+    - [ ] Pattern mining across documentation
+    - [ ] API migration assistant (find equivalent functions)
+    - [ ] Concept clustering and visualization
+    - [ ] Integration with NetworkX for complex graph algorithms
+  - [ ] Keep graph features optional and additive
+  - [ ] Monitor usage metrics before expanding
+  - Reference: See KNOWLEDGE_GRAPH_ANALYSIS.md for detailed implementation strategy

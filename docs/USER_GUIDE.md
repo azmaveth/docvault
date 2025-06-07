@@ -149,6 +149,23 @@ dv search "requests" --suggestions
 
 # Tree view of search results
 dv search "database" --tree
+
+# Verbose output shows contextual information
+dv search "error handling" --verbose
+```
+
+#### Contextual Search
+
+DocVault now uses contextual retrieval to improve search accuracy by adding context to chunks before embedding them:
+
+```bash
+# Search results show [ctx] indicator for contextual embeddings
+dv search "authentication"
+# Results: (0.95 ctx) - indicates contextual embedding was used
+
+# Verbose mode shows context descriptions
+dv search "database connection" --verbose
+# Shows: Context: This section discusses database connection pooling...
 ```
 
 #### Search Output Formats
@@ -576,6 +593,66 @@ dv pin --unpin-all
 ```
 
 ## Advanced Features
+
+### Contextual Retrieval
+
+DocVault uses contextual retrieval to enhance search accuracy by adding context to document chunks before creating embeddings. This reduces retrieval failures by up to 49%.
+
+#### How It Works
+
+1. **Context Generation**: An LLM generates contextual descriptions for each chunk
+2. **Augmented Embeddings**: Context is prepended to chunks before embedding
+3. **Metadata Storage**: Context is also stored as searchable metadata
+4. **Smart Search**: Search automatically uses contextual embeddings when available
+
+#### Managing Contextual Retrieval
+
+```bash
+# Enable contextual retrieval
+dv context enable
+
+# Check status and statistics
+dv context status
+# Shows: Documents with context: 45/100 (45%)
+
+# Process documents with context
+dv context process 1              # Single document
+dv context process-all            # All documents
+dv context process-all --limit 10 # First 10 documents
+
+# Configure LLM settings
+dv context config --provider openai --model gpt-3.5-turbo
+dv context config --provider ollama --model llama2
+dv context config --provider anthropic --model claude-3-haiku
+
+# Find similar content by metadata
+dv context similar 123            # Find similar to segment 123
+dv context similar 123 --role "code_example"
+```
+
+#### Supported LLM Providers
+
+1. **Ollama** (default)
+   - Local models: llama2, mistral, codellama
+   - No API key required
+   - Best for privacy
+
+2. **OpenAI**
+   - Models: gpt-3.5-turbo, gpt-4
+   - Requires API key in environment
+   - Good balance of speed and quality
+
+3. **Anthropic**
+   - Models: claude-3-haiku, claude-3-sonnet
+   - Requires API key in environment
+   - Best quality for complex docs
+
+#### Benefits
+
+- **Better Accuracy**: Context disambiguates chunks that are unclear alone
+- **Cross-Document Navigation**: Find related content across all documents
+- **Semantic Understanding**: Different handling for code, tutorials, API docs
+- **Zero Breaking Changes**: Feature is opt-in and backward compatible
 
 ### llms.txt Support
 

@@ -148,6 +148,43 @@ EMBEDDING_MODEL=mxbai-embed-large  # Higher quality
 EMBEDDING_MODEL=all-minilm         # Faster, lower quality
 ```
 
+#### Contextual Retrieval
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CONTEXTUAL_RETRIEVAL_ENABLED` | `false` | Enable contextual retrieval for new documents |
+| `CONTEXT_LLM_PROVIDER` | `ollama` | LLM provider (ollama, openai, anthropic) |
+| `CONTEXT_LLM_MODEL` | `llama2` | Model for context generation |
+| `CONTEXT_BATCH_SIZE` | `10` | Number of chunks to process in batch |
+| `CONTEXT_MAX_TOKENS` | `150` | Maximum tokens for context descriptions |
+| `CONTEXT_CACHE_ENABLED` | `true` | Cache generated contexts |
+| `OPENAI_API_KEY` | `""` | OpenAI API key (if using OpenAI) |
+| `ANTHROPIC_API_KEY` | `""` | Anthropic API key (if using Anthropic) |
+
+Example:
+```bash
+# Enable contextual retrieval with Ollama
+CONTEXTUAL_RETRIEVAL_ENABLED=true
+CONTEXT_LLM_PROVIDER=ollama
+CONTEXT_LLM_MODEL=llama2
+
+# Use OpenAI for better quality
+CONTEXTUAL_RETRIEVAL_ENABLED=true
+CONTEXT_LLM_PROVIDER=openai
+CONTEXT_LLM_MODEL=gpt-3.5-turbo
+OPENAI_API_KEY=sk-...
+
+# Use Anthropic for best quality
+CONTEXTUAL_RETRIEVAL_ENABLED=true
+CONTEXT_LLM_PROVIDER=anthropic
+CONTEXT_LLM_MODEL=claude-3-haiku-20240307
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Optimize for large documents
+CONTEXT_BATCH_SIZE=20
+CONTEXT_MAX_TOKENS=200
+```
+
 ### Server Configuration
 
 #### MCP Server Settings

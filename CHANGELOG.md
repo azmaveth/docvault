@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-01-06
+
+### Added
+
+- **Vector-Based Document Summarization**: Revolutionary new summarization approach using embeddings
+  - Uses existing document segment embeddings to find most relevant sections
+  - Searches for key concepts: overview, installation, functions, classes, examples, parameters
+  - Falls back to pattern-based summarization if embeddings unavailable
+  - New `summary_method` parameter: "vector" (default) or "pattern"
+  - Significantly improves summary relevance for all documentation types
+
+- **Advanced Content Chunking System**: Sophisticated chunking strategies that respect content structure
+  - **Section-aware chunking**: Aligns chunks with document sections, preserving logical units
+  - **Semantic chunking**: Breaks at natural boundaries (paragraphs, sentences, code blocks)
+  - **Hybrid chunking**: Combines section and semantic awareness for optimal results
+  - **Streaming support**: Memory-efficient chunk reading without loading entire documents
+  - **Rich navigation metadata**: Includes section info, next/prev indicators, and total chunks
+  - New `chunking_strategy` parameter: "hybrid" (default), "section", "semantic", "paragraph", or "character"
+  - New `get_chunk_info` tool for exploring available chunks before reading
+
+- **Section Search and Navigation**: Find specific content and navigate directly to it
+  - New `search_sections` tool searches within documents for code, examples, or headings
+  - Returns section paths and chunk numbers for direct navigation
+  - Search types: "all", "code", "headings", "examples", or "content"
+  - Integrates with chunking system to provide chunk numbers for each result
+  - Enables workflows like: search → find section → read specific chunk
+
+- **MCP Document Reading Enhancements**: Major improvements to document reading functionality
+  - Added automatic summarization as default mode for `read_document` tool
+  - Extracts key functions, classes, parameters, and code examples
+  - Added chunking support for reading large documents in parts
+  - New modes: `summary` (default), `full`, and `chunk`
+  - Chunk navigation with configurable chunk size
+
+- **Contextual Retrieval Implementation**: Enhanced RAG accuracy through contextual augmentation
+  - Added LLM integration module supporting Ollama, OpenAI, and Anthropic providers
+  - Created context-aware chunk processor that augments chunks before embedding
+  - Database migration adds columns for contextual descriptions and metadata
+  - New CLI commands under `dv context` for managing contextual retrieval
+  - Metadata similarity search enables finding related content across documents
+  - Hierarchical context generation leverages document structure
+  - Hybrid approach stores context both in embeddings and as searchable metadata
+  - Integrated contextual search into main search functionality
+  - Search results now show [ctx] indicator when using contextual embeddings
+  - Added context descriptions to verbose search output
+
 ### Changed
 
 - **Connection Pooling**: Changed database connection pooling to be opt-in instead of enabled by default
@@ -16,6 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Helps avoid test environment issues and improves compatibility
 
 ### Fixed
+
+- **MCP Section Reading**: Fixed critical errors in section navigation tools
+  - Fixed `read_document_section` and `read_section` AttributeError issues
+  - Replaced non-existent method calls with proper implementations
+  - Fixed dictionary key access for section metadata
+  - Improved error handling for missing sections
 
 - **Test Infrastructure**: Fixed all failing unit tests and improved test reliability
   - Fixed embeddings tests: corrected vector dimensions (384→768) and mock function signatures

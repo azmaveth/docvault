@@ -54,12 +54,12 @@ async def generate_embeddings(text: str) -> bytes:
 
 
 async def search(
-    query: Optional[str] = None,
+    query: str | None = None,
     limit: int = 5,
     text_only: bool = False,
     min_score: float = 0.0,
-    doc_filter: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, Any]]:
+    doc_filter: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """
     Search for documents using semantic search with metadata filtering
 
@@ -126,14 +126,29 @@ async def search(
             query_embedding = await generate_embeddings(query)
             logger.info(f"Generated embedding for query: {len(query_embedding)} bytes")
 
-            # Search database with both embedding and text query
-            results = operations.search_segments(
-                query_embedding,
-                limit=limit,
-                text_query=expanded_query,
-                min_score=min_score,
-                doc_filter=doc_filter,
-            )
+            # Check if contextual search is available
+            try:
+                from docvault.db.operations_contextual import search_segments_contextual
+
+                # Use contextual search if available
+                results = search_segments_contextual(
+                    query_embedding,
+                    limit=limit,
+                    text_query=expanded_query,
+                    min_score=min_score,
+                    doc_filter=doc_filter,
+                    use_contextual=True,
+                )
+                logger.info("Using contextual search")
+            except ImportError:
+                # Fall back to regular search
+                results = operations.search_segments(
+                    query_embedding,
+                    limit=limit,
+                    text_query=expanded_query,
+                    min_score=min_score,
+                    doc_filter=doc_filter,
+                )
 
         # Log results count and top scores if available
         if results:

@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Optional, Union
 
 import mcp.server.stdio
@@ -11,8 +12,12 @@ from mcp.server.fastmcp import FastMCP
 
 import docvault.core.storage as storage
 from docvault import config
+from docvault.core.content_chunker import ChunkingStrategy, ContentChunker
 from docvault.core.library_manager import lookup_library_docs
 from docvault.core.scraper import get_scraper
+from docvault.core.section_index import SectionIndexer
+from docvault.core.summarizer import DocumentSummarizer
+from docvault.core.vector_summarizer import VectorSummarizer
 from docvault.db import operations
 
 types.ToolResult = types.CallToolResult  # alias for backward compatibility with tests
@@ -29,10 +34,10 @@ def create_server() -> FastMCP:
     @server.tool()
     async def scrape_document(
         url: str,
-        depth: Union[int, str] = 1,
-        sections: Optional[list] = None,
-        filter_selector: Optional[str] = None,
-        depth_strategy: Optional[str] = None,
+        depth: int | str = 1,
+        sections: list | None = None,
+        filter_selector: str | None = None,
+        depth_strategy: str | None = None,
         force_update: bool = False,
     ) -> types.CallToolResult:
         """Scrape a document from a URL and store it in the document vault.
@@ -146,13 +151,13 @@ def create_server() -> FastMCP:
     # Add document search tool
     @server.tool()
     async def search_documents(
-        query: Optional[str] = None,
+        query: str | None = None,
         limit: int = 5,
         min_score: float = 0.0,
-        version: Optional[str] = None,
+        version: str | None = None,
         library: bool = False,
-        title_contains: Optional[str] = None,
-        updated_after: Optional[str] = None,
+        title_contains: str | None = None,
+        updated_after: str | None = None,
     ) -> types.CallToolResult:
         """Search documents in the vault using semantic search with metadata filtering.
 
@@ -227,10 +232,15 @@ def create_server() -> FastMCP:
                 result_text = f"Document: {r.get('title', 'Untitled')} (ID: {r.get('document_id', 'N/A')})\n"
                 if metadata_parts:
                     result_text += f"{' • '.join(metadata_parts)}\n"
-                result_text += f"Score: {r.get('score', 0):.2f}\n"
+                result_text += f"Score: {r.get('score', 0):.2f}"
+                if r.get("is_contextual"):
+                    result_text += " [contextual]"
+                result_text += "\n"
                 result_text += f"Content: {r.get('content', '')[:200]}{'...' if len(r.get('content', '')) > 200 else ''}\n"
                 if r.get("section_title"):
                     result_text += f"Section: {r['section_title']}\n"
+                if r.get("context_description"):
+                    result_text += f"Context: {r['context_description'][:100]}...\n"
                 result_text += "\n"
 
                 content_items.append(types.TextContent(type="text", text=result_text))
@@ -280,20 +290,41 @@ def create_server() -> FastMCP:
     # Add document read tool
     @server.tool()
     async def read_document(
-        document_id: int, format: str = "markdown"
+        document_id: int,
+        format: str = "markdown",
+        mode: str = "summary",
+        chunk_size: int = 5000,
+        chunk_number: int = 1,
+        summary_method: str = "vector",
+        chunking_strategy: str = "hybrid",
     ) -> types.CallToolResult:
-        """Read the full content of a document from the vault.
+        """Read document content from the vault with automatic summarization or chunking.
 
         Args:
             document_id: The ID of the document to read
             format: Format to return - "markdown" (default) or "html"
+            mode: Reading mode - "summary" (default), "full", or "chunk"
+                  - summary: Returns concise summary with key functions, classes, and examples
+                  - full: Returns complete document content (may fail for large docs)
+                  - chunk: Returns a specific chunk of the document
+            chunk_size: Size of each chunk in characters (for chunk mode)
+            chunk_number: Which chunk to return (1-based, for chunk mode)
+            summary_method: Method for summarization - "vector" (default) or "pattern"
+                  - vector: Uses embeddings to find most relevant sections
+                  - pattern: Uses regex patterns to extract functions/classes
+            chunking_strategy: Strategy for chunking - "hybrid" (default), "section", "semantic", "paragraph", or "character"
+                  - hybrid: Combines section and semantic awareness
+                  - section: Chunks align with document sections
+                  - semantic: Chunks at natural boundaries (paragraphs, sentences)
+                  - paragraph: Chunks at paragraph boundaries
+                  - character: Simple character-based chunking (legacy)
 
         Examples:
-            read_document(5)  # Read as markdown
-            read_document(10, format="html")  # Read as HTML
-
-        Note: For large documents, consider using get_document_sections and
-        read_document_section to navigate and read specific parts."""
+            read_document(5)  # Get summary (default)
+            read_document(5, mode="full")  # Try to get full content
+            read_document(5, mode="chunk", chunk_number=1)  # Get first chunk
+            read_document(5, mode="chunk", chunk_number=2)  # Get second chunk
+        """
         try:
             document = operations.get_document(document_id)
 
@@ -310,21 +341,210 @@ def create_server() -> FastMCP:
                     },
                 )
 
+            # Read the content
             if format.lower() == "html":
                 content = storage.read_html(document["html_path"])
             else:
                 content = storage.read_markdown(document["markdown_path"])
 
-            return types.CallToolResult(
-                content=[types.TextContent(type="text", text=content)],
-                metadata={
-                    "success": True,
-                    "document_id": document_id,
-                    "title": document["title"],
-                    "url": document["url"],
-                    "format": format,
-                },
-            )
+            # Handle different modes
+            if mode == "summary":
+                # Choose summarization method
+                if summary_method == "vector":
+                    # Try vector-based summarization
+                    try:
+                        vector_summarizer = VectorSummarizer(use_embeddings=True)
+                        vector_summary = vector_summarizer.summarize_document(
+                            document_id, max_sections=3
+                        )
+                        result_content = vector_summarizer.format_summary(
+                            vector_summary, format="markdown"
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Vector summarization failed, falling back to pattern-based: {e}"
+                        )
+                        # Fall back to pattern-based summarizer
+                        summarizer = DocumentSummarizer()
+                        summary = summarizer.summarize(content, max_items=15)
+                        formatted_summary = summarizer.format_summary(
+                            summary, format="markdown"
+                        )
+
+                        # Add metadata about summarization
+                        result_content = f"# Summary of {document['title']}\n\n"
+                        result_content += "*This is a summarized version focusing on key functions, classes, and examples.*\n\n"
+                        result_content += formatted_summary
+                else:
+                    # Use pattern-based summarizer
+                    summarizer = DocumentSummarizer()
+                    summary = summarizer.summarize(content, max_items=15)
+                    formatted_summary = summarizer.format_summary(
+                        summary, format="markdown"
+                    )
+
+                    # Add metadata about summarization
+                    result_content = f"# Summary of {document['title']}\n\n"
+                    result_content += "*This is a summarized version focusing on key functions, classes, and examples.*\n\n"
+                    result_content += formatted_summary
+
+                return types.CallToolResult(
+                    content=[types.TextContent(type="text", text=result_content)],
+                    metadata={
+                        "success": True,
+                        "document_id": document_id,
+                        "title": document["title"],
+                        "url": document["url"],
+                        "format": format,
+                        "mode": "summary",
+                        "summary_method": summary_method,
+                        "original_length": len(content),
+                        "summary_length": len(result_content),
+                    },
+                )
+
+            elif mode == "chunk":
+                # Use advanced chunking system
+                try:
+                    chunker = ContentChunker(document_id)
+                    chunk = chunker.get_chunk(
+                        chunk_number=chunk_number,
+                        chunk_size=chunk_size,
+                        strategy=ChunkingStrategy(chunking_strategy),
+                    )
+
+                    # Format chunk with metadata
+                    chunk_header = f"# {document['title']} - Chunk {chunk.metadata.chunk_number}/{chunk.metadata.total_chunks}\n\n"
+
+                    # Add section info if available
+                    if chunk.metadata.section_title:
+                        chunk_header += f"**Section**: {chunk.metadata.section_title}\n"
+                    if chunk.metadata.section_path:
+                        chunk_header += f"**Path**: {chunk.metadata.section_path}\n\n"
+
+                    # Add continuation markers
+                    if chunk.metadata.has_prev:
+                        chunk_header += "*...continued from previous chunk*\n\n"
+
+                    chunk_footer = ""
+                    if chunk.metadata.has_next:
+                        chunk_footer = "\n\n*...continues in next chunk*"
+                        if chunk.metadata.next_section:
+                            chunk_footer += (
+                                f" (Next: Section {chunk.metadata.next_section})"
+                            )
+
+                    result_content = chunk_header + chunk.content + chunk_footer
+
+                    # Return with rich metadata
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=result_content)],
+                        metadata={
+                            "success": True,
+                            "document_id": document_id,
+                            "title": document["title"],
+                            "url": document["url"],
+                            "format": format,
+                            "mode": "chunk",
+                            "chunking_strategy": chunk.metadata.strategy_used,
+                            "chunk_number": chunk.metadata.chunk_number,
+                            "total_chunks": chunk.metadata.total_chunks,
+                            "chunk_size": chunk_size,
+                            "section_path": chunk.metadata.section_path,
+                            "section_title": chunk.metadata.section_title,
+                            "has_next": chunk.metadata.has_next,
+                            "has_prev": chunk.metadata.has_prev,
+                            "next_section": chunk.metadata.next_section,
+                            "prev_section": chunk.metadata.prev_section,
+                        },
+                    )
+
+                except ValueError as e:
+                    # Handle invalid chunk numbers gracefully
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=str(e))],
+                        metadata={
+                            "success": False,
+                            "error": str(e),
+                        },
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Advanced chunking failed, falling back to character chunking: {e}"
+                    )
+                    # Fall back to simple character chunking
+                    total_length = len(content)
+                    total_chunks = (total_length + chunk_size - 1) // chunk_size
+
+                    if chunk_number < 1 or chunk_number > total_chunks:
+                        return types.CallToolResult(
+                            content=[
+                                types.TextContent(
+                                    type="text",
+                                    text=f"Invalid chunk number {chunk_number}. Document has {total_chunks} chunks.",
+                                )
+                            ],
+                            metadata={
+                                "success": False,
+                                "error": f"Invalid chunk number. Valid range: 1-{total_chunks}",
+                                "total_chunks": total_chunks,
+                            },
+                        )
+
+                    # Calculate chunk boundaries
+                    start = (chunk_number - 1) * chunk_size
+                    end = min(start + chunk_size, total_length)
+                    chunk_content = content[start:end]
+
+                    # Add chunk metadata
+                    chunk_header = f"# {document['title']} - Chunk {chunk_number}/{total_chunks}\n\n"
+                    if chunk_number > 1:
+                        chunk_header += "*...continued from previous chunk*\n\n"
+
+                    chunk_footer = ""
+                    if chunk_number < total_chunks:
+                        chunk_footer = "\n\n*...continues in next chunk*"
+
+                    result_content = chunk_header + chunk_content + chunk_footer
+
+                    return types.CallToolResult(
+                        content=[types.TextContent(type="text", text=result_content)],
+                        metadata={
+                            "success": True,
+                            "document_id": document_id,
+                            "title": document["title"],
+                            "url": document["url"],
+                            "format": format,
+                            "mode": "chunk",
+                            "chunking_strategy": "character",
+                            "chunk_number": chunk_number,
+                            "total_chunks": total_chunks,
+                            "chunk_size": chunk_size,
+                        },
+                    )
+
+            else:  # mode == "full"
+                # Return full content with a warning if large
+                if len(content) > 25000:  # Roughly 6250 tokens
+                    warning = (
+                        "⚠️ **Warning**: This document is very large and may exceed token limits.\n"
+                        "Consider using mode='summary' for a concise version or mode='chunk' to read in parts.\n\n"
+                    )
+                    content = warning + content
+
+                return types.CallToolResult(
+                    content=[types.TextContent(type="text", text=content)],
+                    metadata={
+                        "success": True,
+                        "document_id": document_id,
+                        "title": document["title"],
+                        "url": document["url"],
+                        "format": format,
+                        "mode": "full",
+                        "content_length": len(content),
+                    },
+                )
+
         except Exception as e:
             logger.exception(f"Error reading document: {e}")
             return types.CallToolResult(
@@ -395,7 +615,7 @@ def create_server() -> FastMCP:
         query: str,
         limit: int = 5,
         task_based: bool = False,
-        complementary: Optional[str] = None,
+        complementary: str | None = None,
     ) -> types.CallToolResult:
         """Get AI-powered suggestions for functions, classes, or documentation based on a query.
 
@@ -631,7 +851,7 @@ def create_server() -> FastMCP:
     # Add freshness checking
     @server.tool()
     async def check_freshness(
-        document_id: Optional[int] = None,
+        document_id: int | None = None,
         stale_only: bool = False,
     ) -> types.CallToolResult:
         """Check the freshness status of documents to identify outdated content.
@@ -1101,11 +1321,13 @@ def create_server() -> FastMCP:
             # Get section navigator
             navigator = SectionNavigator(document_id)
 
+            # Import the function we need
+            from docvault.core.section_navigator import get_section_content
+            from docvault.db.operations import get_document_segment
+
             # Navigate to section by ID or path
             if section_id:
                 # Get section by ID
-                from docvault.db.operations import get_document_segment
-
                 section_data = get_document_segment(section_id)
                 if not section_data or section_data.get("document_id") != document_id:
                     return types.CallToolResult(
@@ -1128,8 +1350,8 @@ def create_server() -> FastMCP:
                     # It's a numeric path, ensure it's treated as string
                     section_path = str(section_path)
 
-                # Navigate to section by path
-                section = navigator.navigate_to_section(section_path)
+                # Get section content by path
+                section = get_section_content(document_id, section_path)
                 if not section:
                     return types.CallToolResult(
                         content=[
@@ -1146,16 +1368,29 @@ def create_server() -> FastMCP:
 
             # Get section content
             if include_subsections:
-                sections = navigator.get_section_with_children(section_path)
-                content_text = f"Section {section_path} and subsections from '{document['title']}':\n\n"
+                # For subsections, we need to get all segments with paths starting with section_path
+                from docvault.db.operations import get_connection
 
+                with get_connection() as conn:
+                    cursor = conn.execute(
+                        """SELECT section_title, section_level, section_path, content
+                           FROM document_segments 
+                           WHERE document_id = ? AND section_path LIKE ?
+                           ORDER BY section_path""",
+                        (document_id, f"{section_path}%"),
+                    )
+                    sections = cursor.fetchall()
+
+                content_text = f"Section {section_path} and subsections from '{document['title']}':\n\n"
                 for s in sections:
-                    content_text += f"{'#' * s['level']} {s['title']}\n\n"
+                    content_text += (
+                        f"{'#' * s['section_level']} {s['section_title']}\n\n"
+                    )
                     content_text += s["content"] + "\n\n"
             else:
                 content_text = f"Section {section_path} from '{document['title']}':\n\n"
-                content_text += f"{'#' * section['level']} {section['title']}\n\n"
-                content_text += section["content"]
+                content_text += f"{'#' * section.get('section_level', 1)} {section.get('section_title', 'Section')}\n\n"
+                content_text += section.get("content", "")
 
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=content_text)],
@@ -1163,7 +1398,7 @@ def create_server() -> FastMCP:
                     "success": True,
                     "document_id": document_id,
                     "section_path": section_path,
-                    "section_title": section["title"],
+                    "section_title": section.get("section_title", ""),
                     "include_subsections": include_subsections,
                 },
             )
@@ -1199,7 +1434,8 @@ def create_server() -> FastMCP:
             read_section(5, "installation")  # Read by section title/slug
         """
         try:
-            from docvault.core.section_navigator import SectionNavigator
+            from docvault.core.section_navigator import get_section_content
+            from docvault.db.operations import get_connection, get_document_segment
 
             # Validate document exists
             document = operations.get_document(document_id)
@@ -1216,25 +1452,21 @@ def create_server() -> FastMCP:
                     },
                 )
 
-            navigator = SectionNavigator(document_id)
-
             # Determine if it's a section ID, path, or title
             if section.startswith("s") and section[1:].replace(".", "").isdigit():
                 # It's a path with 's' prefix
                 section_path = section[1:]  # Remove 's' prefix
-                section_obj = navigator.navigate_to_section(section_path)
+                section_obj = get_section_content(document_id, section_path)
             elif section.isdigit():
                 # It's a section ID
-                from docvault.db.operations import get_document_segment
-
                 section_obj = get_document_segment(int(section))
                 if section_obj and section_obj.get("document_id") == document_id:
                     section_path = section_obj.get("section_path", "")
                 else:
                     section_obj = None
             else:
-                # Try as a path or title
-                section_obj = navigator.navigate_to_section(section)
+                # Try as a path
+                section_obj = get_section_content(document_id, section)
                 section_path = section
 
             if not section_obj:
@@ -1252,8 +1484,17 @@ def create_server() -> FastMCP:
                 )
 
             # Get section content
-            if include_subsections and hasattr(navigator, "get_section_with_children"):
-                sections = navigator.get_section_with_children(section_path or section)
+            if include_subsections:
+                # Get all segments with paths starting with section_path
+                with get_connection() as conn:
+                    cursor = conn.execute(
+                        """SELECT section_title, section_level, section_path, content
+                           FROM document_segments 
+                           WHERE document_id = ? AND section_path LIKE ?
+                           ORDER BY section_path""",
+                        (document_id, f"{section_path}%"),
+                    )
+                    sections = cursor.fetchall()
                 content_text = (
                     f"Section {section} and subsections from '{document['title']}':\n\n"
                 )
@@ -1282,6 +1523,339 @@ def create_server() -> FastMCP:
                 content=[
                     types.TextContent(
                         type="text", text=f"Error reading section: {str(e)}"
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    # Add chunk navigation tool
+    @server.tool()
+    async def get_chunk_info(
+        document_id: int, chunk_size: int = 5000, chunking_strategy: str = "hybrid"
+    ) -> types.CallToolResult:
+        """Get information about available chunks for a document.
+
+        Args:
+            document_id: The ID of the document
+            chunk_size: Size of each chunk in characters
+            chunking_strategy: Strategy for chunking - "hybrid", "section", "semantic", "paragraph", or "character"
+
+        Returns:
+            Information about total chunks and navigation hints
+        """
+        try:
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            # Get chunk information
+            chunker = ContentChunker(document_id)
+
+            # Get first chunk to determine total chunks
+            try:
+                first_chunk = chunker.get_chunk(
+                    chunk_number=1,
+                    chunk_size=chunk_size,
+                    strategy=ChunkingStrategy(chunking_strategy),
+                )
+                total_chunks = first_chunk.metadata.total_chunks
+
+                # Get section information if using section-based chunking
+                sections_info = []
+                if chunking_strategy in ["section", "hybrid"]:
+                    with get_connection() as conn:
+                        cursor = conn.execute(
+                            """
+                            SELECT section_path, section_title
+                            FROM document_segments
+                            WHERE document_id = ?
+                            ORDER BY section_path
+                            LIMIT 20
+                        """,
+                            (document_id,),
+                        )
+                        sections = cursor.fetchall()
+                        sections_info = [
+                            f"{s['section_path']}: {s['section_title']}"
+                            for s in sections
+                            if s["section_title"]
+                        ]
+
+                content_text = f"Document: {document['title']}\n\n"
+                content_text += f"Total chunks: {total_chunks} (using {chunking_strategy} strategy)\n"
+                content_text += f"Chunk size: {chunk_size} characters\n\n"
+
+                if sections_info:
+                    content_text += "Available sections:\n"
+                    for section in sections_info[:10]:
+                        content_text += f"  - {section}\n"
+                    if len(sections_info) > 10:
+                        content_text += (
+                            f"  ... and {len(sections_info) - 10} more sections\n"
+                        )
+
+                content_text += f"\nUse read_document with mode='chunk' and chunk_number=1 to {total_chunks} to read specific chunks."
+
+                return types.CallToolResult(
+                    content=[types.TextContent(type="text", text=content_text)],
+                    metadata={
+                        "success": True,
+                        "document_id": document_id,
+                        "total_chunks": total_chunks,
+                        "chunk_size": chunk_size,
+                        "chunking_strategy": chunking_strategy,
+                        "sections_count": len(sections_info),
+                    },
+                )
+
+            except Exception as e:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Error analyzing chunks: {str(e)}"
+                        )
+                    ],
+                    metadata={"success": False, "error": str(e)},
+                )
+
+        except Exception as e:
+            logger.exception(f"Error getting chunk info: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text=f"Error getting chunk info: {str(e)}"
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    # Add section search tool
+    @server.tool()
+    async def search_sections(
+        document_id: int, query: str, search_type: str = "all", limit: int = 10
+    ) -> types.CallToolResult:
+        """Search for specific sections within a document and get navigation info.
+
+        Args:
+            document_id: The ID of the document to search within
+            query: Search query (e.g., "code example", "error handling", "def function_name")
+            search_type: Type of search - "all", "code", "headings", "examples", or "content"
+                - all: Search everything
+                - code: Focus on code blocks and examples
+                - headings: Search section titles only
+                - examples: Search for example sections
+                - content: Search body text
+            limit: Maximum number of results to return
+
+        Returns:
+            Section paths and chunk numbers for direct navigation
+
+        Examples:
+            search_sections(40, "requests.get", search_type="code")
+            search_sections(40, "error handling", search_type="headings")
+            search_sections(40, "example", search_type="examples")
+        """
+        try:
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            # Build search query based on type
+            search_conditions = []
+            params = [document_id]
+
+            if search_type == "code":
+                # Search for code blocks
+                search_conditions.append(
+                    """
+                    (content LIKE '%```%' || content LIKE '%code%' || content LIKE '%def %' || 
+                     content LIKE '%function %' || content LIKE '%class %')
+                """
+                )
+            elif search_type == "headings":
+                # Search section titles only
+                search_conditions.append("LOWER(section_title) LIKE ?")
+                params.append(f"%{query.lower()}%")
+            elif search_type == "examples":
+                # Search for example sections
+                search_conditions.append(
+                    """
+                    (LOWER(section_title) LIKE '%example%' OR 
+                     LOWER(content) LIKE '%example:%' OR
+                     LOWER(content) LIKE '%usage:%')
+                """
+                )
+
+            # Always search content for the query
+            if search_type != "headings":
+                search_conditions.append("LOWER(content) LIKE ?")
+                params.append(f"%{query.lower()}%")
+
+            # Execute search
+            with get_connection() as conn:
+                query_sql = f"""
+                    SELECT 
+                        id,
+                        section_title,
+                        section_path,
+                        content,
+                        LENGTH(content) as content_length
+                    FROM document_segments
+                    WHERE document_id = ?
+                        AND ({" AND ".join(search_conditions) if search_conditions else "1=1"})
+                    ORDER BY 
+                        CASE 
+                            WHEN LOWER(section_title) LIKE ? THEN 0
+                            ELSE 1
+                        END,
+                        section_path
+                    LIMIT ?
+                """
+                params.extend([f"%{query.lower()}%", limit])
+
+                cursor = conn.execute(query_sql, params)
+                results = cursor.fetchall()
+
+            if not results:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=f"No sections found matching '{query}' in document {document_id}",
+                        )
+                    ],
+                    metadata={
+                        "success": True,
+                        "result_count": 0,
+                    },
+                )
+
+            # Use section indexer for efficient chunk mapping
+            indexer = SectionIndexer(document_id)
+
+            # Get enhanced results with chunk information
+            enhanced_results = indexer.search_sections(
+                query=query,
+                search_type=search_type,
+                limit=limit,
+                chunk_size=5000,
+                strategy=ChunkingStrategy.SECTION,
+            )
+
+            section_info = []
+
+            for result in enhanced_results:
+
+                # Use content preview from enhanced results
+                content_preview = result.get("content_preview", "")
+
+                # Get content for better preview if needed
+                if search_type in ["code", "examples"] and result.get("id"):
+                    # Fetch full content for better extraction
+                    with get_connection() as conn:
+                        cursor = conn.execute(
+                            "SELECT content FROM document_segments WHERE id = ?",
+                            (result["id"],),
+                        )
+                        full_content = cursor.fetchone()
+
+                        if full_content:
+                            if search_type == "code":
+                                # Try to extract code block
+                                code_match = re.search(
+                                    r"```[^`]*```", full_content["content"], re.DOTALL
+                                )
+                                if code_match:
+                                    content_preview = code_match.group(0)[:300]
+                            elif search_type == "examples":
+                                # Try to extract example
+                                example_match = re.search(
+                                    r"(Example|Usage):\s*\n(.*?)(?=\n\n|\Z)",
+                                    full_content["content"],
+                                    re.IGNORECASE | re.DOTALL,
+                                )
+                                if example_match:
+                                    content_preview = example_match.group(0)[:300]
+
+                section_info.append(
+                    {
+                        "section_path": result["section_path"],
+                        "section_title": result["section_title"],
+                        "content_preview": content_preview,
+                        "chunk_number": result.get("chunk_number"),
+                        "spans_chunks": result.get("spans_chunks", False),
+                    }
+                )
+
+            # Format results
+            content_text = f"Found {len(section_info)} sections matching '{query}' in {document['title']}:\n\n"
+
+            for i, info in enumerate(section_info, 1):
+                content_text += f"{i}. "
+                if info["section_title"]:
+                    content_text += f"**{info['section_title']}**"
+                else:
+                    content_text += f"Section {info['section_path']}"
+
+                content_text += f" (path: {info['section_path']})"
+
+                if info["chunk_number"]:
+                    content_text += f"\n   → Chunk {info['chunk_number']}"
+                    if info["spans_chunks"]:
+                        content_text += " (spans multiple chunks)"
+
+                content_text += f"\n   Preview: {info['content_preview']}"
+                if len(info["content_preview"]) >= 200:
+                    content_text += "..."
+                content_text += "\n\n"
+
+            content_text += "\nUse `read_document_section` with section_path or `read_document` with mode='chunk' to read these sections."
+
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=content_text)],
+                metadata={
+                    "success": True,
+                    "document_id": document_id,
+                    "result_count": len(results),
+                    "search_type": search_type,
+                    "sections": [
+                        {
+                            "path": info["section_path"],
+                            "title": info["section_title"],
+                            "chunk_number": info.get("chunk_number"),
+                            "spans_chunks": info.get("spans_chunks", False),
+                        }
+                        for info in section_info
+                    ],
+                },
+            )
+
+        except Exception as e:
+            logger.exception(f"Error searching sections: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text=f"Error searching sections: {str(e)}"
                     )
                 ],
                 metadata={"success": False, "error": str(e)},
@@ -1356,7 +1930,7 @@ async def _run_stdio_server(server: FastMCP):
 
 
 def run_server(
-    host: Optional[str] = None, port: Optional[int] = None, transport: str = "stdio"
+    host: str | None = None, port: int | None = None, transport: str = "stdio"
 ) -> None:
     """Run the MCP server"""
     try:

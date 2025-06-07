@@ -6,7 +6,8 @@ in a backward-compatible way.
 
 import logging
 import sqlite3
-from typing import Any, Callable, Dict, List, Tuple
+from collections.abc import Callable
+from typing import Any, Dict, List, Tuple
 
 from docvault import config
 
@@ -76,7 +77,7 @@ def migrate_schema() -> bool:
         current_version = get_schema_version(conn)
 
         # Define migrations
-        migrations: List[Tuple[int, MigrationFunc]] = [
+        migrations: list[tuple[int, MigrationFunc]] = [
             (1, _migrate_to_v1),  # Add section support
             (2, _migrate_to_v2),  # Add registry support
             (3, _migrate_to_v3),  # Add tags support
@@ -85,6 +86,7 @@ def migrate_schema() -> bool:
             (6, _migrate_to_v6),  # Add caching and staleness tracking
             (7, _migrate_to_v7),  # Add collections for project-based organization
             (8, _migrate_to_v8),  # Add llms.txt support
+            (9, _migrate_to_v9),  # Add contextual retrieval support
         ]
 
         # Apply pending migrations
@@ -196,7 +198,7 @@ def _migrate_to_v1(conn: sqlite3.Connection) -> None:
     logger.info("Applied migration: Added section support to document segments")
 
 
-def get_document_sections(document_id: int) -> List[Dict[str, Any]]:
+def get_document_sections(document_id: int) -> list[dict[str, Any]]:
     """Get the sections hierarchy for a document.
 
     Args:
@@ -376,3 +378,10 @@ def _migrate_to_v8(conn: sqlite3.Connection) -> None:
     from . import add_llms_txt_support_0008
 
     add_llms_txt_support_0008.upgrade(conn)
+
+
+def _migrate_to_v9(conn: sqlite3.Connection) -> None:
+    """Migration to v9: Add contextual retrieval support for enhanced RAG."""
+    from . import add_contextual_retrieval_0009
+
+    add_contextual_retrieval_0009.upgrade(conn)

@@ -65,7 +65,7 @@ def handle_network_error(e: Exception) -> None:
     if isinstance(e, aiohttp.ClientConnectorError):
         if "Cannot connect to host" in error_str:
             console.error(
-                "Could not connect to the server. Please check your internet connection."
+                "Could not connect to the server. Check your internet connection."
             )
         elif "nodename nor servname provided" in error_str:
             console.error("Invalid domain name. Please check the URL.")
@@ -119,7 +119,7 @@ def version_cmd():
 @click.option(
     "--skip-existing",
     is_flag=True,
-    help="Skip dependencies that already have documentation (default: true if --force is not set)",
+    help="Skip existing documentation (default: true if --force is not set)",
 )
 @click.option(
     "--format",
@@ -168,7 +168,7 @@ def import_deps_cmd(
     """
     import json
     from pathlib import Path
-    from typing import Any, Dict, List
+    from typing import Any
 
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -246,7 +246,7 @@ def import_deps_cmd(
         # Skipped imports
         if results["skipped"]:
             console.print(
-                f"[yellow]↻ Skipped {len(results['skipped'])} packages (already imported):[/]"
+                f"[yellow]↻ Skipped {len(results['skipped'])} packages (imported):[/]"
             )
             if verbose > 0:
                 for skip in sorted(results["skipped"], key=lambda x: x["name"].lower()):
@@ -269,7 +269,7 @@ def import_deps_cmd(
             )
 
             # Group failures by reason for better reporting
-            failures_by_reason: Dict[str, List[Dict[str, Any]]] = {}
+            failures_by_reason: dict[str, list[dict[str, Any]]] = {}
             for fail in results["failed"]:
                 reason = fail.get("reason", "Unknown error")
                 if reason not in failures_by_reason:
@@ -323,7 +323,7 @@ def import_deps_cmd(
 @click.option(
     "--depth",
     default="1",
-    help="Scraping depth: number (1=single page) or strategy (auto/conservative/aggressive)",
+    help="Depth: number (1=single page) or strategy (auto/conservative/aggressive)",
 )
 @click.option(
     "--max-links",
@@ -347,11 +347,11 @@ def import_deps_cmd(
 @click.option(
     "--sections",
     multiple=True,
-    help="Filter by section headings (e.g., 'Installation', 'API Reference'). Can be used multiple times.",
+    help="Filter by section headings. Can be used multiple times.",
 )
 @click.option(
     "--filter-selector",
-    help="CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')",
+    help="CSS selector to filter sections (e.g., '.documentation', '#api-docs')",
 )
 def _scrape(
     url, depth, max_links, quiet, strict_path, update, sections, filter_selector
@@ -374,7 +374,7 @@ def _scrape(
         parsed_url = urlparse(url)
         if not all([parsed_url.scheme, parsed_url.netloc]):
             console.print(
-                "❌ Error: Invalid URL format. Please provide a complete URL including http:// or https://",
+                "❌ Error: Invalid URL. Provide a complete URL with http:// or https://",
                 style="bold red",
             )
             return
@@ -413,19 +413,19 @@ def _scrape(
                         depth_strategy=depth_strategy,
                     )
                 )
-            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+            except (TimeoutError, aiohttp.ClientError, ValueError) as e:
                 handle_network_error(e)
                 return
             except ssl.SSLError as e:
                 console.error("SSL certificate verification failed.")
                 console.warning(f"Details: {str(e)}")
                 console.warning(
-                    "This might happen with self-signed certificates or outdated SSL configurations."
+                    "This might happen with self-signed or outdated SSL certificates."
                 )
                 return
             except socket.gaierror:
                 console.error(
-                    "Could not resolve the hostname. Please check the URL and your network connection."
+                    "Could not resolve hostname. Check the URL and network connection."
                 )
                 return
             except Exception as e:
@@ -461,7 +461,7 @@ def _scrape(
 
             console.print(table)
             console.print(
-                f"✅ Successfully imported: [bold green]{document['title']}[/] (ID: {document['id']})"
+                f"✅ Imported: [bold green]{document['title']}[/] (ID: {document['id']})"
             )
         else:
             console.print(
@@ -521,11 +521,11 @@ def _scrape(
 @click.option(
     "--sections",
     multiple=True,
-    help="Filter by section headings (e.g., 'Installation', 'API Reference'). Can be used multiple times.",
+    help="Filter by section headings. Can be used multiple times.",
 )
 @click.option(
     "--filter-selector",
-    help="CSS selector to filter specific sections (e.g., '.documentation', '#api-docs')",
+    help="CSS selector to filter sections (e.g., '.documentation', '#api-docs')",
 )
 @validate_url
 def import_cmd(
@@ -596,19 +596,19 @@ def import_cmd(
                         depth_strategy=depth_strategy,
                     )
                 )
-            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+            except (TimeoutError, aiohttp.ClientError, ValueError) as e:
                 handle_network_error(e)
                 return
             except ssl.SSLError as e:
                 console.error("SSL certificate verification failed.")
                 console.warning(f"Details: {str(e)}")
                 console.warning(
-                    "This might happen with self-signed certificates or outdated SSL configurations."
+                    "This might happen with self-signed or outdated SSL certificates."
                 )
                 return
             except socket.gaierror:
                 console.error(
-                    "Could not resolve the hostname. Please check the URL and your network connection."
+                    "Could not resolve hostname. Check the URL and network connection."
                 )
                 return
             except Exception as e:
@@ -710,7 +710,7 @@ def import_cmd(
                 )
                 console.print(table)
                 console.print(
-                    f"✅ Successfully imported: [bold green]{document['title']}[/] (ID: {document['id']})"
+                    f"✅ Imported: [bold green]{document['title']}[/] (ID: {document['id']})"
                 )
 
                 # Provide helpful next steps
@@ -1196,7 +1196,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
             from docvault.core.summarizer import DocumentSummarizer
 
             # Read the markdown content
-            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+            with open(doc["markdown_path"], encoding="utf-8") as f:
                 content = f.read()
 
             # Generate summary
@@ -1315,7 +1315,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
         # Normal (non-summarized) output
         if format == "json":
             # JSON output
-            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+            with open(doc["markdown_path"], encoding="utf-8") as f:
                 content = f.read()
 
             output = {
@@ -1339,7 +1339,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
             from xml.dom import minidom
             from xml.etree.ElementTree import Element, SubElement, tostring
 
-            with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+            with open(doc["markdown_path"], encoding="utf-8") as f:
                 content = f.read()
 
             root = Element("document")
@@ -1375,7 +1375,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 return 0
 
             if raw:
-                with open(doc["html_path"], "r", encoding="utf-8") as f:
+                with open(doc["html_path"], encoding="utf-8") as f:
                     content = f.read()
             else:
                 content = read_html(doc["html_path"])
@@ -1547,7 +1547,7 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 from docvault.core.suggestion_engine import SuggestionEngine
 
                 # Read the content for context extraction
-                with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                with open(doc["markdown_path"], encoding="utf-8") as f:
                     content = f.read()
 
                 extractor = ContextExtractor()
@@ -1670,10 +1670,10 @@ def read_cmd(document_id, format, raw, use_browser, summarize, show_refs, contex
                 not raw and format == "markdown"
             ):  # If not in raw mode, try showing raw content as fallback
                 try:
-                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    with open(doc["markdown_path"], encoding="utf-8") as f:
                         console.print("\n[dim]Falling back to raw content:[/]\n")
                         console.print(f.read())
-                except (IOError, OSError) as io_err:
+                except OSError as io_err:
                     console.print(
                         f"❌ Error reading raw content: {io_err}", style="red"
                     )
@@ -1923,12 +1923,12 @@ def export_cmd(
                     content = read_markdown(doc["markdown_path"], render=False)
                 elif format == "html":
                     if raw:
-                        with open(doc["html_path"], "r", encoding="utf-8") as f:
+                        with open(doc["html_path"], encoding="utf-8") as f:
                             content = f.read()
                     else:
                         content = read_html(doc["html_path"])
                 elif format == "json":
-                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    with open(doc["markdown_path"], encoding="utf-8") as f:
                         content = f.read()
                     doc_data = {
                         "id": doc["id"],
@@ -1943,7 +1943,7 @@ def export_cmd(
                     from xml.dom import minidom
                     from xml.etree.ElementTree import Element, SubElement, tostring
 
-                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    with open(doc["markdown_path"], encoding="utf-8") as f:
                         content_text = f.read()
 
                     root = Element("document")
@@ -2019,7 +2019,7 @@ def export_cmd(
 
                 elif format == "html":
                     if raw:
-                        with open(doc["html_path"], "r", encoding="utf-8") as f:
+                        with open(doc["html_path"], encoding="utf-8") as f:
                             content = f.read()
                     else:
                         content = read_html(doc["html_path"])
@@ -2036,7 +2036,7 @@ Scraped: {doc["scraped_at"]}
                         content = meta_html + content
 
                 elif format == "json":
-                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    with open(doc["markdown_path"], encoding="utf-8") as f:
                         content_text = f.read()
 
                     doc_data = {
@@ -2056,7 +2056,7 @@ Scraped: {doc["scraped_at"]}
                     from xml.dom import minidom
                     from xml.etree.ElementTree import Element, SubElement, tostring
 
-                    with open(doc["markdown_path"], "r", encoding="utf-8") as f:
+                    with open(doc["markdown_path"], encoding="utf-8") as f:
                         content_text = f.read()
 
                     root = Element("document")
@@ -2177,7 +2177,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
 
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
-    def parse_library_spec(spec: str) -> Tuple[str, str]:
+    def parse_library_spec(spec: str) -> tuple[str, str]:
         """Parse library specification into (name, version) tuple.
 
         Supports formats:
@@ -2199,7 +2199,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
     # If version is still None or empty, default to 'latest'
     version = version or "latest"
 
-    async def fetch_documentation() -> List[Dict[str, Any]]:
+    async def fetch_documentation() -> list[dict[str, Any]]:
         """Fetch documentation with progress indication."""
         with Progress(
             SpinnerColumn(),
@@ -2250,7 +2250,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
                     )
                 return []
 
-    def format_json_output(docs: List[Dict[str, Any]]) -> None:
+    def format_json_output(docs: list[dict[str, Any]]) -> None:
         """Format and print results in JSON format."""
         json_results = []
         for doc in docs:
@@ -2274,7 +2274,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
         }
         print(json.dumps(output, indent=2))
 
-    def format_text_output(docs: List[Dict[str, Any]]) -> None:
+    def format_text_output(docs: list[dict[str, Any]]) -> None:
         """Format and print results in a table."""
         if not docs:
             console.print(f"[yellow]No documentation found for {library_name}[/]")
@@ -2329,7 +2329,7 @@ def search_lib(library_spec, version, format, timeout, verbose):
         else:
             format_text_output(docs)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         console.print(
             f"[red]Error:[/] Search timed out after {timeout} seconds. "
             "Try increasing the timeout with --timeout"
@@ -2407,14 +2407,14 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
     from docvault.core.exceptions import LibraryNotFoundError, VersionNotFoundError
     from docvault.core.library_manager import LibraryManager
 
-    def parse_library_spec(spec: str) -> Tuple[str, str]:
+    def parse_library_spec(spec: str) -> tuple[str, str]:
         """Parse library specification into (name, version) tuple."""
         if "@" in spec:
             name, version_spec = spec.split("@", 1)
             return name.strip(), version_spec.strip()
         return spec.strip(), version or "latest"
 
-    async def fetch_library_docs(library_name: str, lib_version: str) -> Dict[str, Any]:
+    async def fetch_library_docs(library_name: str, lib_version: str) -> dict[str, Any]:
         """Fetch documentation for a single library."""
         try:
             manager = LibraryManager()
@@ -2451,7 +2451,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
                 "error": str(e),
             }
 
-    async def fetch_all_documentation() -> List[Dict[str, Any]]:
+    async def fetch_all_documentation() -> list[dict[str, Any]]:
         """Fetch documentation for all libraries concurrently."""
         # Parse all library specifications
         library_requests = []
@@ -2477,7 +2477,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
 
             async def fetch_with_semaphore(
                 lib_name: str, lib_version: str
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 async with semaphore:
                     result = await fetch_library_docs(lib_name, lib_version)
                     progress.update(task, advance=1)
@@ -2493,7 +2493,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
             )
             return results
 
-    def format_json_output(results: List[Dict[str, Any]]):
+    def format_json_output(results: list[dict[str, Any]]):
         """Format results as JSON."""
         output = {
             "total": len(results),
@@ -2503,7 +2503,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
         }
         print(json.dumps(output, indent=2))
 
-    def format_text_output(results: List[Dict[str, Any]]):
+    def format_text_output(results: list[dict[str, Any]]):
         """Format results as text tables."""
         # Summary table
         summary_table = Table(title="Batch Search Summary")
@@ -2572,7 +2572,7 @@ def search_batch(library_specs, version, format, timeout, concurrent, verbose):
         else:
             format_text_output(results)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         console.print(
             f"[red]Error:[/] Batch search timed out after {timeout} seconds. "
             "Try increasing the timeout with --timeout or reducing concurrency with --concurrent"
@@ -3358,7 +3358,19 @@ def search_text(
                     content_preview = prefix + "".join(highlighted) + suffix
 
                 # Display the match with score
-                console.print(f"{indent}  • [dim]({score:.2f})[/] {content_preview}")
+                score_display = f"[dim]({score:.2f})[/]"
+                if hit.get("is_contextual"):
+                    score_display = f"[dim]({score:.2f} [green]ctx[/green])[/]"
+                console.print(f"{indent}  • {score_display} {content_preview}")
+
+                # Show context description if available
+                if hit.get("context_description") and verbose:
+                    context_preview = hit["context_description"][:150]
+                    if len(hit["context_description"]) > 150:
+                        context_preview += "..."
+                    console.print(
+                        f"{indent}    [dim italic]Context: {context_preview}[/]"
+                    )
 
             # Show navigation hints
             if section_idx < len(sorted_sections):

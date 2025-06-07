@@ -2,7 +2,7 @@
 
 ## Version and Quality Notice
 
-**Current Version**: 0.5.0 (Alpha Quality Software)
+**Current Version**: 0.7.0 (Alpha Quality Software)
 
 **Important**: DocVault is currently in alpha stage. While functional, you may encounter bugs or unexpected behavior. Please report any issues you find.
 
@@ -65,7 +65,26 @@ DocVault integrates with AI assistants via the Model Context Protocol (MCP). The
 
 ## Enhanced CLI Features for AI Assistance
 
-In addition to the MCP tools, DocVault v0.5.0 includes powerful CLI features that AI assistants should recommend to users:
+In addition to the MCP tools, DocVault v0.7.0 includes powerful CLI features that AI assistants should recommend to users:
+
+### Contextual Retrieval for Enhanced RAG
+
+DocVault now supports contextual retrieval, which improves search accuracy by up to 49%:
+
+1. **Enable Contextual Retrieval**: Recommend users enable this feature:
+   - `dv context enable` - Turn on contextual retrieval
+   - `dv context status` - Check current status and coverage
+   - `dv context process-all` - Process all documents with context
+
+2. **Search with Contextual Embeddings**: Search now automatically uses contextual embeddings:
+   - Look for `[ctx]` indicators in search results
+   - Use `--verbose` to see context descriptions
+   - Results with contextual embeddings are prioritized
+
+3. **Configure LLM Providers**: Help users set up their preferred LLM:
+   - `dv context config --provider ollama --model llama2` (local, default)
+   - `dv context config --provider openai --model gpt-3.5-turbo` (cloud)
+   - `dv context config --provider anthropic --model claude-3-haiku` (best quality)
 
 ### Context-Aware Documentation Access
 

@@ -1,6 +1,6 @@
 # DocVault
 
-**⚠️ ALPHA SOFTWARE**: This project is currently in alpha stage (v0.5.0). While functional, it may contain bugs and undergo breaking changes. Use in production at your own risk.
+**⚠️ ALPHA SOFTWARE**: This project is currently in alpha stage (v0.7.0). While functional, it may contain bugs and undergo breaking changes. Use in production at your own risk.
 
 A document management system with vector search and MCP integration for AI assistants.
 
@@ -644,6 +644,41 @@ To ensure code and documentation quality, DocVault uses [pre-commit](https://pre
 
 ### Advanced Features
 
+#### Contextual Retrieval (NEW)
+
+DocVault now supports contextual retrieval to enhance RAG accuracy by adding context to chunks before embedding them. This technique can reduce retrieval failures by up to 49%.
+
+```bash
+# Enable contextual retrieval for new documents
+dv context enable
+
+# Check status and statistics
+dv context status
+
+# Process a document with contextual augmentation
+dv context process <document_id>
+
+# Process all documents (or only those without context)
+dv context process-all [--limit 10]
+
+# Find similar segments using metadata
+dv context similar <segment_id> [--role "code_example"]
+
+# Configure LLM settings
+dv context config --provider openai --model gpt-3.5-turbo
+```
+
+Contextual retrieval works by:
+1. Generating contextual descriptions for each chunk using an LLM
+2. Prepending context to chunks before creating embeddings
+3. Storing context as metadata for filtering and navigation
+4. Enabling similarity search based on semantic roles
+
+Supported LLM providers:
+- **Ollama** (default) - Local models like llama2
+- **OpenAI** - GPT-3.5/GPT-4 models
+- **Anthropic** - Claude models
+
 #### Context-Aware Documentation
 
 DocVault can extract and display rich contextual information from documentation including usage examples, best practices, and common pitfalls:
@@ -1111,7 +1146,7 @@ DocVault uses GitHub Actions for CI/CD. Tests are automatically run on:
 
 ### Current Version
 
-DocVault is at version 0.5.0 (Alpha). See [CHANGELOG.md](CHANGELOG.md) for version history.
+DocVault is at version 0.7.0 (Alpha). See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ### Versioning Policy
 
