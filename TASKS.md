@@ -643,3 +643,142 @@ Most CLI UX improvements have been completed. Remaining nice-to-have features:
   - [ ] Keep graph features optional and additive
   - [ ] Monitor usage metrics before expanding
   - Reference: See KNOWLEDGE_GRAPH_ANALYSIS.md for detailed implementation strategy
+
+## MCP QA Issues to Address (DocVault 0.7.1)
+
+Based on comprehensive QA testing of all MCP tools, the following issues need attention:
+
+### High Priority Issues
+
+- [ ] **Fix read_document_section Parameter Validation Error** (Critical)
+  - [ ] Issue: MCP tool interface validation fails with "Input should be a valid string [type=string_type, input_value=1, input_type=int]"
+  - [ ] Root cause: Parameter validation in MCP tool interface incorrectly handles string parameters
+  - [ ] Impact: Cannot read specific document sections via MCP, blocking partial document access
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/mcp/tools.py` or `/Users/azmaveth/code/docvault/docvault/mcp/handlers.py`
+  - [ ] Solution: Fix parameter type conversion in read_document_section tool definition
+  - [ ] Test: Verify `read_document_section(document_id=107, section_path="1")` works correctly
+
+- [ ] **Improve Suggestion Engine Quality** (High)
+  - [ ] Issue: `suggest` tool returns low-relevance suggestions (Node.js functions for "python requests" query)
+  - [ ] Root cause: Suggestion algorithm lacks proper query context understanding
+  - [ ] Impact: Reduced utility of AI-powered suggestions for developers
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/core/suggestion_engine.py`
+  - [ ] Solution: Enhance algorithm to better match query context and programming language
+  - [ ] Test: Query "python requests" should return relevant Python HTTP library suggestions
+
+### Medium Priority Issues
+
+- [x] **Enhance Package Manager Integration Coverage** (Medium) [2025-06-07]
+  - [x] Issue: `add_from_package_manager` fails for common packages like pytest
+  - [x] Root cause: Limited coverage of package documentation sources  
+  - [x] Impact: Reduced automation of documentation acquisition
+  - [x] File: `/Users/azmaveth/code/docvault/docvault/core/library_manager.py`
+  - [x] Solution: Expand documentation source mapping and improve error handling
+  - [x] Test: `add_from_package_manager("pytest", "pypi")` now succeeds
+  - **Improvements Made**:
+    - Fixed URL pattern formatting for non-versioned URLs (e.g., fastapi.tiangolo.com)
+    - Expanded hardcoded patterns from 12 to 70+ popular Python packages
+    - Enhanced PyPI metadata extraction with multiple documentation URL keys
+    - Added common pattern detection (readthedocs.io, github.io, etc.)
+    - Added comprehensive logging for troubleshooting
+
+- [x] **Improve Section Content Extraction** (Medium) [2025-06-07]
+  - [x] Issue: `read_section` returns minimal content ("# Section" only)
+  - [x] Root cause: Section reading implementation may not extract full content
+  - [x] Impact: Incomplete section access reduces navigation utility
+  - [x] File: `/Users/azmaveth/code/docvault/docvault/mcp/server.py`
+  - [x] Solution: Enhanced section content extraction to return complete section text from segments
+  - [x] Test: Section reading now extracts full content from segments structure
+  - **Fix Applied**: Updated MCP server to properly extract content from segments structure in multiple tools (read_document_section, read_section_by_number, read_section)
+
+### AI Usability Improvements
+
+- [x] **Add Contextual Search Hints** (Medium) [2025-06-07]
+  - [x] Issue: Search results don't provide enough context for AI assistants to understand relevance
+  - [x] Enhancement: Add snippet previews and relevance explanations in MCP search results
+  - [x] Impact: Better AI decision-making about which documents to read
+  - [x] File: `/Users/azmaveth/code/docvault/docvault/mcp/server.py`
+  - [x] Solution: Include content snippets and relevance scores in search metadata
+  - **Improvements Made**:
+    - Added visual relevance indicators (🟢 High, 🟡 Medium, 🔵 Basic)
+    - Implemented content type detection (API Reference, Tutorial/Guide, Examples, etc.)
+    - Added complexity indicators (Beginner, Intermediate, Advanced, Technical)
+    - Enhanced content previews (300 characters vs 200)
+    - Added AI usage hints with specific recommendations for each result
+    - Enhanced metadata with relevance distribution and content type analysis
+    - Added summary statistics for AI decision-making
+
+- [ ] **Implement Progressive Content Discovery** (Medium)
+  - [ ] Issue: AI assistants lack guidance on how to navigate large documents efficiently
+  - [ ] Enhancement: Add "suggested next sections" and "related content" to read operations
+  - [ ] Impact: More efficient AI exploration of documentation
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/core/section_navigator.py`
+  - [ ] Solution: Implement content relationship mapping and navigation suggestions
+
+- [ ] **Add Document Difficulty/Complexity Indicators** (Low)
+  - [ ] Issue: AI assistants can't assess document complexity before reading
+  - [ ] Enhancement: Add metadata indicating beginner/intermediate/advanced content
+  - [ ] Impact: Better content prioritization for AI responses
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/core/processor.py`
+  - [ ] Solution: Analyze content complexity during scraping and store as metadata
+
+- [ ] **Enhance Error Messages for AI Consumption** (Low)
+  - [ ] Issue: Error messages are human-focused and may not provide actionable guidance for AI
+  - [ ] Enhancement: Include structured error codes and suggested remediation steps
+  - [ ] Impact: Better AI error handling and user guidance
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/mcp/handlers.py`
+  - [ ] Solution: Standardize error response format with actionable guidance
+
+### Testing and Validation
+
+- [ ] **Create MCP Tool Integration Tests** (High)
+  - [ ] Add automated tests for all 20 MCP tools to prevent regressions
+  - [ ] Include parameter validation and error handling tests
+  - [ ] File: `/Users/azmaveth/code/docvault/tests/test_mcp_integration.py`
+  - [ ] Ensure tests cover the specific issues found in QA testing
+
+- [ ] **Add AI Assistant Usage Analytics** (Low)
+  - [ ] Track which tools are most/least used by AI assistants
+  - [ ] Monitor error patterns to identify common issues
+  - [ ] File: `/Users/azmaveth/code/docvault/docvault/utils/usage_analytics.py`
+  - [ ] Help prioritize future improvements based on actual usage
+
+## AI Assistant Workflow Improvements
+
+Based on QA testing from an AI perspective, these enhancements would improve DocVault's utility for AI assistants:
+
+### Enhanced Content Understanding
+
+- [ ] **Add Content Type Classification** (Medium)
+  - [ ] Automatically classify content as: tutorial, reference, example, troubleshooting, concept
+  - [ ] Help AI assistants select appropriate content for different user queries
+  - [ ] Store classification metadata and expose via MCP tools
+
+- [ ] **Implement Code Example Extraction** (Medium)  
+  - [ ] Automatically identify and index code examples separately
+  - [ ] Make code examples searchable by programming language and functionality
+  - [ ] Add `search_code_examples` MCP tool for targeted code search
+
+### Improved Navigation Assistance
+
+- [ ] **Add Learning Path Suggestions** (Low)
+  - [ ] Suggest logical reading order for complex topics
+  - [ ] Identify prerequisite and follow-up content
+  - [ ] Help AI assistants guide users through structured learning
+
+- [ ] **Implement Smart Content Chunking** (Low)
+  - [ ] Break large documents into conceptually coherent chunks
+  - [ ] Preserve logical boundaries (complete functions, examples, explanations)
+  - [ ] Improve AI's ability to provide focused, complete answers
+
+### Enhanced Metadata for AI Decision Making
+
+- [ ] **Add Content Confidence Scores** (Low)
+  - [ ] Score content based on completeness, accuracy indicators, and freshness
+  - [ ] Help AI assistants prioritize high-quality sources
+  - [ ] Include scores in MCP tool responses
+
+- [ ] **Implement Usage Pattern Analysis** (Low)
+  - [ ] Track which content is most useful for different types of queries
+  - [ ] Surface popular/recommended sections for common topics
+  - [ ] Help AI assistants identify the most valuable content first

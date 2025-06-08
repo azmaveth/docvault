@@ -117,3 +117,28 @@ MAX_CONCURRENT_REQUESTS = int(
 )  # Reduced from 10
 MAX_MEMORY_MB = int(os.getenv("MAX_MEMORY_MB", "1024"))
 MAX_PROCESSING_TIME_SECONDS = int(os.getenv("MAX_PROCESSING_TIME_SECONDS", "300"))
+
+
+# Helper function for getting config values from database
+def get(key: str, default: str | None = None) -> str | None:
+    """Get a configuration value from the database.
+    
+    Args:
+        key: The configuration key
+        default: Default value if key not found
+        
+    Returns:
+        The configuration value or default
+    """
+    try:
+        from docvault.db import operations
+        
+        with operations.get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT value FROM config WHERE key = ?",
+                (key,)
+            )
+            result = cursor.fetchone()
+            return result["value"] if result else default
+    except Exception:
+        return default

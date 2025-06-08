@@ -7,6 +7,7 @@ contextual descriptions for chunks before embedding them.
 
 import asyncio
 import json
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Optional
 
@@ -35,7 +36,7 @@ class ContextualChunkProcessor:
         """
         self.context_generator = ContextGenerator(llm_provider)
         self.enable_metadata_embeddings = enable_metadata_embeddings
-        self.chunker = ContentChunker()
+        # Don't initialize chunker here - create it per document
 
     async def process_document(
         self,
@@ -44,6 +45,7 @@ class ContextualChunkProcessor:
         force: bool = False,
         chunk_size: int = 5000,
         chunking_strategy: str = "hybrid",
+        progress_callback: Callable[[int, int, str], None] | None = None,
     ) -> dict[str, Any]:
         """Process a document with contextual augmentation.
 
@@ -53,6 +55,8 @@ class ContextualChunkProcessor:
             force: Force regeneration of contexts
             chunk_size: Size of chunks in characters
             chunking_strategy: Strategy for chunking
+            progress_callback: Optional callback for progress updates. Called with
+                              (current_segment, total_segments, segment_title)
 
         Returns:
             Processing results with statistics
@@ -98,7 +102,7 @@ class ContextualChunkProcessor:
 
         # Generate contexts for segments
         results = await self._generate_contexts_for_segments(
-            segments, content, document, regenerate
+            segments, content, document, regenerate, progress_callback
         )
 
         # Update embeddings with contextualized content
@@ -147,10 +151,11 @@ class ContextualChunkProcessor:
                 # Get existing segments
                 cursor = conn.execute(
                     """
-                    SELECT id, content, section_title, section_path, chunk_index
+                    SELECT id, content, section_title, section_path, position,
+                           context_description
                     FROM document_segments
                     WHERE document_id = ?
-                    ORDER BY chunk_index
+                    ORDER BY position
                 """,
                     (document_id,),
                 )
@@ -160,20 +165,31 @@ class ContextualChunkProcessor:
             logger.info(f"Creating segments for document {document_id}")
 
             # Use chunker to create chunks
-            chunks = self.chunker.chunk_document(
-                content, chunk_size=chunk_size, strategy=chunking_strategy
-            )
+            chunker = ContentChunker(document_id)
 
-            # Store chunks as segments
+            # Stream through all chunks
             segments = []
-            for i, chunk in enumerate(chunks):
+            chunk_index = 0
+
+            # Use the streaming interface
+            from docvault.core.content_chunker import ChunkingStrategy
+            strategy_enum = ChunkingStrategy(chunking_strategy)
+
+            for chunk in chunker.stream_chunks(
+                chunk_size=chunk_size, strategy=strategy_enum
+            ):
                 segment_data = {
                     "document_id": document_id,
-                    "content": chunk["content"],
-                    "section_title": chunk.get("metadata", {}).get("section", ""),
-                    "section_path": chunk.get("metadata", {}).get("path", ""),
-                    "chunk_index": i,
-                    "metadata": json.dumps(chunk.get("metadata", {})),
+                    "content": chunk.content,
+                    "section_title": chunk.metadata.section_title or "",
+                    "section_path": chunk.metadata.section_path or "",
+                    "position": chunk_index,
+                    "metadata": json.dumps({
+                        "start_position": chunk.metadata.start_position,
+                        "end_position": chunk.metadata.end_position,
+                        "section": chunk.metadata.section_title,
+                        "path": chunk.metadata.section_path,
+                    }),
                 }
 
                 # Insert segment
@@ -181,7 +197,7 @@ class ContextualChunkProcessor:
                     """
                     INSERT INTO document_segments
                     (document_id, content, section_title, section_path,
-                     chunk_index, metadata)
+                     position, segment_type)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """,
                     (
@@ -189,13 +205,14 @@ class ContextualChunkProcessor:
                         segment_data["content"],
                         segment_data["section_title"],
                         segment_data["section_path"],
-                        segment_data["chunk_index"],
-                        segment_data["metadata"],
+                        segment_data["position"],
+                        "chunk",  # segment_type
                     ),
                 )
 
                 segment_data["id"] = cursor.lastrowid
                 segments.append(segment_data)
+                chunk_index += 1
 
             conn.commit()
             logger.info(f"Created {len(segments)} segments")
@@ -208,6 +225,7 @@ class ContextualChunkProcessor:
         document_content: str,
         document: dict,
         regenerate: bool,
+        progress_callback: Callable[[int, int, str], None] | None = None,
     ) -> list[dict]:
         """Generate contextual descriptions for segments."""
         results = []
@@ -218,7 +236,13 @@ class ContextualChunkProcessor:
         )
 
         # Process each segment
-        for segment in segments:
+        total_segments = len(segments)
+        for idx, segment in enumerate(segments):
+            # Report progress
+            if progress_callback:
+                segment_title = segment.get("section_title", f"Segment {idx + 1}")
+                progress_callback(idx + 1, total_segments, segment_title)
+
             # Skip if context exists and not regenerating
             if segment.get("context_description") and not regenerate:
                 results.append(
@@ -346,7 +370,7 @@ class ContextualChunkProcessor:
 
     async def _update_embeddings(self, results: list[dict]) -> dict[str, int]:
         """Update embeddings with contextualized content."""
-        from docvault.core.embeddings import generate_embedding
+        from docvault.core.embeddings import generate_embeddings as generate_embedding
 
         updated_count = 0
 
@@ -375,13 +399,18 @@ class ContextualChunkProcessor:
                     embedding = await generate_embedding(contextualized_content)
 
                     # Store contextualized embedding
+                    embedding_bytes = (
+                        embedding.tobytes()
+                        if hasattr(embedding, 'tobytes')
+                        else embedding
+                    )
                     conn.execute(
                         """
                         UPDATE document_segments
                         SET context_embedding = ?
                         WHERE id = ?
                     """,
-                        (embedding.tobytes(), segment_id),
+                        (embedding_bytes, segment_id),
                     )
 
                     updated_count += 1
@@ -406,7 +435,7 @@ class ContextualChunkProcessor:
         self, results: list[dict]
     ) -> dict[str, int]:
         """Generate embeddings for metadata to enable similarity search."""
-        from docvault.core.embeddings import generate_embedding
+        from docvault.core.embeddings import generate_embeddings as generate_embedding
 
         created_count = 0
 
@@ -440,6 +469,11 @@ class ContextualChunkProcessor:
                 embedding = await generate_embedding(metadata_str)
 
                 # Store metadata embedding
+                embedding_bytes = (
+                    embedding.tobytes()
+                    if hasattr(embedding, 'tobytes')
+                    else embedding
+                )
                 with operations.get_connection() as conn:
                     conn.execute(
                         """
@@ -447,7 +481,7 @@ class ContextualChunkProcessor:
                         (segment_id, metadata_embedding, metadata_json)
                         VALUES (?, ?, ?)
                     """,
-                        (segment_id, embedding.tobytes(), json.dumps(metadata)),
+                        (segment_id, embedding_bytes, json.dumps(metadata)),
                     )
                     conn.commit()
 

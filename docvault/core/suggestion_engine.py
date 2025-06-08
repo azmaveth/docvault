@@ -35,6 +35,19 @@ class SuggestionEngine:
     def __init__(self):
         self.context_extractor = ContextExtractor()
 
+        # Language/framework context mappings
+        self.language_contexts = {
+            "python": ["python", "py", "pip", "django", "flask", "pandas", "requests", "numpy"],
+            "javascript": ["javascript", "js", "node", "npm", "react", "vue", "express", "axios"],
+            "typescript": ["typescript", "ts", "node", "npm", "react", "vue", "express"],
+            "java": ["java", "maven", "gradle", "spring", "hibernate", "junit"],
+            "c#": ["csharp", "dotnet", "nuget", "asp.net", "entity"],
+            "rust": ["rust", "cargo", "tokio", "serde", "actix"],
+            "go": ["golang", "go", "mod", "gin", "gorilla"],
+            "php": ["php", "composer", "laravel", "symfony", "psr"],
+            "ruby": ["ruby", "gem", "rails", "sinatra", "rspec"],
+        }
+
         # Common programming task categories
         self.task_categories = {
             "data_processing": [
@@ -63,6 +76,8 @@ class SuggestionEngine:
                 "api",
                 "client",
                 "fetch",
+                "url",
+                "response",
             ],
             "database": [
                 "query",
@@ -112,6 +127,9 @@ class SuggestionEngine:
         """
         suggestions = []
 
+        # Detect language context from query
+        language_context = self._detect_language_context(query)
+
         # Get suggestions from different sources
         suggestions.extend(self._get_semantic_suggestions(query, limit // 2))
         suggestions.extend(
@@ -122,6 +140,10 @@ class SuggestionEngine:
         )
         suggestions.extend(self._get_category_based_suggestions(query, context))
 
+        # Apply language context filtering if detected
+        if language_context:
+            suggestions = self._filter_by_language_context(suggestions, language_context)
+
         # Remove duplicates and sort by relevance
         unique_suggestions = self._deduplicate_suggestions(suggestions)
         sorted_suggestions = sorted(
@@ -129,6 +151,46 @@ class SuggestionEngine:
         )
 
         return sorted_suggestions[:limit]
+
+    def _detect_language_context(self, query: str) -> str | None:
+        """Detect programming language/framework context from query."""
+        query_lower = query.lower()
+        
+        for language, keywords in self.language_contexts.items():
+            if any(keyword in query_lower for keyword in keywords):
+                return language
+        
+        return None
+
+    def _filter_by_language_context(self, suggestions: list[Suggestion], target_language: str) -> list[Suggestion]:
+        """Filter suggestions to prefer those from the target language context."""
+        if not target_language:
+            return suggestions
+            
+        language_keywords = self.language_contexts.get(target_language, [])
+        
+        # Score suggestions based on language relevance
+        for suggestion in suggestions:
+            content_lower = (suggestion.description + " " + suggestion.title).lower()
+            
+            # Boost score if content matches target language
+            language_matches = sum(1 for keyword in language_keywords if keyword in content_lower)
+            if language_matches > 0:
+                # Boost score based on language matches
+                suggestion.relevance_score = min(1.0, suggestion.relevance_score + (language_matches * 0.2))
+                suggestion.reason = f"{suggestion.reason} (language: {target_language})"
+            else:
+                # Check if it's from a different language context
+                other_language_matches = 0
+                for other_lang, other_keywords in self.language_contexts.items():
+                    if other_lang != target_language:
+                        other_language_matches += sum(1 for keyword in other_keywords if keyword in content_lower)
+                
+                if other_language_matches > 0:
+                    # Penalize suggestions from other languages
+                    suggestion.relevance_score = max(0.1, suggestion.relevance_score - 0.3)
+        
+        return suggestions
 
     def get_task_based_suggestions(
         self, task_description: str, limit: int = 5
@@ -142,6 +204,9 @@ class SuggestionEngine:
         Returns:
             List of relevant suggestions
         """
+        # Detect language context
+        language_context = self._detect_language_context(task_description)
+        
         # Analyze task description to identify categories
         task_lower = task_description.lower()
         relevant_categories = []
@@ -162,6 +227,10 @@ class SuggestionEngine:
         # If no specific categories match, use general search
         if not suggestions:
             suggestions = self._get_semantic_suggestions(task_description, limit)
+
+        # Apply language context filtering if detected
+        if language_context:
+            suggestions = self._filter_by_language_context(suggestions, language_context)
 
         return sorted(suggestions, key=lambda x: x.relevance_score, reverse=True)[
             :limit
@@ -239,14 +308,31 @@ class SuggestionEngine:
         suggestions = []
 
         try:
+            # Detect language context to improve search
+            language_context = self._detect_language_context(query)
+            
+            # Enhance query with language context if detected
+            enhanced_query = query
+            if language_context:
+                # Add language context to search query for better targeting
+                enhanced_query = f"{query} {language_context}"
+
             # Use existing search functionality to find related content
-            results = asyncio.run(search_docs(query, limit=limit * 2))
+            results = asyncio.run(search_docs(enhanced_query, limit=limit * 2))
 
             for result in results:
                 # Extract identifiers from the content
                 identifiers = self._extract_identifiers_from_content(result["content"])
 
                 for identifier, id_type in identifiers:
+                    # Calculate better relevance score based on content quality
+                    base_score = result["score"] * 0.8
+                    
+                    # Boost score if identifier matches query terms
+                    query_words = query.lower().split()
+                    if any(word in identifier.lower() for word in query_words):
+                        base_score = min(1.0, base_score + 0.2)
+
                     suggestions.append(
                         Suggestion(
                             identifier=identifier,
@@ -255,8 +341,7 @@ class SuggestionEngine:
                             segment_id=result["id"],
                             title=result["title"],
                             description=result["content"][:200],
-                            relevance_score=result["score"]
-                            * 0.8,  # Slightly lower than direct matches
+                            relevance_score=base_score,
                             reason="Semantic similarity to query",
                         )
                     )
@@ -393,34 +478,118 @@ class SuggestionEngine:
 
         # Get keywords for this category
         keywords = self.task_categories.get(category, [])
-
+        
+        # Detect language context from query to improve search
+        language_context = self._detect_language_context(query)
+        
         conn = sqlite3.connect(config.DB_PATH)
         conn.row_factory = sqlite3.Row
 
         try:
             cursor = conn.cursor()
 
-            # Find segments related to this category
-            for keyword in keywords[:3]:  # Limit to avoid too many queries
+            # Combine query terms with category keywords for better targeting
+            query_words = query.lower().split()
+            
+            # If we have language context, search for both query + language + category keywords
+            if language_context:
+                search_terms = query_words + [language_context] + keywords[:2]
+            else:
+                search_terms = query_words + keywords[:2]
+
+            # Create search pattern that looks for multiple terms
+            search_patterns = []
+            for term in search_terms[:5]:  # Limit to avoid too complex queries
+                search_patterns.append(f"%{term}%")
+            
+            # Build SQL query that prefers content with multiple matching terms
+            sql_conditions = []
+            sql_params = []
+            
+            for pattern in search_patterns:
+                sql_conditions.append("(ds.content LIKE ? OR ds.section_title LIKE ? OR d.title LIKE ?)")
+                sql_params.extend([pattern, pattern, pattern])
+            
+            # Execute query that finds segments with any of the terms
+            cursor.execute(
+                f"""
+                SELECT ds.*, d.title, d.id as doc_id,
+                       ({' + '.join(['CASE WHEN (ds.content LIKE ? OR ds.section_title LIKE ? OR d.title LIKE ?) THEN 1 ELSE 0 END' for _ in search_patterns])}) as match_count
+                FROM document_segments ds
+                JOIN documents d ON ds.document_id = d.id
+                WHERE {' OR '.join(sql_conditions)}
+                ORDER BY match_count DESC, d.title
+                LIMIT 10
+                """,
+                sql_params * 2  # Parameters used twice: once for match_count, once for WHERE
+            )
+
+            segments = cursor.fetchall()
+
+            for segment in segments:
+                # Calculate relevance based on how many terms match
+                match_count = segment.get("match_count", 1)
+                base_relevance = min(0.9, 0.4 + (match_count * 0.15))
+                
+                identifiers = self._extract_identifiers_from_content(
+                    segment["content"]
+                )
+
+                for identifier, id_type in identifiers[:3]:  # More identifiers from good matches
+                    # Boost relevance if identifier matches query terms
+                    identifier_relevance = base_relevance
+                    if any(word in identifier.lower() for word in query_words):
+                        identifier_relevance = min(1.0, identifier_relevance + 0.2)
+                    
+                    suggestions.append(
+                        Suggestion(
+                            identifier=identifier,
+                            type=id_type,
+                            document_id=segment["doc_id"],
+                            segment_id=segment["id"],
+                            title=segment["section_title"] or segment["title"],
+                            description=segment["content"][:200],
+                            relevance_score=identifier_relevance,
+                            reason=f"Related to {category} (matches: {match_count} terms)",
+                        )
+                    )
+
+        except Exception as e:
+            logger.warning(f"Category-based search failed: {e}")
+            # Fallback to simple search
+            return self._simple_category_search(category, keywords[:2])
+        finally:
+            conn.close()
+
+        return suggestions
+    
+    def _simple_category_search(self, category: str, keywords: list[str]) -> list[Suggestion]:
+        """Fallback simple category search."""
+        suggestions = []
+        conn = sqlite3.connect(config.DB_PATH)
+        conn.row_factory = sqlite3.Row
+
+        try:
+            cursor = conn.cursor()
+            
+            for keyword in keywords:
                 cursor.execute(
                     """
                     SELECT ds.*, d.title, d.id as doc_id
                     FROM document_segments ds
                     JOIN documents d ON ds.document_id = d.id
                     WHERE ds.content LIKE ? OR ds.section_title LIKE ?
-                    LIMIT 5
+                    LIMIT 3
                 """,
                     (f"%{keyword}%", f"%{keyword}%"),
                 )
 
                 segments = cursor.fetchall()
-
+                
                 for segment in segments:
-                    identifiers = self._extract_identifiers_from_content(
-                        segment["content"]
-                    )
+                    identifiers = self._extract_identifiers_from_content(segment["content"])
 
-                    for identifier, id_type in identifiers[:2]:  # Limit per segment
+                    for identifier, id_type in identifiers[:1]:
                         suggestions.append(
                             Suggestion(
                                 identifier=identifier,
@@ -429,14 +598,13 @@ class SuggestionEngine:
                                 segment_id=segment["id"],
                                 title=segment["section_title"] or segment["title"],
                                 description=segment["content"][:200],
-                                relevance_score=0.6,
+                                relevance_score=0.5,
                                 reason=f"Related to {category}",
                             )
                         )
-
         finally:
             conn.close()
-
+        
         return suggestions
 
     def _extract_identifiers_from_content(self, content: str) -> list[tuple[str, str]]:

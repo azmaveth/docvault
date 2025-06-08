@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2025-01-07
+
+### Added
+- **Non-Scrolling Progress Indicators**: Completely redesigned contextual processing progress display
+  - Eliminated terminal scrolling and empty lines during processing
+  - Real-time segment-level progress with titles and counters
+  - Clean, simple status updates without progress bar artifacts
+  - Shows exactly which segment is being processed (e.g., "Segment 54/281: fsPromises.realpath")
+  - Works for both single document (`dv context process`) and batch (`dv context process-all`) commands
+  - Throttled updates (every 0.5 seconds) to prevent output spam
+  - Professional-looking progress indication with completion statistics
+
+### Fixed
+- **Contextual Processing Skip Logic**: Fixed issue where already-processed segments were reprocessed
+  - Now properly fetches `context_description` field when checking existing segments
+  - Correctly skips segments that already have contextual descriptions
+  - Documents resume processing from the correct segment when restarted
+  - Prevents duplicate processing and improves performance
+- **Embedding Storage Error**: Fixed `'bytes' object has no attribute 'tobytes'` error
+  - Added proper type checking for embedding format before storage
+  - Handles both numpy arrays and bytes objects correctly
+
 ## [0.7.1] - 2025-01-06
 
 ### Fixed

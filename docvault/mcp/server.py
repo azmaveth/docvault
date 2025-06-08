@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import mcp.server.stdio
 
@@ -246,17 +246,84 @@ def create_server() -> FastMCP:
                 )
                 if metadata_parts:
                     result_text += f"{' • '.join(metadata_parts)}\n"
+                
+                # Enhanced relevance information for AI assistants
                 result_text += f"Score: {r.get('score', 0):.2f}"
                 if r.get("is_contextual"):
-                    result_text += " [contextual]"
+                    result_text += " [ctx]"
+                
+                # Add relevance explanation based on score
+                score = r.get('score', 0)
+                if score >= 0.8:
+                    result_text += " 🟢 High relevance"
+                elif score >= 0.6:
+                    result_text += " 🟡 Medium relevance"
+                else:
+                    result_text += " 🔵 Basic match"
                 result_text += "\n"
-                content_preview = r.get("content", "")[:200]
-                ellipsis = "..." if len(r.get("content", "")) > 200 else ""
-                result_text += f"Content: {content_preview}{ellipsis}\n"
+                
+                # Add content type detection
+                title = r.get('title', '').lower()
+                content = r.get('content', '').lower()
+                content_types = []
+                
+                if any(word in title or word in content[:500] for word in ['api', 'reference', 'method', 'function', 'class']):
+                    content_types.append("API Reference")
+                if any(word in title or word in content[:500] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                    content_types.append("Tutorial/Guide")
+                if any(word in title or word in content[:500] for word in ['example', 'sample', 'demo', 'usage']):
+                    content_types.append("Examples")
+                if any(word in title or word in content[:500] for word in ['install', 'setup', 'configuration', 'config']):
+                    content_types.append("Setup/Config")
+                if any(word in title or word in content[:500] for word in ['troubleshoot', 'debug', 'error', 'problem', 'issue']):
+                    content_types.append("Troubleshooting")
+                
+                if content_types:
+                    result_text += f"Content Type: {', '.join(content_types)}\n"
+                
+                # Add complexity indicator
+                complexity_indicators = []
+                if any(word in title or word in content[:500] for word in ['beginner', 'basic', 'intro', 'getting started', 'quickstart']):
+                    complexity_indicators.append("Beginner")
+                if any(word in title or word in content[:500] for word in ['advanced', 'expert', 'complex', 'in-depth']):
+                    complexity_indicators.append("Advanced")
+                if any(word in title or word in content[:500] for word in ['intermediate', 'moderate']):
+                    complexity_indicators.append("Intermediate")
+                
+                if complexity_indicators:
+                    result_text += f"Complexity: {', '.join(complexity_indicators)}\n"
+                elif any(word in content[:500] for word in ['class ', 'def ', 'function', 'import', 'from']):
+                    result_text += "Complexity: Technical (contains code)\n"
+                
+                # Enhanced content preview with better formatting
+                content_preview = r.get("content", "")[:300]
+                ellipsis = "..." if len(r.get("content", "")) > 300 else ""
+                result_text += f"Preview: {content_preview.strip()}{ellipsis}\n"
+                
                 if r.get("section_title"):
                     result_text += f"Section: {r['section_title']}\n"
                 if r.get("context_description"):
-                    result_text += f"Context: {r['context_description'][:100]}...\n"
+                    result_text += f"Context: {r['context_description'][:150]}...\n"
+                
+                # Add AI usage hints
+                usage_hints = []
+                if score >= 0.8:
+                    usage_hints.append("🎯 Primary reference - use for detailed answers")
+                elif score >= 0.6:
+                    usage_hints.append("📖 Supporting reference - good for additional context")
+                else:
+                    usage_hints.append("📝 Background reference - may contain related info")
+                
+                if "API Reference" in content_types:
+                    usage_hints.append("🔧 Contains technical specifications")
+                if "Tutorial/Guide" in content_types:
+                    usage_hints.append("📚 Good for step-by-step explanations")
+                if "Examples" in content_types:
+                    usage_hints.append("💡 Contains practical examples")
+                
+                if usage_hints:
+                    result_text += f"AI Hint: {' • '.join(usage_hints)}\n"
+                
                 result_text += "\n"
 
                 content_items.append(types.TextContent(type="text", text=result_text))
@@ -283,14 +350,55 @@ def create_server() -> FastMCP:
 
                 content_items.append(types.TextContent(type="text", text=msg))
 
+            # Generate search metadata with contextual hints
+            search_metadata = {
+                "success": True,
+                "result_count": len(results),
+                "query": query,
+                "filters": doc_filter if doc_filter else {},
+            }
+            
+            if results:
+                # Add summary statistics for AI decision making
+                high_relevance_count = sum(1 for r in results if r.get('score', 0) >= 0.8)
+                medium_relevance_count = sum(1 for r in results if 0.6 <= r.get('score', 0) < 0.8)
+                low_relevance_count = sum(1 for r in results if r.get('score', 0) < 0.6)
+                
+                search_metadata.update({
+                    "relevance_distribution": {
+                        "high": high_relevance_count,
+                        "medium": medium_relevance_count, 
+                        "low": low_relevance_count
+                    },
+                    "highest_score": max(r.get('score', 0) for r in results),
+                    "average_score": sum(r.get('score', 0) for r in results) / len(results),
+                    "has_contextual_results": any(r.get('is_contextual') for r in results),
+                    "ai_recommendation": (
+                        "High quality results found - suitable for primary references" 
+                        if high_relevance_count > 0 
+                        else "Medium quality results - good for supporting information" 
+                        if medium_relevance_count > 0 
+                        else "Basic matches found - may contain related information"
+                    )
+                })
+                
+                # Content type analysis
+                all_content_types = []
+                for r in results:
+                    title = r.get('title', '').lower()
+                    content = r.get('content', '').lower()
+                    if any(word in title or word in content[:500] for word in ['api', 'reference', 'method', 'function', 'class']):
+                        all_content_types.append("API Reference")
+                    if any(word in title or word in content[:500] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                        all_content_types.append("Tutorial/Guide")
+                    if any(word in title or word in content[:500] for word in ['example', 'sample', 'demo', 'usage']):
+                        all_content_types.append("Examples")
+                
+                search_metadata["content_types_found"] = list(set(all_content_types))
+
             return types.CallToolResult(
                 content=content_items,
-                metadata={
-                    "success": True,
-                    "result_count": len(results),
-                    "query": query,
-                    "filters": doc_filter if doc_filter else {},
-                },
+                metadata=search_metadata,
             )
         except Exception as e:
             logger.exception(f"Error searching documents: {e}")
@@ -416,6 +524,40 @@ def create_server() -> FastMCP:
                     )
                     result_content += formatted_summary
 
+                # Generate contextual hints for AI assistants
+                title = document["title"].lower()
+                content_lower = content.lower()
+                
+                # Detect content types
+                content_types = []
+                if any(word in title or word in content_lower[:1000] for word in ['api', 'reference', 'method', 'function', 'class']):
+                    content_types.append("API Reference")
+                if any(word in title or word in content_lower[:1000] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                    content_types.append("Tutorial/Guide")
+                if any(word in title or word in content_lower[:1000] for word in ['example', 'sample', 'demo', 'usage']):
+                    content_types.append("Examples")
+                if any(word in title or word in content_lower[:1000] for word in ['install', 'setup', 'configuration', 'config']):
+                    content_types.append("Setup/Config")
+                    
+                # Determine complexity
+                complexity = "Intermediate"
+                if any(word in title or word in content_lower[:1000] for word in ['beginner', 'basic', 'intro', 'getting started', 'quickstart']):
+                    complexity = "Beginner"
+                elif any(word in title or word in content_lower[:1000] for word in ['advanced', 'expert', 'complex', 'in-depth']):
+                    complexity = "Advanced"
+                elif any(word in content_lower[:1000] for word in ['class ', 'def ', 'function', 'import', 'from']):
+                    complexity = "Technical"
+                    
+                # Generate AI usage recommendation
+                if "API Reference" in content_types:
+                    ai_usage = "Best for technical implementation details and function specifications"
+                elif "Tutorial/Guide" in content_types:
+                    ai_usage = "Best for step-by-step explanations and learning concepts"
+                elif "Examples" in content_types:
+                    ai_usage = "Best for practical code examples and usage patterns"
+                else:
+                    ai_usage = "General documentation - good for overview and concepts"
+
                 return types.CallToolResult(
                     content=[types.TextContent(type="text", text=result_content)],
                     metadata={
@@ -428,6 +570,11 @@ def create_server() -> FastMCP:
                         "summary_method": summary_method,
                         "original_length": len(content),
                         "summary_length": len(result_content),
+                        "content_types": content_types,
+                        "complexity": complexity,
+                        "ai_usage_recommendation": ai_usage,
+                        "is_large_document": len(content) > 20000,
+                        "compression_ratio": round(len(result_content) / len(content), 2) if len(content) > 0 else 0,
                     },
                 )
 
@@ -1349,8 +1496,8 @@ def create_server() -> FastMCP:
     @server.tool()
     async def read_document_section(
         document_id: int,
-        section_path: str = None,
-        section_id: int = None,
+        section_path: Any = None,
+        section_id: int | None = None,
         include_subsections: bool = False,
     ) -> types.CallToolResult:
         """Read a specific section from a document using its path or ID.
@@ -1435,8 +1582,10 @@ def create_server() -> FastMCP:
                 section_path = section_data.get("section_path", "")
                 section = section_data
             else:
-                # Convert numeric strings if needed (workaround for MCP parameter issue)
-                if section_path and section_path.replace(".", "").isdigit():
+                # Handle case where section_path comes in as integer (MCP client issue)
+                if isinstance(section_path, int):
+                    section_path = str(section_path)
+                elif section_path and section_path.replace(".", "").isdigit():
                     # It's a numeric path, ensure it's treated as string
                     section_path = str(section_path)
 
@@ -1487,11 +1636,23 @@ def create_server() -> FastMCP:
                     content_text += s["content"] + "\n\n"
             else:
                 content_text = f"Section {section_path} from '{document['title']}':\n\n"
-                content_text += (
-                    f"{'#' * section.get('section_level', 1)} "
-                    f"{section.get('section_title', 'Section')}\n\n"
-                )
-                content_text += section.get("content", "")
+                
+                # Extract content from the segments structure returned by get_section_content
+                if "segments" in section and section["segments"]:
+                    for segment in section["segments"]:
+                        if segment.get("title"):
+                            level = "#" * segment.get("level", 1)
+                            content_text += f"{level} {segment['title']}\n\n"
+                        content_text += segment.get("content", "") + "\n\n"
+                else:
+                    # Fallback for old format or empty segments
+                    content_text += (
+                        f"{'#' * section.get('level', 1)} "
+                        f"{section.get('title', 'Section')}\n\n"
+                    )
+                    # Try both possible content keys
+                    content = section.get("content", "") or section.get("segments", [{}])[0].get("content", "")
+                    content_text += content
 
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=content_text)],
@@ -1499,7 +1660,7 @@ def create_server() -> FastMCP:
                     "success": True,
                     "document_id": document_id,
                     "section_path": section_path,
-                    "section_title": section.get("section_title", ""),
+                    "section_title": section.get("title", "") or section.get("section_title", ""),
                     "include_subsections": include_subsections,
                 },
             )
@@ -1612,10 +1773,20 @@ def create_server() -> FastMCP:
                     content_text += s.get("content", "") + "\n\n"
             else:
                 content_text = f"Section {section} from '{document['title']}':\n\n"
-                level = "#" * section_obj.get("section_level", 1)
-                title = section_obj.get("section_title", "Section")
-                content_text += f"{level} {title}\n\n"
-                content_text += section_obj.get("content", "")
+                
+                # Extract content from the segments structure if available
+                if "segments" in section_obj and section_obj["segments"]:
+                    for segment in section_obj["segments"]:
+                        if segment.get("title"):
+                            level = "#" * segment.get("level", 1)
+                            content_text += f"{level} {segment['title']}\n\n"
+                        content_text += segment.get("content", "") + "\n\n"
+                else:
+                    # Fallback for old format or direct database access
+                    level = "#" * section_obj.get("section_level", 1)
+                    title = section_obj.get("section_title", "Section")
+                    content_text += f"{level} {title}\n\n"
+                    content_text += section_obj.get("content", "")
 
             return types.CallToolResult(
                 content=[types.TextContent(type="text", text=content_text)],
@@ -2484,6 +2655,151 @@ def create_server() -> FastMCP:
                 content=[
                     types.TextContent(
                         type="text", text=f"Error finding similar content: {str(e)}"
+                    )
+                ],
+                metadata={"success": False, "error": str(e)},
+            )
+
+    # Add working section reader tool (workaround for parameter validation issues)
+    @server.tool()
+    async def read_section_by_number(
+        document_id: int,
+        section_number: int,
+        include_subsections: bool = False,
+    ) -> types.CallToolResult:
+        """Read a document section by numeric identifier (workaround tool).
+        
+        This tool accepts section numbers as integers and converts them to paths internally.
+        Use this when read_document_section fails with validation errors.
+
+        Args:
+            document_id: The ID of the document
+            section_number: Section number (e.g., 1 for section 1, 12 for section 1.2)
+            include_subsections: If True, include all subsections
+
+        Examples:
+            read_section_by_number(5, 2)  # Read section 2
+            read_section_by_number(5, 21)  # Read section 2.1 
+            read_section_by_number(5, 123)  # Read section 1.2.3
+        """
+        try:
+            from docvault.core.section_navigator import get_section_content
+            from docvault.db.operations import get_connection
+
+            # Validate document exists
+            document = operations.get_document(document_id)
+            if not document:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text=f"Document not found: {document_id}"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Document not found: {document_id}",
+                    },
+                )
+
+            # Convert section number to path (e.g., 123 -> "1.2.3")
+            if section_number <= 0:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text", text="Section number must be positive"
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": "Invalid section number",
+                    },
+                )
+            
+            # Convert integer to dotted path
+            section_str = str(section_number)
+            if len(section_str) == 1:
+                section_path = section_str
+            else:
+                section_path = ".".join(section_str)
+            
+            # Get section content
+            section = get_section_content(document_id, section_path)
+            if not section:
+                return types.CallToolResult(
+                    content=[
+                        types.TextContent(
+                            type="text",
+                            text=(
+                                f"Section not found: {section_path} in document "
+                                f"{document_id}"
+                            ),
+                        )
+                    ],
+                    metadata={
+                        "success": False,
+                        "error": f"Section not found: {section_path}",
+                    },
+                )
+
+            # Get section content
+            if include_subsections:
+                # Get all segments with paths starting with section_path
+                with get_connection() as conn:
+                    cursor = conn.execute(
+                        """SELECT section_title, section_level, section_path,
+                           content
+                           FROM document_segments
+                           WHERE document_id = ? AND section_path LIKE ?
+                           ORDER BY section_path""",
+                        (document_id, f"{section_path}%"),
+                    )
+                    sections = cursor.fetchall()
+                content_text = (
+                    f"Section {section_path} and subsections from "
+                    f"'{document['title']}':\n\n"
+                )
+                for s in sections:
+                    content_text += (
+                        f"{'#' * s['section_level']} {s['section_title']}\n\n"
+                    )
+                    content_text += s["content"] + "\n\n"
+            else:
+                content_text = f"Section {section_path} from '{document['title']}':\n\n"
+                
+                # Extract content from the segments structure returned by get_section_content
+                if "segments" in section and section["segments"]:
+                    for segment in section["segments"]:
+                        if segment.get("title"):
+                            level = "#" * segment.get("level", 1)
+                            content_text += f"{level} {segment['title']}\n\n"
+                        content_text += segment.get("content", "") + "\n\n"
+                else:
+                    # Fallback for old format or empty segments
+                    content_text += (
+                        f"{'#' * section.get('level', 1)} "
+                        f"{section.get('title', 'Section')}\n\n"
+                    )
+                    # Try both possible content keys
+                    content = section.get("content", "") or section.get("segments", [{}])[0].get("content", "")
+                    content_text += content
+
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=content_text)],
+                metadata={
+                    "success": True,
+                    "document_id": document_id,
+                    "section_path": section_path,
+                    "section_number": section_number,
+                    "section_title": section.get("title", "") or section.get("section_title", ""),
+                    "include_subsections": include_subsections,
+                },
+            )
+        except Exception as e:
+            logger.exception(f"Error reading section: {e}")
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text", text=f"Error reading section: {str(e)}"
                     )
                 ],
                 metadata={"success": False, "error": str(e)},
