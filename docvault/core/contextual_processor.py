@@ -173,6 +173,7 @@ class ContextualChunkProcessor:
 
             # Use the streaming interface
             from docvault.core.content_chunker import ChunkingStrategy
+
             strategy_enum = ChunkingStrategy(chunking_strategy)
 
             for chunk in chunker.stream_chunks(
@@ -184,12 +185,14 @@ class ContextualChunkProcessor:
                     "section_title": chunk.metadata.section_title or "",
                     "section_path": chunk.metadata.section_path or "",
                     "position": chunk_index,
-                    "metadata": json.dumps({
-                        "start_position": chunk.metadata.start_position,
-                        "end_position": chunk.metadata.end_position,
-                        "section": chunk.metadata.section_title,
-                        "path": chunk.metadata.section_path,
-                    }),
+                    "metadata": json.dumps(
+                        {
+                            "start_position": chunk.metadata.start_position,
+                            "end_position": chunk.metadata.end_position,
+                            "section": chunk.metadata.section_title,
+                            "path": chunk.metadata.section_path,
+                        }
+                    ),
                 }
 
                 # Insert segment
@@ -401,7 +404,7 @@ class ContextualChunkProcessor:
                     # Store contextualized embedding
                     embedding_bytes = (
                         embedding.tobytes()
-                        if hasattr(embedding, 'tobytes')
+                        if hasattr(embedding, "tobytes")
                         else embedding
                     )
                     conn.execute(
@@ -470,9 +473,7 @@ class ContextualChunkProcessor:
 
                 # Store metadata embedding
                 embedding_bytes = (
-                    embedding.tobytes()
-                    if hasattr(embedding, 'tobytes')
-                    else embedding
+                    embedding.tobytes() if hasattr(embedding, "tobytes") else embedding
                 )
                 with operations.get_connection() as conn:
                     conn.execute(

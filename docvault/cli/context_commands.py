@@ -7,7 +7,9 @@ import logging
 from typing import Optional
 
 import click
+from rich.align import Align
 from rich.console import Console
+from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
@@ -18,8 +20,6 @@ from rich.progress import (
     TimeElapsedColumn,
 )
 from rich.table import Table
-from rich.layout import Layout
-from rich.align import Align
 
 from docvault import config
 from docvault.core.contextual_processor import ContextualChunkProcessor
@@ -146,7 +146,7 @@ def process_document(
     # Suppress logging immediately to prevent output before Live display
     original_level = logging.root.level
     logging.root.setLevel(logging.CRITICAL)
-    
+
     try:
         # Check if document exists
         doc = operations.get_document(document_id)
@@ -156,7 +156,7 @@ def process_document(
 
         # Clear any previous output to start with a clean screen
         console.clear()
-        
+
         # Run async processing
         async def run_processing():
             processor = ContextualChunkProcessor()
@@ -173,13 +173,9 @@ def process_document(
             )
 
             doc_task = progress.add_task(
-                f"[bold blue]Processing:[/bold blue] {doc['title'][:60]}...",
-                total=100
+                f"[bold blue]Processing:[/bold blue] {doc['title'][:60]}...", total=100
             )
-            seg_task = progress.add_task(
-                "[yellow]Initializing...[/yellow]",
-                total=1
-            )
+            seg_task = progress.add_task("[yellow]Initializing...[/yellow]", total=1)
 
             # Track segment progress
             current_segment = 0
@@ -199,7 +195,9 @@ def process_document(
                     seg_task,
                     completed=current,
                     total=total,
-                    description=f"[yellow]Segment {current}/{total}:[/yellow] {seg_title}"
+                    description=(
+                        f"[yellow]Segment {current}/{total}:[/yellow] {seg_title}"
+                    ),
                 )
                 # Update overall progress
                 doc_progress = (current / total) * 100
@@ -207,10 +205,10 @@ def process_document(
 
             # Use simpler status updates instead of Live display
             import time
-            
+
             console.print(f"\n[bold blue]Processing:[/bold blue] {doc['title']}")
             last_update_time = time.time()
-            
+
             def segment_progress(current, total, segment_title):
                 nonlocal last_update_time
                 # Only update every 0.5 seconds to avoid spam
@@ -222,12 +220,13 @@ def process_document(
                         else segment_title
                     )
                     console.print(
-                        f"\r[yellow]  → Segment {current}/{total}:[/yellow] {seg_title}",
+                        f"\r[yellow]  → Segment {current}/{total}:[/yellow] "
+                        f"{seg_title}",
                         end="",
-                        overflow="crop"
+                        overflow="crop",
                     )
                     last_update_time = now
-            
+
             try:
                 result = await processor.process_document(
                     document_id,
@@ -242,25 +241,34 @@ def process_document(
                         f"\r[green]✓ Completed {result['contexts_generated']} contexts "
                         f"in {result['duration_seconds']:.1f}s[/green]"
                     )
-                    
+
                     # Print summary
                     console.print("\n[bold green]✓ Processing complete![/bold green]")
-                    console.print(f"  Segments processed: {result['segments_processed']}")
-                    console.print(f"  Contexts generated: {result['contexts_generated']}")
-                    console.print(f"  Embeddings updated: {result['embeddings_updated']}")
+                    console.print(
+                        f"  Segments processed: {result['segments_processed']}"
+                    )
+                    console.print(
+                        f"  Contexts generated: {result['contexts_generated']}"
+                    )
+                    console.print(
+                        f"  Embeddings updated: {result['embeddings_updated']}"
+                    )
                     if result.get("metadata_embeddings"):
-                        console.print(f"  Metadata embeddings: {result['metadata_embeddings']}")
+                        console.print(
+                            f"  Metadata embeddings: {result['metadata_embeddings']}"
+                        )
                     console.print(f"  Duration: {result['duration_seconds']:.1f}s")
                 else:
                     console.print(
-                        f"\r[yellow]! Skipped: {result.get('reason', 'Unknown')}[/yellow]"
+                        f"\r[yellow]! Skipped: "
+                        f"{result.get('reason', 'Unknown')}[/yellow]"
                     )
 
             except Exception as e:
                 console.print(f"\r[red]✗ Error processing document: {e}[/red]")
 
         asyncio.run(run_processing())
-        
+
     finally:
         # Restore original logging level
         logging.root.setLevel(original_level)
@@ -274,16 +282,16 @@ def process_all_documents(regenerate: bool, limit: int | None):
     # Suppress all logging immediately to prevent output before Live display
     import sys
     from io import StringIO
-    
+
     original_level = logging.root.level
     logging.root.setLevel(logging.CRITICAL)
-    
+
     # Temporarily redirect stdout/stderr to capture any remaining output
     original_stdout = sys.stdout
     original_stderr = sys.stderr
     sys.stdout = StringIO()
     sys.stderr = StringIO()
-    
+
     try:
         # Get documents to process
         with operations.get_connection() as conn:
@@ -317,42 +325,42 @@ def process_all_documents(regenerate: bool, limit: int | None):
             success_count = 0
             error_count = 0
 
-            # Create progress tracking
-            progress = Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TextColumn("{task.completed}/{task.total}"),
-                TimeElapsedColumn(),
-                console=console,
-                transient=False,
-            )
+            # Create progress tracking (unused but structure remains)
+            # progress = Progress(
+            #     SpinnerColumn(),
+            #     TextColumn("[progress.description]{task.description}"),
+            #     BarColumn(),
+            #     TextColumn("{task.completed}/{task.total}"),
+            #     TimeElapsedColumn(),
+            #     console=console,
+            #     transient=False,
+            # )
 
-            doc_task = progress.add_task(
-                f"[bold blue]Processing {len(documents)} documents[/bold blue]",
-                total=len(documents)
-            )
-            seg_task = progress.add_task(
-                "[yellow]Waiting to start...[/yellow]",
-                total=1,
-                visible=True
-            )
+            # Remove unused progress variables - using simple console output
+            # doc_task = progress.add_task(
+            #     f"[bold blue]Processing {len(documents)} documents[/bold blue]",
+            #     total=len(documents),
+            # )
+            # seg_task = progress.add_task(
+            #     "[yellow]Waiting to start...[/yellow]", total=1, visible=True
+            # )
 
             # Use a much simpler approach - just print status updates
             import time
-            
+
             try:
                 for doc_idx, doc in enumerate(documents):
                     doc_title = (
-                        doc['title'][:50] + "..."
-                        if len(doc['title']) > 50
-                        else doc['title']
+                        doc["title"][:50] + "..."
+                        if len(doc["title"]) > 50
+                        else doc["title"]
                     )
 
                     # Print document start
                     console.print(
-                        f"\n[bold blue]Processing document {doc_idx + 1}/{len(documents)}:[/bold blue] {doc_title}",
-                        end=""
+                        f"\n[bold blue]Processing document {doc_idx + 1}/"
+                        f"{len(documents)}:[/bold blue] {doc_title}",
+                        end="",
                     )
 
                     # Track segment progress
@@ -369,9 +377,10 @@ def process_all_documents(regenerate: bool, limit: int | None):
                                 else segment_title
                             )
                             console.print(
-                                f"\r[yellow]  → Segment {current}/{total}:[/yellow] {seg_title}",
+                                f"\r[yellow]  → Segment {current}/{total}:[/yellow] "
+                                f"{seg_title}",
                                 end="",
-                                overflow="crop"
+                                overflow="crop",
                             )
                             last_update_time = now
 
@@ -379,30 +388,29 @@ def process_all_documents(regenerate: bool, limit: int | None):
                         result = await processor.process_document(
                             doc["id"],
                             regenerate=regenerate,
-                            progress_callback=segment_progress
+                            progress_callback=segment_progress,
                         )
 
                         if result["status"] == "success":
                             success_count += 1
                             console.print(
-                                f"\r[green]  ✓ Completed {result['contexts_generated']} contexts "
-                                f"in {result['duration_seconds']:.1f}s[/green]"
+                                f"\r[green]  ✓ Completed {result['contexts_generated']} "
+                                f"contexts in {result['duration_seconds']:.1f}s[/green]"
                             )
                         else:
                             error_count += 1
                             console.print(
-                                f"\r[yellow]  ! Skipped: {result.get('reason', 'Unknown')}[/yellow]"
+                                f"\r[yellow]  ! Skipped: "
+                                f"{result.get('reason', 'Unknown')}[/yellow]"
                             )
 
                     except Exception as e:
                         error_count += 1
-                        console.print(
-                            f"\r[red]  ✗ Error: {str(e)[:50]}...[/red]"
-                        )
-                        
+                        console.print(f"\r[red]  ✗ Error: {str(e)[:50]}...[/red]")
+
             except Exception as e:
                 console.print(f"\n[red]Error in batch processing: {e}[/red]")
-            
+
             finally:
                 # Show cursor again
                 console.show_cursor(True)
@@ -415,12 +423,12 @@ def process_all_documents(regenerate: bool, limit: int | None):
         # Restore stdout/stderr before running the async function
         sys.stdout = original_stdout
         sys.stderr = original_stderr
-        
+
         # Clear any previous output to start with a clean screen
         console.clear()
-        
+
         asyncio.run(run_batch_processing())
-        
+
     finally:
         # Restore original logging level
         logging.root.setLevel(original_level)

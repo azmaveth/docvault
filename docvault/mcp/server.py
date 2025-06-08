@@ -246,14 +246,14 @@ def create_server() -> FastMCP:
                 )
                 if metadata_parts:
                     result_text += f"{' • '.join(metadata_parts)}\n"
-                
+
                 # Enhanced relevance information for AI assistants
                 result_text += f"Score: {r.get('score', 0):.2f}"
                 if r.get("is_contextual"):
                     result_text += " [ctx]"
-                
+
                 # Add relevance explanation based on score
-                score = r.get('score', 0)
+                score = r.get("score", 0)
                 if score >= 0.8:
                     result_text += " 🟢 High relevance"
                 elif score >= 0.6:
@@ -261,69 +261,114 @@ def create_server() -> FastMCP:
                 else:
                     result_text += " 🔵 Basic match"
                 result_text += "\n"
-                
+
                 # Add content type detection
-                title = r.get('title', '').lower()
-                content = r.get('content', '').lower()
+                title = r.get("title", "").lower()
+                content = r.get("content", "").lower()
                 content_types = []
-                
-                if any(word in title or word in content[:500] for word in ['api', 'reference', 'method', 'function', 'class']):
+
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["api", "reference", "method", "function", "class"]
+                ):
                     content_types.append("API Reference")
-                if any(word in title or word in content[:500] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in [
+                        "tutorial",
+                        "guide",
+                        "getting started",
+                        "quickstart",
+                        "intro",
+                    ]
+                ):
                     content_types.append("Tutorial/Guide")
-                if any(word in title or word in content[:500] for word in ['example', 'sample', 'demo', 'usage']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["example", "sample", "demo", "usage"]
+                ):
                     content_types.append("Examples")
-                if any(word in title or word in content[:500] for word in ['install', 'setup', 'configuration', 'config']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["install", "setup", "configuration", "config"]
+                ):
                     content_types.append("Setup/Config")
-                if any(word in title or word in content[:500] for word in ['troubleshoot', 'debug', 'error', 'problem', 'issue']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["troubleshoot", "debug", "error", "problem", "issue"]
+                ):
                     content_types.append("Troubleshooting")
-                
+
                 if content_types:
                     result_text += f"Content Type: {', '.join(content_types)}\n"
-                
+
                 # Add complexity indicator
                 complexity_indicators = []
-                if any(word in title or word in content[:500] for word in ['beginner', 'basic', 'intro', 'getting started', 'quickstart']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in [
+                        "beginner",
+                        "basic",
+                        "intro",
+                        "getting started",
+                        "quickstart",
+                    ]
+                ):
                     complexity_indicators.append("Beginner")
-                if any(word in title or word in content[:500] for word in ['advanced', 'expert', 'complex', 'in-depth']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["advanced", "expert", "complex", "in-depth"]
+                ):
                     complexity_indicators.append("Advanced")
-                if any(word in title or word in content[:500] for word in ['intermediate', 'moderate']):
+                if any(
+                    word in title or word in content[:500]
+                    for word in ["intermediate", "moderate"]
+                ):
                     complexity_indicators.append("Intermediate")
-                
+
                 if complexity_indicators:
                     result_text += f"Complexity: {', '.join(complexity_indicators)}\n"
-                elif any(word in content[:500] for word in ['class ', 'def ', 'function', 'import', 'from']):
+                elif any(
+                    word in content[:500]
+                    for word in ["class ", "def ", "function", "import", "from"]
+                ):
                     result_text += "Complexity: Technical (contains code)\n"
-                
+
                 # Enhanced content preview with better formatting
                 content_preview = r.get("content", "")[:300]
                 ellipsis = "..." if len(r.get("content", "")) > 300 else ""
                 result_text += f"Preview: {content_preview.strip()}{ellipsis}\n"
-                
+
                 if r.get("section_title"):
                     result_text += f"Section: {r['section_title']}\n"
                 if r.get("context_description"):
                     result_text += f"Context: {r['context_description'][:150]}...\n"
-                
+
                 # Add AI usage hints
                 usage_hints = []
                 if score >= 0.8:
-                    usage_hints.append("🎯 Primary reference - use for detailed answers")
+                    usage_hints.append(
+                        "🎯 Primary reference - use for detailed answers"
+                    )
                 elif score >= 0.6:
-                    usage_hints.append("📖 Supporting reference - good for additional context")
+                    usage_hints.append(
+                        "📖 Supporting reference - good for additional context"
+                    )
                 else:
-                    usage_hints.append("📝 Background reference - may contain related info")
-                
+                    usage_hints.append(
+                        "📝 Background reference - may contain related info"
+                    )
+
                 if "API Reference" in content_types:
                     usage_hints.append("🔧 Contains technical specifications")
                 if "Tutorial/Guide" in content_types:
                     usage_hints.append("📚 Good for step-by-step explanations")
                 if "Examples" in content_types:
                     usage_hints.append("💡 Contains practical examples")
-                
+
                 if usage_hints:
                     result_text += f"AI Hint: {' • '.join(usage_hints)}\n"
-                
+
                 result_text += "\n"
 
                 content_items.append(types.TextContent(type="text", text=result_text))
@@ -357,43 +402,69 @@ def create_server() -> FastMCP:
                 "query": query,
                 "filters": doc_filter if doc_filter else {},
             }
-            
+
             if results:
                 # Add summary statistics for AI decision making
-                high_relevance_count = sum(1 for r in results if r.get('score', 0) >= 0.8)
-                medium_relevance_count = sum(1 for r in results if 0.6 <= r.get('score', 0) < 0.8)
-                low_relevance_count = sum(1 for r in results if r.get('score', 0) < 0.6)
-                
-                search_metadata.update({
-                    "relevance_distribution": {
-                        "high": high_relevance_count,
-                        "medium": medium_relevance_count, 
-                        "low": low_relevance_count
-                    },
-                    "highest_score": max(r.get('score', 0) for r in results),
-                    "average_score": sum(r.get('score', 0) for r in results) / len(results),
-                    "has_contextual_results": any(r.get('is_contextual') for r in results),
-                    "ai_recommendation": (
-                        "High quality results found - suitable for primary references" 
-                        if high_relevance_count > 0 
-                        else "Medium quality results - good for supporting information" 
-                        if medium_relevance_count > 0 
-                        else "Basic matches found - may contain related information"
-                    )
-                })
-                
+                high_relevance_count = sum(
+                    1 for r in results if r.get("score", 0) >= 0.8
+                )
+                medium_relevance_count = sum(
+                    1 for r in results if 0.6 <= r.get("score", 0) < 0.8
+                )
+                low_relevance_count = sum(1 for r in results if r.get("score", 0) < 0.6)
+
+                search_metadata.update(
+                    {
+                        "relevance_distribution": {
+                            "high": high_relevance_count,
+                            "medium": medium_relevance_count,
+                            "low": low_relevance_count,
+                        },
+                        "highest_score": max(r.get("score", 0) for r in results),
+                        "average_score": sum(r.get("score", 0) for r in results)
+                        / len(results),
+                        "has_contextual_results": any(
+                            r.get("is_contextual") for r in results
+                        ),
+                        "ai_recommendation": (
+                            "High quality results found - suitable for primary references"
+                            if high_relevance_count > 0
+                            else (
+                                "Medium quality results - good for supporting information"
+                                if medium_relevance_count > 0
+                                else "Basic matches found - may contain related information"
+                            )
+                        ),
+                    }
+                )
+
                 # Content type analysis
                 all_content_types = []
                 for r in results:
-                    title = r.get('title', '').lower()
-                    content = r.get('content', '').lower()
-                    if any(word in title or word in content[:500] for word in ['api', 'reference', 'method', 'function', 'class']):
+                    title = r.get("title", "").lower()
+                    content = r.get("content", "").lower()
+                    if any(
+                        word in title or word in content[:500]
+                        for word in ["api", "reference", "method", "function", "class"]
+                    ):
                         all_content_types.append("API Reference")
-                    if any(word in title or word in content[:500] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                    if any(
+                        word in title or word in content[:500]
+                        for word in [
+                            "tutorial",
+                            "guide",
+                            "getting started",
+                            "quickstart",
+                            "intro",
+                        ]
+                    ):
                         all_content_types.append("Tutorial/Guide")
-                    if any(word in title or word in content[:500] for word in ['example', 'sample', 'demo', 'usage']):
+                    if any(
+                        word in title or word in content[:500]
+                        for word in ["example", "sample", "demo", "usage"]
+                    ):
                         all_content_types.append("Examples")
-                
+
                 search_metadata["content_types_found"] = list(set(all_content_types))
 
             return types.CallToolResult(
@@ -527,32 +598,67 @@ def create_server() -> FastMCP:
                 # Generate contextual hints for AI assistants
                 title = document["title"].lower()
                 content_lower = content.lower()
-                
+
                 # Detect content types
                 content_types = []
-                if any(word in title or word in content_lower[:1000] for word in ['api', 'reference', 'method', 'function', 'class']):
+                if any(
+                    word in title or word in content_lower[:1000]
+                    for word in ["api", "reference", "method", "function", "class"]
+                ):
                     content_types.append("API Reference")
-                if any(word in title or word in content_lower[:1000] for word in ['tutorial', 'guide', 'getting started', 'quickstart', 'intro']):
+                if any(
+                    word in title or word in content_lower[:1000]
+                    for word in [
+                        "tutorial",
+                        "guide",
+                        "getting started",
+                        "quickstart",
+                        "intro",
+                    ]
+                ):
                     content_types.append("Tutorial/Guide")
-                if any(word in title or word in content_lower[:1000] for word in ['example', 'sample', 'demo', 'usage']):
+                if any(
+                    word in title or word in content_lower[:1000]
+                    for word in ["example", "sample", "demo", "usage"]
+                ):
                     content_types.append("Examples")
-                if any(word in title or word in content_lower[:1000] for word in ['install', 'setup', 'configuration', 'config']):
+                if any(
+                    word in title or word in content_lower[:1000]
+                    for word in ["install", "setup", "configuration", "config"]
+                ):
                     content_types.append("Setup/Config")
-                    
+
                 # Determine complexity
                 complexity = "Intermediate"
-                if any(word in title or word in content_lower[:1000] for word in ['beginner', 'basic', 'intro', 'getting started', 'quickstart']):
+                if any(
+                    word in title or word in content_lower[:1000]
+                    for word in [
+                        "beginner",
+                        "basic",
+                        "intro",
+                        "getting started",
+                        "quickstart",
+                    ]
+                ):
                     complexity = "Beginner"
-                elif any(word in title or word in content_lower[:1000] for word in ['advanced', 'expert', 'complex', 'in-depth']):
+                elif any(
+                    word in title or word in content_lower[:1000]
+                    for word in ["advanced", "expert", "complex", "in-depth"]
+                ):
                     complexity = "Advanced"
-                elif any(word in content_lower[:1000] for word in ['class ', 'def ', 'function', 'import', 'from']):
+                elif any(
+                    word in content_lower[:1000]
+                    for word in ["class ", "def ", "function", "import", "from"]
+                ):
                     complexity = "Technical"
-                    
+
                 # Generate AI usage recommendation
                 if "API Reference" in content_types:
                     ai_usage = "Best for technical implementation details and function specifications"
                 elif "Tutorial/Guide" in content_types:
-                    ai_usage = "Best for step-by-step explanations and learning concepts"
+                    ai_usage = (
+                        "Best for step-by-step explanations and learning concepts"
+                    )
                 elif "Examples" in content_types:
                     ai_usage = "Best for practical code examples and usage patterns"
                 else:
@@ -574,7 +680,11 @@ def create_server() -> FastMCP:
                         "complexity": complexity,
                         "ai_usage_recommendation": ai_usage,
                         "is_large_document": len(content) > 20000,
-                        "compression_ratio": round(len(result_content) / len(content), 2) if len(content) > 0 else 0,
+                        "compression_ratio": (
+                            round(len(result_content) / len(content), 2)
+                            if len(content) > 0
+                            else 0
+                        ),
                     },
                 )
 
@@ -1636,7 +1746,7 @@ def create_server() -> FastMCP:
                     content_text += s["content"] + "\n\n"
             else:
                 content_text = f"Section {section_path} from '{document['title']}':\n\n"
-                
+
                 # Extract content from the segments structure returned by get_section_content
                 if "segments" in section and section["segments"]:
                     for segment in section["segments"]:
@@ -1651,7 +1761,9 @@ def create_server() -> FastMCP:
                         f"{section.get('title', 'Section')}\n\n"
                     )
                     # Try both possible content keys
-                    content = section.get("content", "") or section.get("segments", [{}])[0].get("content", "")
+                    content = section.get("content", "") or section.get(
+                        "segments", [{}]
+                    )[0].get("content", "")
                     content_text += content
 
             return types.CallToolResult(
@@ -1660,7 +1772,8 @@ def create_server() -> FastMCP:
                     "success": True,
                     "document_id": document_id,
                     "section_path": section_path,
-                    "section_title": section.get("title", "") or section.get("section_title", ""),
+                    "section_title": section.get("title", "")
+                    or section.get("section_title", ""),
                     "include_subsections": include_subsections,
                 },
             )
@@ -1773,7 +1886,7 @@ def create_server() -> FastMCP:
                     content_text += s.get("content", "") + "\n\n"
             else:
                 content_text = f"Section {section} from '{document['title']}':\n\n"
-                
+
                 # Extract content from the segments structure if available
                 if "segments" in section_obj and section_obj["segments"]:
                     for segment in section_obj["segments"]:
@@ -2015,8 +2128,9 @@ def create_server() -> FastMCP:
                         LENGTH(content) as content_length
                     FROM document_segments
                     WHERE document_id = ?
-                        AND ({" AND ".join(search_conditions)
-                              if search_conditions else "1=1"})
+                        AND ({
+                    " AND ".join(search_conditions) if search_conditions else "1=1"
+                })
                     ORDER BY
                         CASE
                             WHEN LOWER(section_title) LIKE ? THEN 0
@@ -2668,7 +2782,7 @@ def create_server() -> FastMCP:
         include_subsections: bool = False,
     ) -> types.CallToolResult:
         """Read a document section by numeric identifier (workaround tool).
-        
+
         This tool accepts section numbers as integers and converts them to paths internally.
         Use this when read_document_section fails with validation errors.
 
@@ -2679,7 +2793,7 @@ def create_server() -> FastMCP:
 
         Examples:
             read_section_by_number(5, 2)  # Read section 2
-            read_section_by_number(5, 21)  # Read section 2.1 
+            read_section_by_number(5, 21)  # Read section 2.1
             read_section_by_number(5, 123)  # Read section 1.2.3
         """
         try:
@@ -2714,14 +2828,14 @@ def create_server() -> FastMCP:
                         "error": "Invalid section number",
                     },
                 )
-            
+
             # Convert integer to dotted path
             section_str = str(section_number)
             if len(section_str) == 1:
                 section_path = section_str
             else:
                 section_path = ".".join(section_str)
-            
+
             # Get section content
             section = get_section_content(document_id, section_path)
             if not section:
@@ -2765,7 +2879,7 @@ def create_server() -> FastMCP:
                     content_text += s["content"] + "\n\n"
             else:
                 content_text = f"Section {section_path} from '{document['title']}':\n\n"
-                
+
                 # Extract content from the segments structure returned by get_section_content
                 if "segments" in section and section["segments"]:
                     for segment in section["segments"]:
@@ -2780,7 +2894,9 @@ def create_server() -> FastMCP:
                         f"{section.get('title', 'Section')}\n\n"
                     )
                     # Try both possible content keys
-                    content = section.get("content", "") or section.get("segments", [{}])[0].get("content", "")
+                    content = section.get("content", "") or section.get(
+                        "segments", [{}]
+                    )[0].get("content", "")
                     content_text += content
 
             return types.CallToolResult(
@@ -2790,7 +2906,8 @@ def create_server() -> FastMCP:
                     "document_id": document_id,
                     "section_path": section_path,
                     "section_number": section_number,
-                    "section_title": section.get("title", "") or section.get("section_title", ""),
+                    "section_title": section.get("title", "")
+                    or section.get("section_title", ""),
                     "include_subsections": include_subsections,
                 },
             )

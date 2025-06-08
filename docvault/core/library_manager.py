@@ -21,7 +21,6 @@ LIBRARY_URL_PATTERNS = {
     "scikit-image": "https://scikit-image.org/docs/stable/",
     "statsmodels": "https://www.statsmodels.org/stable/",
     "sympy": "https://docs.sympy.org/latest/",
-    
     # Machine Learning & AI
     "tensorflow": "https://www.tensorflow.org/versions/r{major}.{minor}/api_docs/python/tf",
     "pytorch": "https://pytorch.org/docs/{version}/",
@@ -29,7 +28,6 @@ LIBRARY_URL_PATTERNS = {
     "keras": "https://keras.io/",
     "transformers": "https://huggingface.co/docs/transformers/",
     "openai": "https://platform.openai.com/docs/",
-    
     # Web Development
     "django": "https://docs.djangoproject.com/en/{version}/",
     "flask": "https://flask.palletsprojects.com/en/{version}/",
@@ -39,12 +37,10 @@ LIBRARY_URL_PATTERNS = {
     "tornado": "https://www.tornadoweb.org/en/stable/",
     "aiohttp": "https://docs.aiohttp.org/en/stable/",
     "celery": "https://docs.celeryproject.org/en/stable/",
-    
     # HTTP & APIs
     "requests": "https://requests.readthedocs.io/en/{version}/",
     "httpx": "https://www.python-httpx.org/",
     "urllib3": "https://urllib3.readthedocs.io/en/stable/",
-    
     # Database & ORM
     "sqlalchemy": "https://docs.sqlalchemy.org/en/{version}/",
     "django-orm": "https://docs.djangoproject.com/en/{version}/topics/db/",
@@ -52,7 +48,6 @@ LIBRARY_URL_PATTERNS = {
     "pymongo": "https://pymongo.readthedocs.io/en/stable/",
     "redis": "https://redis-py.readthedocs.io/en/stable/",
     "psycopg2": "https://www.psycopg.org/docs/",
-    
     # Testing
     "pytest": "https://docs.pytest.org/en/latest/",
     "unittest": "https://docs.python.org/3/library/unittest.html",
@@ -60,7 +55,6 @@ LIBRARY_URL_PATTERNS = {
     "nose2": "https://docs.nose2.io/en/latest/",
     "tox": "https://tox.readthedocs.io/en/latest/",
     "coverage": "https://coverage.readthedocs.io/en/latest/",
-    
     # Utilities & Tools
     "click": "https://click.palletsprojects.org/en/{version}/",
     "rich": "https://rich.readthedocs.io/en/stable/",
@@ -69,19 +63,16 @@ LIBRARY_URL_PATTERNS = {
     "marshmallow": "https://marshmallow.readthedocs.io/en/stable/",
     "attrs": "https://www.attrs.org/en/stable/",
     "dataclasses": "https://docs.python.org/3/library/dataclasses.html",
-    
     # Parsing & Processing
     "beautifulsoup4": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
     "lxml": "https://lxml.de/",
     "pyparsing": "https://pyparsing-docs.readthedocs.io/en/latest/",
     "regex": "https://pypi.org/project/regex/",
     "jsonschema": "https://python-jsonschema.readthedocs.io/en/stable/",
-    
     # Async & Concurrency
     "asyncio": "https://docs.python.org/3/library/asyncio.html",
     "trio": "https://trio.readthedocs.io/en/stable/",
     "twisted": "https://twistedmatrix.com/documents/current/",
-    
     # Dev Tools & Deployment
     "docker": "https://docker-py.readthedocs.io/en/stable/",
     "fabric": "https://docs.fabfile.org/en/stable/",
@@ -353,7 +344,7 @@ class LibraryManager:
         # If pattern has no placeholders, return as-is
         if "{" not in pattern:
             return pattern
-            
+
         if version == "latest" or version == "stable":
             version = "stable"
         else:
@@ -384,23 +375,33 @@ class LibraryManager:
 
                     # Check for documentation URL in metadata
                     project_urls = info.get("project_urls", {})
-                    
+
                     # Try various common documentation URL keys
                     doc_keys = [
-                        "Documentation", "Docs", "documentation", "docs",
-                        "documentation_url", "doc_url", "Read the Docs",
-                        "ReadTheDocs", "Manual", "User Guide", "API Reference"
+                        "Documentation",
+                        "Docs",
+                        "documentation",
+                        "docs",
+                        "documentation_url",
+                        "doc_url",
+                        "Read the Docs",
+                        "ReadTheDocs",
+                        "Manual",
+                        "User Guide",
+                        "API Reference",
                     ]
-                    
+
                     doc_url = info.get("documentation_url")
                     if not doc_url and project_urls:
                         for key in doc_keys:
                             if key in project_urls:
                                 doc_url = project_urls[key]
                                 break
-                                
+
                     if doc_url and doc_url.strip():
-                        self.logger.info(f"Found documentation URL in PyPI metadata: {doc_url}")
+                        self.logger.info(
+                            f"Found documentation URL in PyPI metadata: {doc_url}"
+                        )
                         return doc_url.strip()
 
                     # Fallback to homepage if it looks like documentation
@@ -408,9 +409,11 @@ class LibraryManager:
                     if homepage and self._is_likely_documentation_url(
                         library_name, homepage
                     ):
-                        self.logger.info(f"Using homepage as documentation URL: {homepage}")
+                        self.logger.info(
+                            f"Using homepage as documentation URL: {homepage}"
+                        )
                         return homepage
-                        
+
                     # Try common documentation patterns based on package name
                     common_patterns = [
                         f"https://{library_name}.readthedocs.io/",
@@ -421,10 +424,12 @@ class LibraryManager:
                         f"https://{library_name}.org/documentation/",
                         f"https://{library_name}.github.io/",
                     ]
-                    
+
                     for pattern in common_patterns:
                         if await self.check_url_exists(pattern):
-                            self.logger.info(f"Found documentation via pattern: {pattern}")
+                            self.logger.info(
+                                f"Found documentation via pattern: {pattern}"
+                            )
                             return pattern
 
             return None
